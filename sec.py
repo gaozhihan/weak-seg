@@ -95,8 +95,6 @@ class weighted_pool_mul_class_loss(nn.Module):
 
     def forward(self, labels, outputs):
         outputs = outputs.view(outputs.size()[0],outputs.size()[1], -1)
-        print(outputs.shape)
-        print(self.pool_weight.shape)
 
         if outputs.shape[0] != self.batch_size:
             dim_temp = outputs.shape[0]
