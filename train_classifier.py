@@ -47,14 +47,16 @@ max_acc = 0
 
 for epoch in range(args.epochs):
     train_loss = 0.0
-    TP = 0
-    T = 0
-    P = 0
+    eval_loss = 0.0
+    TP_train = 0; TP_eval = 0
+    T_train = 0;  T_eval = 0
+    P_train = 0;  P_eval = 0
     main_scheduler.step()
+    start = time.time()
     for phase in ['train', 'val']:
         if phase == 'train':
             net.train(True)
-            start = time.time()
+
             for data in dataloader.dataloaders["train"]:
                 inputs, labels = data
                 if flag_use_cuda:
@@ -69,8 +71,6 @@ for epoch in range(args.epochs):
 
                 train_loss += loss.item() * inputs.size(0)
 
-            time_took = time.time() - start
-            print('Took: {:.2f} to train this epoch'.format(time_took))
 
         else:  # evaluation
             net.train(False)
@@ -84,25 +84,27 @@ for epoch in range(args.epochs):
                     outputs = net(inputs)
                     loss, outputs = criterion(labels, outputs)
 
+                eval_loss += loss.item() * inputs.size(0)
+
                 preds = (torch.sigmoid(outputs.squeeze().data)>0.5)
-                TP += torch.sum(preds.long() == (labels*2-1).data.long())
-                T += torch.sum(labels.data.long()==1)
-                P += torch.sum(preds.long()==1)
+                TP_eval += torch.sum(preds.long() == (labels*2-1).data.long())
+                T_eval += torch.sum(labels.data.long()==1)
+                P_eval += torch.sum(preds.long()==1)
 
-            time_took = time.time() - start
-            print('Took: {:.2f} to eval this epoch'.format(time_took))
+    time_took = time.time() - start
+    epoch_train_loss = train_loss / dataloader.dataset_sizes["train"]
+    epoch_eval_loss = eval_loss / dataloader.dataset_sizes["val"]
 
+    recall_train = TP_train / T_train if T_train!=0 else 0
+    acc_train = TP_train / P_train if P_train!=0 else 0
+    recall_eval = TP_eval / T_eval if T_eval!=0 else 0
+    acc_eval = TP_eval / P_eval if P_eval!=0 else 0
 
-
-    epoch_loss = train_loss / dataloader.dataset_sizes["train"]
-    recall = TP / T if T!=0 else 0
-    acc = TP / P if P!=0 else 0
-
-    if acc > max_acc:
+    if acc_eval > max_acc:
         torch.save(net.state_dict(), './models/top_val_acc.pth')
-        max_acc = acc
+        max_acc = acc_eval
 
-    print('Train Loss: {:.4f}, Acc: {:.4f}, Recall: {:.4f}'.format(epoch_loss, acc, recall))
+    print('Epoch: {} took {:.2f}, Train Loss: {:.4f}, Acc: {:.4f}, Recall: {:.4f}; eval loss: {:.4f}, Acc: {:.4f}, Recall: {:.4f}'.format(epoch, time_took, epoch_train_loss, acc_train, recall_train, epoch_eval_loss, acc_eval, recall_eval))
 
 
 print("done")
