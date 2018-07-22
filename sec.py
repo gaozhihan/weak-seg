@@ -66,6 +66,7 @@ class weighted_pool_mul_class_loss(nn.Module):
     def __init__(self, batch_size, num_classes, map_size, no_bg, flag_use_cuda):
         super(weighted_pool_mul_class_loss, self).__init__()
         self.dim = map_size[0] * map_size[1]
+        self.batch_size = batch_size
         self.df = 0.996 # foreground decay
         self.db = 0.999 # background decay
         weight = np.ones([batch_size, num_classes, self.dim])
@@ -96,7 +97,13 @@ class weighted_pool_mul_class_loss(nn.Module):
         outputs = outputs.view(outputs.size()[0],outputs.size()[1], -1)
         print(outputs.shape)
         print(self.pool_weight.shape)
-        outputs = torch.mul(outputs, self.pool_weight)
+
+        if outputs.shape[0] != self.batch_size:
+            dim_temp = outputs.shape[0]
+            outputs = torch.mul(outputs, self.pool_weight[:dim_temp,:,:])
+        else:
+            outputs = torch.mul(outputs, self.pool_weight)
+
         outputs = torch.sum(outputs, dim=2)
 
         loss = nn.functional.multilabel_soft_margin_loss(outputs, labels)
