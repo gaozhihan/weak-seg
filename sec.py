@@ -94,6 +94,8 @@ class weighted_pool_mul_class_loss(nn.Module):
 
     def forward(self, labels, outputs):
         outputs = outputs.view(outputs.size()[0],outputs.size()[1], -1)
+        print(outputs.shape)
+        print(self.pool_weight.shape)
         outputs = torch.mul(outputs, self.pool_weight)
         outputs = torch.sum(outputs, dim=2)
 
