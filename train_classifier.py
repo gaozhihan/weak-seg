@@ -67,7 +67,7 @@ for epoch in range(args.epochs):
                 loss.backward()
                 optimizer.step()
 
-                train_loss += loss.data[0] * inputs.size(0)
+                train_loss += loss.item() * inputs.size(0)
 
             time_took = time.time() - start
             print('Took: {:.2f} to train this epoch'.format(time_took))
