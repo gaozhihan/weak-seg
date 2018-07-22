@@ -2,8 +2,8 @@ import argparse
 
 def get_args():
     parser = argparse.ArgumentParser(description='weak_supervise')
-    parser.add_argument('--lr', type=float, default=1e-3,
-                        help='learning rate (default: 1e-3)')
+    parser.add_argument('--lr', type=float, default=1e-4,
+                        help='learning rate (default: 1e-4)')
     parser.add_argument('--data_dir', type=str,
                         default="./data/VOC2012/VOC2012_SEG_AUG",
                         help='data loading directory')
