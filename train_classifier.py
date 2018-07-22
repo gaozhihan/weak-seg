@@ -37,7 +37,7 @@ if flag_use_cuda:
     net.cuda()
 
 dataloader = VOCData(args)
-criterion = sec.weighted_pool_mul_class_loss(args.batch_size, args.num_classes, args.output_size, args.no_bg)
+criterion = sec.weighted_pool_mul_class_loss(args.batch_size, args.num_classes, args.output_size, args.no_bg, flag_use_cuda)
 
 optimizer = optim.Adam(net.parameters(), lr=args.lr)  # L2 penalty: norm weight_decay=0.0001
 main_scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=args.step_size)

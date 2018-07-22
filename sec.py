@@ -63,7 +63,7 @@ class SEC_NN(nn.Module):
 
 
 class weighted_pool_mul_class_loss(nn.Module):
-    def __init__(self, batch_size, num_classes, map_size, no_bg):
+    def __init__(self, batch_size, num_classes, map_size, no_bg, flag_use_cuda):
         super(weighted_pool_mul_class_loss, self).__init__()
         self.dim = map_size[0] * map_size[1]
         self.df = 0.996 # foreground decay
@@ -88,6 +88,8 @@ class weighted_pool_mul_class_loss(nn.Module):
         weight[:,1:,:] = weight[:,1:,:]/np.sum(weight[0,1,:])
 
         self.pool_weight = torch.from_numpy(weight.astype('float32'))
+        if flag_use_cuda:
+            self.pool_weight = self.pool_weight.cuda()
 
 
     def forward(self, labels, outputs):
