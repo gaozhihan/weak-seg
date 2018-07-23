@@ -22,8 +22,13 @@ if host_name == 'sunting':
 elif host_name == 'sunting-ThinkCenter-M90':
     args.batch_size = 18
 elif host_name == 'ram-lab':
-    args.batch_size = 50
     args.data_dir = '/data_shared/Docker/ltai/ws/decoupled_net/data/VOC2012/VOC2012_SEG_AUG'
+    if args.model == 'SEC':
+        args.batch_size = 50
+    elif args.model == 'resnet':
+        args.batch_size = 100
+
+    
 
 
 if args.model == 'SEC':
