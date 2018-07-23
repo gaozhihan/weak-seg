@@ -8,14 +8,13 @@ import time
 import socket
 import os
 import sec
+import torchvision.models.resnet as resnet
 from arguments import get_args
 
 args = get_args()
 
-# model_url = 'https://download.pytorch.org/models/vgg16-397923af.pth' # 'vgg16'
-model_path = 'models/vgg16-397923af.pth' # 'vgg16'
-
 host_name = socket.gethostname()
+flag_use_cuda = torch.cuda.is_available()
 
 if host_name == 'sunting':
     args.batch_size = 5
@@ -27,17 +26,25 @@ elif host_name == 'ram-lab':
     args.data_dir = '/data_shared/Docker/ltai/ws/decoupled_net/data/VOC2012/VOC2012_SEG_AUG'
 
 
-flag_use_cuda = torch.cuda.is_available()
-net = sec.SEC_NN()
+if args.model == 'SEC':
+    # model_url = 'https://download.pytorch.org/models/vgg16-397923af.pth' # 'vgg16'
+    model_path = 'models/vgg16-397923af.pth' # 'vgg16'
+    net = sec.SEC_NN()
 
-#net.load_state_dict(model_zoo.load_url(model_url), strict = False)
-net.load_state_dict(torch.load(model_path), strict = False)
+    #net.load_state_dict(model_zoo.load_url(model_url), strict = False)
+    net.load_state_dict(torch.load(model_path), strict = False)
+    criterion = sec.weighted_pool_mul_class_loss(args.batch_size, args.num_classes, args.output_size, args.no_bg, flag_use_cuda)
+
+elif args.model == 'resnet':
+    net = resnet.resnet50(pretrained=False, num_classes=args.num_classes)
+    criterion = nn.MultiLabelSoftMarginLoss()
+
 
 if flag_use_cuda:
     net.cuda()
 
 dataloader = VOCData(args)
-criterion = sec.weighted_pool_mul_class_loss(args.batch_size, args.num_classes, args.output_size, args.no_bg, flag_use_cuda)
+
 
 optimizer = optim.Adam(net.parameters(), lr=args.lr)  # L2 penalty: norm weight_decay=0.0001
 main_scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=args.step_size)
@@ -101,7 +108,7 @@ for epoch in range(args.epochs):
     acc_eval = TP_eval / P_eval if P_eval!=0 else 0
 
     if acc_eval > max_acc:
-        torch.save(net.state_dict(), './models/top_val_acc.pth')
+        torch.save(net.state_dict(), './models/top_val_acc'+ args.model + '.pth')
         max_acc = acc_eval
 
     print('Epoch: {} took {:.2f}, Train Loss: {:.4f}, Acc: {:.4f}, Recall: {:.4f}; eval loss: {:.4f}, Acc: {:.4f}, Recall: {:.4f}'.format(epoch, time_took, epoch_train_loss, acc_train, recall_train, epoch_eval_loss, acc_eval, recall_eval))
