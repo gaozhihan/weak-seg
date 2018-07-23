@@ -72,7 +72,11 @@ for epoch in range(args.epochs):
                 outputs = net(inputs)
 
                 optimizer.zero_grad()
-                loss, outputs = criterion(labels, outputs)
+                if args.model == 'SEC':
+                    loss, outputs = criterion(labels, outputs)
+                elif args.model == 'resnet':
+                    loss = criterion(outputs.squeeze(), labels)
+
                 loss.backward()
                 optimizer.step()
 
@@ -89,7 +93,10 @@ for epoch in range(args.epochs):
 
                 with torch.no_grad():
                     outputs = net(inputs)
-                    loss, outputs = criterion(labels, outputs)
+                    if args.model == 'SEC':
+                        loss, outputs = criterion(labels, outputs)
+                    elif args.model == 'resnet':
+                        loss = criterion(outputs.squeeze(), labels)
 
                 eval_loss += loss.item() * inputs.size(0)
 
