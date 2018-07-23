@@ -7,7 +7,7 @@ def get_args():
     parser.add_argument('--data_dir', type=str,
                         default="./data/VOC2012/VOC2012_SEG_AUG",
                         help='data loading directory')
-    parser.add_argument('--model', type=str, default="vgg16",
+    parser.add_argument('--model', type=str, default="SEC",
                         help='model type resnet|SEC')
     parser.add_argument('--batch_size', type=int, default=15,
                         help='training batch size')
