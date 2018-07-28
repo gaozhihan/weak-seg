@@ -12,7 +12,7 @@ from PIL import Image
 
 class VOCData():
     def __init__(self, args):
-        if args.model == "SEC":
+        if args.model ==  "SEC":
             self.data_transforms = {
                 'train': transforms.Compose([
                     transforms.Resize(args.input_size),

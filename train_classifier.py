@@ -41,7 +41,9 @@ if args.model == 'SEC':
     criterion = sec.weighted_pool_mul_class_loss(args.batch_size, args.num_classes, args.output_size, args.no_bg, flag_use_cuda)
 
 elif args.model == 'resnet':
+    model_path = 'models/resnet50_feat.pth'
     net = resnet.resnet50(pretrained=False, num_classes=args.num_classes)
+    net.load_state_dict(torch.load(model_path), strict = False)
     criterion = nn.MultiLabelSoftMarginLoss()
 
 
