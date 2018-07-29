@@ -125,8 +125,8 @@ for epoch in range(args.epochs):
     recall_eval = TP_eval / T_eval if T_eval!=0 else 0
     acc_eval = TP_eval / P_eval if P_eval!=0 else 0
 
-    print('TP_train is {}; T_train is {}; P_train is {}'.format(TP_train, T_train, P_train) )
-    print('TP_eval is {}; T_eval is {}; P_eval is {}'.format(TP_eval, T_eval, P_eval) )
+    print('TP_train: {};   T_train: {};   P_train: {};   acc_train: {};   recall_train: {} '.format(TP_train, T_train, P_train, acc_train, recall_train))
+    print('TP_eval: {};   T_eval: {};   P_eval: {};   acc_eval: {};   recall__eval: {} '.format(TP_eval, T_eval, P_eval, acc_eval, recall_eval))
 
     if acc_eval > max_acc:
         torch.save(net.state_dict(), './models/top_val_acc'+ args.model + '.pth')
