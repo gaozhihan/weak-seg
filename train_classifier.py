@@ -120,15 +120,22 @@ for epoch in range(args.epochs):
     epoch_train_loss = train_loss / dataloader.dataset_sizes["train"]
     epoch_eval_loss = eval_loss / dataloader.dataset_sizes["val"]
 
-    recall_train = TP_train.numpy() / T_train.numpy() if T_train!=0 else 0
-    acc_train = TP_train.numpy() / P_train.numpy() if P_train!=0 else 0
-    recall_eval = TP_eval.numpy() / T_eval.numpy() if T_eval!=0 else 0
-    acc_eval = TP_eval.numpy() / P_eval.numpy() if P_eval!=0 else 0
+    if flag_use_cuda:
+        recall_train = TP_train.cpu().numpy() / T_train.cpu().numpy() if T_train!=0 else 0
+        acc_train = TP_train.cpu().numpy() / P_train.cpu().numpy() if P_train!=0 else 0
+        recall_eval = TP_eval.cpu().numpy() / T_eval.cpu().numpy() if T_eval!=0 else 0
+        acc_eval = TP_eval.cpu().numpy() / P_eval.cpu().numpy() if P_eval!=0 else 0
+    else:
+        recall_train = TP_train.numpy() / T_train.numpy() if T_train!=0 else 0
+        acc_train = TP_train.numpy() / P_train.numpy() if P_train!=0 else 0
+        recall_eval = TP_eval.numpy() / T_eval.numpy() if T_eval!=0 else 0
+        acc_eval = TP_eval.numpy() / P_eval.numpy() if P_eval!=0 else 0
 
     # print('TP_train: {};   T_train: {};   P_train: {};   acc_train: {};   recall_train: {} '.format(TP_train, T_train, P_train, acc_train, recall_train))
     # print('TP_eval: {};   T_eval: {};   P_eval: {};   acc_eval: {};   recall__eval: {} '.format(TP_eval, T_eval, P_eval, acc_eval, recall_eval))
 
     if acc_eval > max_acc:
+        print('save model with val acc: {}'.format(acc_eval))
         torch.save(net.state_dict(), './models/top_val_acc'+ args.model + '.pth')
         max_acc = acc_eval
 
