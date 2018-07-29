@@ -28,19 +28,17 @@ elif host_name == 'ram-lab':
     elif args.model == 'resnet':
         args.batch_size = 100
 
-    
-
 
 if args.model == 'SEC':
     # model_url = 'https://download.pytorch.org/models/vgg16-397923af.pth' # 'vgg16'
     model_path = 'models/vgg16-397923af.pth' # 'vgg16'
     net = sec.SEC_NN()
-
     #net.load_state_dict(model_zoo.load_url(model_url), strict = False)
     net.load_state_dict(torch.load(model_path), strict = False)
     criterion = sec.weighted_pool_mul_class_loss(args.batch_size, args.num_classes, args.output_size, args.no_bg, flag_use_cuda)
 
 elif args.model == 'resnet':
+    #model_path = 'models/resnet50_feat.pth'
     model_path = 'models/resnet50_feat.pth'
     net = resnet.resnet50(pretrained=False, num_classes=args.num_classes)
     net.load_state_dict(torch.load(model_path), strict = False)
@@ -84,6 +82,7 @@ for epoch in range(args.epochs):
                 elif args.model == 'resnet':
                     loss = criterion(outputs.squeeze(), labels)
 
+
                 loss.backward()
                 optimizer.step()
 
@@ -125,6 +124,9 @@ for epoch in range(args.epochs):
     acc_train = TP_train / P_train if P_train!=0 else 0
     recall_eval = TP_eval / T_eval if T_eval!=0 else 0
     acc_eval = TP_eval / P_eval if P_eval!=0 else 0
+
+    print('TP_train is {}; T_train is {}; P_train is {}'.format(TP_train, T_train, P_train) )
+    print('TP_eval is {}; T_eval is {}; P_eval is {}'.format(TP_eval, T_eval, P_eval) )
 
     if acc_eval > max_acc:
         torch.save(net.state_dict(), './models/top_val_acc'+ args.model + '.pth')
