@@ -108,7 +108,8 @@ for epoch in range(args.epochs):
                 with torch.no_grad():
                     outputs = net(inputs)
                     if args.model == 'SEC':
-                        loss, outputs = criterion(labels, outputs)
+                        # loss, outputs = criterion(labels, outputs)
+                        loss = criterion(outputs.squeeze(), labels)
                     elif args.model == 'resnet':
                         loss = criterion(outputs.squeeze(), labels)
 
