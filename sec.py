@@ -45,6 +45,7 @@ class SEC_NN(nn.Module):
         nn.ReLU(),
         nn.Dropout(0.5),
         nn.Conv2d(1024,21,(1, 1)),
+        nn.AdaptiveAvgPool2d(1)
         )
 
 

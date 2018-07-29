@@ -35,7 +35,8 @@ if args.model == 'SEC':
     net = sec.SEC_NN()
     #net.load_state_dict(model_zoo.load_url(model_url), strict = False)
     net.load_state_dict(torch.load(model_path), strict = False)
-    criterion = sec.weighted_pool_mul_class_loss(args.batch_size, args.num_classes, args.output_size, args.no_bg, flag_use_cuda)
+    #criterion = sec.weighted_pool_mul_class_loss(args.batch_size, args.num_classes, args.output_size, args.no_bg, flag_use_cuda)
+    criterion = nn.MultiLabelSoftMarginLoss()
 
 elif args.model == 'resnet':
     #model_path = 'models/resnet50_feat.pth'
@@ -79,7 +80,8 @@ for epoch in range(args.epochs):
 
                 optimizer.zero_grad()
                 if args.model == 'SEC':
-                    loss, outputs = criterion(labels, outputs)
+                    #loss, outputs = criterion(labels, outputs)
+                    loss = criterion(outputs.squeeze(), labels)
                 elif args.model == 'resnet':
                     loss = criterion(outputs.squeeze(), labels)
 
