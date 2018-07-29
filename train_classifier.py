@@ -44,6 +44,7 @@ elif args.model == 'resnet':
     net.load_state_dict(torch.load(model_path), strict = False)
     criterion = nn.MultiLabelSoftMarginLoss()
 
+print(args.model)
 
 if flag_use_cuda:
     net.cuda()
@@ -135,7 +136,7 @@ for epoch in range(args.epochs):
     # print('TP_eval: {};   T_eval: {};   P_eval: {};   acc_eval: {};   recall__eval: {} '.format(TP_eval, T_eval, P_eval, acc_eval, recall_eval))
 
     if acc_eval > max_acc:
-        print('save model with val acc: {}'.format(acc_eval))
+        print('save model ' + args.model + ' with val acc: {}'.format(acc_eval))
         torch.save(net.state_dict(), './models/top_val_acc'+ args.model + '.pth')
         max_acc = acc_eval
 
