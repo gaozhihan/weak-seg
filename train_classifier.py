@@ -145,7 +145,7 @@ for epoch in range(args.epochs):
         max_acc = acc_eval
 
     if recall_eval > max_recall:
-        print('save model ' + args.model + ' with val recall: {}'.format(acc_eval))
+        print('save model ' + args.model + ' with val recall: {}'.format(recall_eval))
         torch.save(net.state_dict(), './models/top_val_rec_'+ args.model + '.pth')
         max_recall = recall_eval
 
