@@ -58,6 +58,7 @@ main_scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=args.step_size)
 
 # criterion = nn.MultiLabelSoftMarginLoss()
 max_acc = 0
+max_recall = 0
 
 for epoch in range(args.epochs):
     train_loss = 0.0
@@ -142,6 +143,11 @@ for epoch in range(args.epochs):
         print('save model ' + args.model + ' with val acc: {}'.format(acc_eval))
         torch.save(net.state_dict(), './models/top_val_acc_'+ args.model + '.pth')
         max_acc = acc_eval
+
+    if recall_eval > max_recall:
+        print('save model ' + args.model + ' with val recall: {}'.format(acc_eval))
+        torch.save(net.state_dict(), './models/top_val_rec_'+ args.model + '.pth')
+        max_recall = recall_eval
 
     print('Epoch: {} took {:.2f}, Train Loss: {:.4f}, Acc: {:.4f}, Recall: {:.4f}; eval loss: {:.4f}, Acc: {:.4f}, Recall: {:.4f}'.format(epoch, time_took, epoch_train_loss, acc_train, recall_train, epoch_eval_loss, acc_eval, recall_eval))
 
