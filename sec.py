@@ -5,7 +5,7 @@ import  numpy as np
 class SEC_NN(nn.Module):
     def __init__(self):
         super(SEC_NN, self).__init__()
-        self.sec_pytorch = nn.Sequential( # Sequential,
+        self.features = nn.Sequential( # the Sequential name has to be 'vgg feature'. the params name will be like feature.0.weight ,
         nn.Conv2d(3,64,(3, 3),(1, 1),(1, 1)),
         nn.ReLU(),
         nn.Conv2d(64,64,(3, 3),(1, 1),(1, 1)),
@@ -36,16 +36,17 @@ class SEC_NN(nn.Module):
         nn.ReLU(),
         nn.Conv2d(512,512,(3, 3),padding=2, dilation=2),
         nn.ReLU(),
-        nn.MaxPool2d((3, 3),(1, 1),(1, 1),ceil_mode=True),
-        nn.AvgPool2d((3, 3),(1, 1),(1, 1),ceil_mode=True),#AvgPool2d,
-        nn.Conv2d(512,1024,(3, 3),padding =12, dilation=12),
-        nn.ReLU(),
-        nn.Dropout(0.5),
-        nn.Conv2d(1024,1024,(1, 1)),
-        nn.ReLU(),
-        nn.Dropout(0.5),
-        nn.Conv2d(1024,21,(1, 1)),
+        # nn.MaxPool2d((3, 3),(1, 1),(1, 1),ceil_mode=True),
+        # nn.AvgPool2d((3, 3),(1, 1),(1, 1),ceil_mode=True),#AvgPool2d,
+        # nn.Conv2d(512,1024,(3, 3),padding =12, dilation=12),
+        # nn.ReLU(),
+        # nn.Dropout(0.5),
+        # nn.Conv2d(1024,1024,(1, 1)),
+        # nn.ReLU(),
+        nn.Dropout(0.3),
+        nn.Conv2d(512,21,(1, 1)),
         nn.AdaptiveAvgPool2d(1)
+        # nn.LPPool2d(5, (29, 29), stride=(29, 29))
         )
 
 
@@ -58,7 +59,7 @@ class SEC_NN(nn.Module):
 
 
     def forward(self, x):
-        output = self.sec_pytorch(x)
+        output = self.features(x)
         return output
 
 
