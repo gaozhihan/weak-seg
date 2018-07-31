@@ -43,7 +43,7 @@ class SEC_NN(nn.Module):
         nn.Dropout(0.5),
         nn.Conv2d(1024,1024,(1, 1)),
         nn.ReLU(),
-        nn.Dropout(0.3),
+        nn.Dropout(0.5),
         nn.Conv2d(1024,21,(1, 1)),
         nn.AdaptiveAvgPool2d(1)
         # nn.LPPool2d(5, (29, 29), stride=(29, 29))
