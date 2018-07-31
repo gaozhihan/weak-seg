@@ -47,8 +47,8 @@ class SEC_NN(nn.Module):
         nn.Conv2d(1024,21,(1, 1))
         )
 
-        #self.mask2label_pool = nn.AdaptiveAvgPool2d(1)
-        self.mask2label_pool = nn.LPPool2d(2, (29, 29), stride=(29, 29))
+        self.mask2label_pool = nn.AdaptiveAvgPool2d(1)
+        #self.mask2label_pool = nn.LPPool2d(5, (29, 29), stride=(29, 29))
 
 
         for m in self.modules():
@@ -63,7 +63,7 @@ class SEC_NN(nn.Module):
         mask = self.features(x)
         output = self.mask2label_pool(mask)
 
-        return output
+        return mask, output
 
 
 
