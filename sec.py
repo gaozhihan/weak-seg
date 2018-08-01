@@ -1,9 +1,10 @@
 import torch
 import torch.nn as nn
-import  numpy as np
+import numpy as np
+import common_function
 
 class SEC_NN(nn.Module):
-    def __init__(self):
+    def __init__(self, batch_size, num_classes, map_size, no_bg, flag_use_cuda):
         super(SEC_NN, self).__init__()
         self.features = nn.Sequential( # the Sequential name has to be 'vgg feature'. the params name will be like feature.0.weight ,
         nn.Conv2d(3,64,(3, 3),(1, 1),(1, 1)),
@@ -36,19 +37,23 @@ class SEC_NN(nn.Module):
         nn.ReLU(),
         nn.Conv2d(512,512,(3, 3),padding=2, dilation=2),
         nn.ReLU(),
-        nn.MaxPool2d((3, 3),(1, 1),(1, 1),ceil_mode=True),
-        nn.AvgPool2d((3, 3),(1, 1),(1, 1),ceil_mode=True),#AvgPool2d,
-        nn.Conv2d(512,1024,(3, 3),padding =12, dilation=12),
-        nn.ReLU(),
+        # nn.MaxPool2d((3, 3),(1, 1),(1, 1),ceil_mode=True),
+        # nn.AvgPool2d((3, 3),(1, 1),(1, 1),ceil_mode=True),#AvgPool2d,
+        # nn.Conv2d(512,1024,(3, 3),padding =12, dilation=12),
+        # nn.ReLU(),
+        # nn.Dropout(0.5),
+        # nn.Conv2d(1024,1024,(1, 1)),
+        # nn.ReLU(),
         nn.Dropout(0.5),
-        nn.Conv2d(1024,1024,(1, 1)),
-        nn.ReLU(),
-        nn.Dropout(0.5),
-        nn.Conv2d(1024,21,(1, 1))
+        nn.Conv2d(512,21,(1, 1)),
+        nn.ReLU()
         )
 
-        #self.mask2label_pool = nn.AdaptiveAvgPool2d(1)
-        self.mask2label_pool = nn.LPPool2d(2, (29, 29), stride=(29, 29))
+        # self.mask2label_pool = nn.AdaptiveAvgPool2d(1)
+        # self.mask2label_pool = nn.Sequential(
+        #     nn.ReLU(),
+        #     nn.LPPool2d(2, (29, 29), stride=(29, 29)))
+        self.mask2label_pool = common_function.weighted_pool(batch_size, num_classes, map_size, no_bg, flag_use_cuda)
 
 
         for m in self.modules():
@@ -61,9 +66,9 @@ class SEC_NN(nn.Module):
 
     def forward(self, x):
         mask = self.features(x)
-        output = self.mask2label_pool(mask)
+        output = self.mask2label_pool(mask) # / 841
 
-        return output
+        return mask, output
 
 
 
@@ -87,8 +92,8 @@ class weighted_pool_mul_class_loss(nn.Module):
 
             weight[:,1:,i] = weight[:,1:,i] * sf
 
-            sb = sb * self.df
-            sf = sf * self.db
+            sb = sb * self.db
+            sf = sf * self.df
 
         weight[:,0,:] = weight[:,0,:]/np.sum(weight[0,0,:])
         weight[:,1:,:] = weight[:,1:,:]/np.sum(weight[0,1,:])
