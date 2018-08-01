@@ -37,12 +37,12 @@ if args.model == 'SEC':
     net.load_state_dict(torch.load(model_path), strict = False)
 
 elif args.model == 'resnet':
-    #model_path = 'models/resnet50_feat.pth'
     model_path = 'models/resnet50_feat.pth'
     net = resnet.resnet50(pretrained=False, num_classes=args.num_classes)
     net.load_state_dict(torch.load(model_path), strict = False)
 
-criterion = nn.MultiLabelSoftMarginLoss()
+# criterion = nn.MultiLabelSoftMarginLoss()
+criterion = nn.BCELoss()
 
 print(args.model)
 

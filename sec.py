@@ -46,14 +46,14 @@ class SEC_NN(nn.Module):
         # nn.ReLU(),
         nn.Dropout(0.5),
         nn.Conv2d(512,21,(1, 1)),
-        nn.ReLU()
+        nn.Softmax2d()
         )
 
-        # self.mask2label_pool = nn.AdaptiveAvgPool2d(1)
+        self.mask2label_pool = nn.AdaptiveAvgPool2d(1)
         # self.mask2label_pool = nn.Sequential(
         #     nn.ReLU(),
         #     nn.LPPool2d(2, (29, 29), stride=(29, 29)))
-        self.mask2label_pool = common_function.weighted_pool(batch_size, num_classes, map_size, no_bg, flag_use_cuda)
+        # self.mask2label_pool = common_function.weighted_pool(batch_size, num_classes, map_size, no_bg, flag_use_cuda)
 
 
         for m in self.modules():
