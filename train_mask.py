@@ -7,9 +7,10 @@ import torch.nn.functional as F
 import time
 import socket
 import os
-import sec
+import sec_mask
 import torchvision.models.resnet as resnet
 from arguments import get_args
+import common_function
 
 args = get_args()
 
@@ -32,7 +33,7 @@ elif host_name == 'ram-lab':
 if args.model == 'SEC':
     # model_url = 'https://download.pytorch.org/models/vgg16-397923af.pth' # 'vgg16'
     model_path = 'models/vgg16-397923af.pth' # 'vgg16'
-    net = sec.SEC_NN()
+    net = sec_mask.SEC_NN()
     #net.load_state_dict(model_zoo.load_url(model_url), strict = False)
     net.load_state_dict(torch.load(model_path), strict = False)
     #criterion = sec.weighted_pool_mul_class_loss(args.batch_size, args.num_classes, args.output_size, args.no_bg, flag_use_cuda)
@@ -44,6 +45,12 @@ elif args.model == 'resnet':
     net = resnet.resnet50(pretrained=False, num_classes=args.num_classes)
     net.load_state_dict(torch.load(model_path), strict = False)
     criterion = nn.MultiLabelSoftMarginLoss()
+    features_blob = []
+    params = list(net.parameters())
+    fc_weight = params[-2]
+    def hook_feature(module, input, output):
+        features_blob.append(output.data)
+    net._modules.get('layer4').register_forward_hook(hook_feature)
 
 print(args.model)
 
@@ -77,13 +84,18 @@ for epoch in range(args.epochs):
                 if flag_use_cuda:
                     inputs = inputs.cuda(); labels = labels.cuda()
 
-                outputs = net(inputs)
-
                 optimizer.zero_grad()
                 if args.model == 'SEC':
+                    mask, outputs = net(inputs)
                     #loss, outputs = criterion(labels, outputs)
                     loss = criterion(outputs.squeeze(), labels)
                 elif args.model == 'resnet':
+                    outputs = net(inputs)
+                    loss = criterion(outputs.squeeze(), labels)
+                    # params = list(net.parameters())
+                    # fc_weight = params[-2]
+                    mask = common_function.cam_extract(features_blob[0].squeeze(), fc_weight)
+                    features_blob.clear()
                     loss = criterion(outputs.squeeze(), labels)
 
 
@@ -107,12 +119,18 @@ for epoch in range(args.epochs):
                     inputs = inputs.cuda(); labels = labels.cuda()
 
                 with torch.no_grad():
-                    outputs = net(inputs)
+
                     if args.model == 'SEC':
+                        mask, outputs = net(inputs)
                         # loss, outputs = criterion(labels, outputs)
                         loss = criterion(outputs.squeeze(), labels)
                     elif args.model == 'resnet':
+                        outputs = net(inputs)
                         loss = criterion(outputs.squeeze(), labels)
+                        params = list(net.parameters())
+                        fc_weight = params[-2]
+                        mask = common_function.cam_extract(features_blob[0].squeeze(), fc_weight)
+                        features_blob.clear()
 
                 eval_loss += loss.item() * inputs.size(0)
 
@@ -141,12 +159,12 @@ for epoch in range(args.epochs):
 
     if acc_eval > max_acc:
         print('save model ' + args.model + ' with val acc: {}'.format(acc_eval))
-        torch.save(net.state_dict(), './models/top_val_acc_'+ args.model + '_03.pth')
+        torch.save(net.state_dict(), './models/M_top_val_acc_'+ args.model + '.pth')
         max_acc = acc_eval
 
     if recall_eval > max_recall:
         print('save model ' + args.model + ' with val recall: {}'.format(recall_eval))
-        torch.save(net.state_dict(), './models/top_val_rec_'+ args.model + '_03.pth')
+        torch.save(net.state_dict(), './models/M_top_val_rec_'+ args.model + '.pth')
         max_recall = recall_eval
 
     print('Epoch: {} took {:.2f}, Train Loss: {:.4f}, Acc: {:.4f}, Recall: {:.4f}; eval loss: {:.4f}, Acc: {:.4f}, Recall: {:.4f}'.format(epoch, time_took, epoch_train_loss, acc_train, recall_train, epoch_eval_loss, acc_eval, recall_eval))
