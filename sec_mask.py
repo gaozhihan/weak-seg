@@ -48,7 +48,11 @@ class SEC_NN(nn.Module):
         )
 
         self.mask2label_pool = nn.AdaptiveAvgPool2d(1)
-        #self.mask2label_pool = nn.LPPool2d(5, (29, 29), stride=(29, 29))
+        # self.mask2label_pool = nn.Sequential(
+        #     nn.ReLU(),
+        #     nn.LPPool2d(2, (29, 29), stride=(29, 29)))
+
+
 
 
         for m in self.modules():
@@ -87,8 +91,8 @@ class weighted_pool_mul_class_loss(nn.Module):
 
             weight[:,1:,i] = weight[:,1:,i] * sf
 
-            sb = sb * self.df
-            sf = sf * self.db
+            sb = sb * self.db
+            sf = sf * self.df
 
         weight[:,0,:] = weight[:,0,:]/np.sum(weight[0,0,:])
         weight[:,1:,:] = weight[:,1:,:]/np.sum(weight[0,1,:])

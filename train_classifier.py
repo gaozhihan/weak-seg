@@ -32,18 +32,17 @@ elif host_name == 'ram-lab':
 if args.model == 'SEC':
     # model_url = 'https://download.pytorch.org/models/vgg16-397923af.pth' # 'vgg16'
     model_path = 'models/vgg16-397923af.pth' # 'vgg16'
-    net = sec.SEC_NN()
+    net = sec.SEC_NN(args.batch_size, args.num_classes, args.output_size, args.no_bg, flag_use_cuda)
     #net.load_state_dict(model_zoo.load_url(model_url), strict = False)
     net.load_state_dict(torch.load(model_path), strict = False)
-    #criterion = sec.weighted_pool_mul_class_loss(args.batch_size, args.num_classes, args.output_size, args.no_bg, flag_use_cuda)
-    criterion = nn.MultiLabelSoftMarginLoss()
 
 elif args.model == 'resnet':
     #model_path = 'models/resnet50_feat.pth'
     model_path = 'models/resnet50_feat.pth'
     net = resnet.resnet50(pretrained=False, num_classes=args.num_classes)
     net.load_state_dict(torch.load(model_path), strict = False)
-    criterion = nn.MultiLabelSoftMarginLoss()
+
+criterion = nn.MultiLabelSoftMarginLoss()
 
 print(args.model)
 
@@ -56,7 +55,6 @@ dataloader = VOCData(args)
 optimizer = optim.Adam(net.parameters(), lr=args.lr)  # L2 penalty: norm weight_decay=0.0001
 main_scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=args.step_size)
 
-# criterion = nn.MultiLabelSoftMarginLoss()
 max_acc = 0
 max_recall = 0
 
@@ -77,16 +75,14 @@ for epoch in range(args.epochs):
                 if flag_use_cuda:
                     inputs = inputs.cuda(); labels = labels.cuda()
 
-                outputs = net(inputs)
-
                 optimizer.zero_grad()
+
                 if args.model == 'SEC':
-                    #loss, outputs = criterion(labels, outputs)
-                    loss = criterion(outputs.squeeze(), labels)
+                    mask, outputs = net(inputs)
                 elif args.model == 'resnet':
-                    loss = criterion(outputs.squeeze(), labels)
+                    outputs = net(inputs)
 
-
+                loss = criterion(outputs.squeeze(), labels)
                 loss.backward()
                 optimizer.step()
 
@@ -107,13 +103,12 @@ for epoch in range(args.epochs):
                     inputs = inputs.cuda(); labels = labels.cuda()
 
                 with torch.no_grad():
-                    outputs = net(inputs)
                     if args.model == 'SEC':
-                        # loss, outputs = criterion(labels, outputs)
-                        loss = criterion(outputs.squeeze(), labels)
+                        mask, outputs = net(inputs)
                     elif args.model == 'resnet':
-                        loss = criterion(outputs.squeeze(), labels)
+                        outputs = net(inputs)
 
+                loss = criterion(outputs.squeeze(), labels)
                 eval_loss += loss.item() * inputs.size(0)
 
                 preds = (torch.sigmoid(outputs.squeeze().data)>0.5)
@@ -141,12 +136,12 @@ for epoch in range(args.epochs):
 
     if acc_eval > max_acc:
         print('save model ' + args.model + ' with val acc: {}'.format(acc_eval))
-        torch.save(net.state_dict(), './models/top_val_acc_'+ args.model + '_03.pth')
+        torch.save(net.state_dict(), './models/top_val_acc_'+ args.model + '_05.pth')
         max_acc = acc_eval
 
     if recall_eval > max_recall:
         print('save model ' + args.model + ' with val recall: {}'.format(recall_eval))
-        torch.save(net.state_dict(), './models/top_val_rec_'+ args.model + '_03.pth')
+        torch.save(net.state_dict(), './models/top_val_rec_'+ args.model + '_05.pth')
         max_recall = recall_eval
 
     print('Epoch: {} took {:.2f}, Train Loss: {:.4f}, Acc: {:.4f}, Recall: {:.4f}; eval loss: {:.4f}, Acc: {:.4f}, Recall: {:.4f}'.format(epoch, time_took, epoch_train_loss, acc_train, recall_train, epoch_eval_loss, acc_eval, recall_eval))

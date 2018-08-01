@@ -9,6 +9,8 @@ def get_args():
                         help='data loading directory')
     parser.add_argument('--model', type=str, default="SEC",  # resnet SEC
                         help='model type resnet|SEC')
+    parser.add_argument('--criterion', type=str, default="wp",  # resnet SEC
+                        help='criterion wp|mul')
     parser.add_argument('--batch_size', type=int, default=15,
                         help='training batch size')
     parser.add_argument('--origin_size', action='store_true', default=False,
