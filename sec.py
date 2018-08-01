@@ -49,10 +49,10 @@ class SEC_NN(nn.Module):
         nn.Softmax2d()
         )
 
-        self.mask2label_pool = nn.AdaptiveAvgPool2d(1)
-        # self.mask2label_pool = nn.Sequential(
-        #     nn.ReLU(),
-        #     nn.LPPool2d(2, (29, 29), stride=(29, 29)))
+        # self.mask2label_pool = nn.AdaptiveAvgPool2d(1)
+        self.mask2label_pool = nn.Sequential(
+            nn.ReLU(),
+            nn.LPPool2d(2, (29, 29), stride=(29, 29)))
         # self.mask2label_pool = common_function.weighted_pool(batch_size, num_classes, map_size, no_bg, flag_use_cuda)
 
 
@@ -66,7 +66,7 @@ class SEC_NN(nn.Module):
 
     def forward(self, x):
         mask = self.features(x)
-        output = self.mask2label_pool(mask) # / 841
+        output = self.mask2label_pool(mask) / 841
 
         return mask, output
 

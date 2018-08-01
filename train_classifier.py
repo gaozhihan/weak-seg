@@ -41,10 +41,13 @@ elif args.model == 'resnet':
     net = resnet.resnet50(pretrained=False, num_classes=args.num_classes)
     net.load_state_dict(torch.load(model_path), strict = False)
 
-# criterion = nn.MultiLabelSoftMarginLoss()
-criterion = nn.BCELoss()
+if args.loss == 'BCELoss':
+    criterion = nn.BCELoss()
+elif args.loss == 'MultiLabelSoftMarginLoss':
+    criterion = nn.MultiLabelSoftMarginLoss()
 
-print(args.model)
+
+print(args)
 
 if flag_use_cuda:
     net.cuda()
