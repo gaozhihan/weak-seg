@@ -29,6 +29,8 @@ def get_args():
                         help='no background')
     parser.add_argument('--test_flag', action='store_true', default=False,
                         help='when it is training')
+    parser.add_argument('--need_mask_flag', action='store_true', default=False,
+                        help='need mask even training')
 
     args = parser.parse_args()
     if args.no_bg==True:

@@ -21,8 +21,9 @@ flag_use_cuda = torch.cuda.is_available()
 if host_name == 'sunting':
     args.batch_size = 5
     args.data_dir = '/home/sunting/Documents/program/VOC2012_SEG_AUG'
-elif host_name == 'sunting-ThinkCenter-M90':
+elif host_name == 'sunting-ThinkCentre-M90':
     args.batch_size = 18
+    args.data_dir = '/home/sunting/Documents/data/VOC2012_SEG_AUG'
 elif host_name == 'ram-lab':
     args.data_dir = '/data_shared/Docker/ltai/ws/decoupled_net/data/VOC2012/VOC2012_SEG_AUG'
     if args.model == 'SEC':
@@ -33,13 +34,13 @@ elif host_name == 'ram-lab':
 
 if args.model == 'SEC':
     # model_url = 'https://download.pytorch.org/models/vgg16-397923af.pth' # 'vgg16'
-    model_path = 'models/0506/top_val_rec_SEC_06_CPU.pth' # 'vgg16'
+    model_path = 'models/0506/top_val_rec_SEC_05.pth' # 'vgg16'
     net = sec.SEC_NN(args.batch_size, args.num_classes, args.output_size, args.no_bg, flag_use_cuda)
     #net.load_state_dict(model_zoo.load_url(model_url), strict = False)
     net.load_state_dict(torch.load(model_path), strict = True)
 
 elif args.model == 'resnet':
-    model_path = 'models/resnet50_feat.pth'
+    model_path = 'models/0506/resnet50_feat.pth'
     net = resnet.resnet50(pretrained=False, num_classes=args.num_classes)
     net.load_state_dict(torch.load(model_path), strict = False)
 

@@ -19,8 +19,9 @@ flag_use_cuda = torch.cuda.is_available()
 if host_name == 'sunting':
     args.batch_size = 5
     args.data_dir = '/home/sunting/Documents/program/VOC2012_SEG_AUG'
-elif host_name == 'sunting-ThinkCenter-M90':
+elif host_name == 'sunting-ThinkCentre-M90':
     args.batch_size = 18
+    args.data_dir = '/home/sunting/Documents/data/VOC2012_SEG_AUG'
 elif host_name == 'ram-lab':
     args.data_dir = '/data_shared/Docker/ltai/ws/decoupled_net/data/VOC2012/VOC2012_SEG_AUG'
     if args.model == 'SEC':
@@ -82,17 +83,17 @@ for epoch in range(args.epochs):
 
                 if args.model == 'SEC':
                     mask, outputs = net(inputs)
+                    preds = outputs.squeeze().data>0.3
                 elif args.model == 'resnet':
                     outputs = net(inputs)
+                    preds = (torch.sigmoid(outputs.squeeze().data)>0.5)
 
                 loss = criterion(outputs.squeeze(), labels)
                 loss.backward()
                 optimizer.step()
 
                 train_loss += loss.item() * inputs.size(0)
- 
-                #preds = (torch.sigmoid(outputs.squeeze().data)>0.5)
-                preds = outputs.squeeze().data>0.3
+
                 TP_train += torch.sum(preds.long() == (labels*2-1).data.long())
                 T_train += torch.sum(labels.data.long()==1)
                 P_train += torch.sum(preds.long()==1)
@@ -109,14 +110,14 @@ for epoch in range(args.epochs):
                 with torch.no_grad():
                     if args.model == 'SEC':
                         mask, outputs = net(inputs)
+                        preds = outputs.squeeze().data>0.3
                     elif args.model == 'resnet':
                         outputs = net(inputs)
+                        preds = (torch.sigmoid(outputs.squeeze().data)>0.5)
 
                 loss = criterion(outputs.squeeze(), labels)
                 eval_loss += loss.item() * inputs.size(0)
 
-                #preds = (torch.sigmoid(outputs.squeeze().data)>0.5)
-                preds = outputs.squeeze().data>0.3
                 TP_eval += torch.sum(preds.long() == (labels*2-1).data.long())
                 T_eval += torch.sum(labels.data.long()==1)
                 P_eval += torch.sum(preds.long()==1)

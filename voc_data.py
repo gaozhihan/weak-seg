@@ -76,6 +76,7 @@ class VOCDataset(Dataset):
         self.size = args.input_size
         self.num_classes = args.num_classes
         self.transform = transform
+        self.need_mask = args.need_mask_flag
         self.file_list = self._get_file_list()
         self.label_dict = self._get_lable_dict()
 
@@ -129,7 +130,10 @@ class VOCDataset(Dataset):
             label[item] = 1
         label_ts = torch.from_numpy(label)
         if self.train_flag:
-            return img_ts, label_ts
+            if self.need_mask:
+                return img_ts, label_ts, mask, img_array # img_name,
+            else:
+                return img_ts, label_ts
         else:
             return img_ts, label_ts, mask, img_name, img_array
 
