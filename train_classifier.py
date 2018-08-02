@@ -41,10 +41,13 @@ elif args.model == 'resnet':
     net = resnet.resnet50(pretrained=False, num_classes=args.num_classes)
     net.load_state_dict(torch.load(model_path), strict = False)
 
-# criterion = nn.MultiLabelSoftMarginLoss()
-criterion = nn.BCELoss()
+if args.loss == 'BCELoss':
+    criterion = nn.BCELoss()
+elif args.loss == 'MultiLabelSoftMarginLoss':
+    criterion = nn.MultiLabelSoftMarginLoss()
 
-print(args.model)
+
+print(args)
 
 if flag_use_cuda:
     net.cuda()
@@ -111,7 +114,8 @@ for epoch in range(args.epochs):
                 loss = criterion(outputs.squeeze(), labels)
                 eval_loss += loss.item() * inputs.size(0)
 
-                preds = (torch.sigmoid(outputs.squeeze().data)>0.5)
+                #preds = (torch.sigmoid(outputs.squeeze().data)>0.5)
+                preds = outputs.squeeze().data>0.3
                 TP_eval += torch.sum(preds.long() == (labels*2-1).data.long())
                 T_eval += torch.sum(labels.data.long()==1)
                 P_eval += torch.sum(preds.long()==1)
@@ -136,12 +140,12 @@ for epoch in range(args.epochs):
 
     if acc_eval > max_acc:
         print('save model ' + args.model + ' with val acc: {}'.format(acc_eval))
-        torch.save(net.state_dict(), './models/top_val_acc_'+ args.model + '_05.pth')
+        torch.save(net.state_dict(), './models/top_val_acc_'+ args.model + '_06.pth')
         max_acc = acc_eval
 
     if recall_eval > max_recall:
         print('save model ' + args.model + ' with val recall: {}'.format(recall_eval))
-        torch.save(net.state_dict(), './models/top_val_rec_'+ args.model + '_05.pth')
+        torch.save(net.state_dict(), './models/top_val_rec_'+ args.model + '_06.pth')
         max_recall = recall_eval
 
     print('Epoch: {} took {:.2f}, Train Loss: {:.4f}, Acc: {:.4f}, Recall: {:.4f}; eval loss: {:.4f}, Acc: {:.4f}, Recall: {:.4f}'.format(epoch, time_took, epoch_train_loss, acc_train, recall_train, epoch_eval_loss, acc_eval, recall_eval))
