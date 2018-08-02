@@ -10,6 +10,7 @@ import os
 import sec
 import torchvision.models.resnet as resnet
 from arguments import get_args
+import common_function
 
 args = get_args()
 
@@ -19,9 +20,8 @@ flag_use_cuda = torch.cuda.is_available()
 if host_name == 'sunting':
     args.batch_size = 5
     args.data_dir = '/home/sunting/Documents/program/VOC2012_SEG_AUG'
-elif host_name == 'sunting-ThinkCentre-M90':
+elif host_name == 'sunting-ThinkCenter-M90':
     args.batch_size = 18
-    args.data_dir = '/home/sunting/Documents/data/VOC2012_SEG_AUG'
 elif host_name == 'ram-lab':
     args.data_dir = '/data_shared/Docker/ltai/ws/decoupled_net/data/VOC2012/VOC2012_SEG_AUG'
     if args.model == 'SEC':
@@ -32,23 +32,25 @@ elif host_name == 'ram-lab':
 
 if args.model == 'SEC':
     # model_url = 'https://download.pytorch.org/models/vgg16-397923af.pth' # 'vgg16'
-    model_path = 'models/vgg16-397923af.pth' # 'vgg16'
+    model_path = 'models/01/top_val_acc_SEC_CPU.pth' # 'vgg16'
     net = sec.SEC_NN(args.batch_size, args.num_classes, args.output_size, args.no_bg, flag_use_cuda)
     #net.load_state_dict(model_zoo.load_url(model_url), strict = False)
     net.load_state_dict(torch.load(model_path), strict = False)
 
 elif args.model == 'resnet':
+    #model_path = 'models/resnet50_feat.pth'
     model_path = 'models/resnet50_feat.pth'
     net = resnet.resnet50(pretrained=False, num_classes=args.num_classes)
     net.load_state_dict(torch.load(model_path), strict = False)
+    features_blob = []
+    params = list(net.parameters())
+    fc_weight = params[-2]
+    def hook_feature(module, input, output):
+        features_blob.append(output.data)
+    net._modules.get('layer4').register_forward_hook(hook_feature)
 
-if args.loss == 'BCELoss':
-    criterion = nn.BCELoss()
-elif args.loss == 'MultiLabelSoftMarginLoss':
-    criterion = nn.MultiLabelSoftMarginLoss()
-
-
-print(args)
+criterion1 = nn.MultiLabelSoftMarginLoss()
+print(args.model)
 
 if flag_use_cuda:
     net.cuda()
@@ -59,6 +61,7 @@ dataloader = VOCData(args)
 optimizer = optim.Adam(net.parameters(), lr=args.lr)  # L2 penalty: norm weight_decay=0.0001
 main_scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=args.step_size)
 
+# criterion = nn.MultiLabelSoftMarginLoss()
 max_acc = 0
 max_recall = 0
 
@@ -80,18 +83,18 @@ for epoch in range(args.epochs):
                     inputs = inputs.cuda(); labels = labels.cuda()
 
                 optimizer.zero_grad()
-
                 if args.model == 'SEC':
                     mask, outputs = net(inputs)
-
                 elif args.model == 'resnet':
                     outputs = net(inputs)
+                    mask = common_function.cam_extract(features_blob[0].squeeze(), fc_weight)
+                    features_blob.clear()
 
-                loss = criterion(outputs.squeeze(), labels)
-                loss.backward()
+                loss1 = criterion1(outputs.squeeze(), labels)
+                loss1.backward()
                 optimizer.step()
 
-                train_loss += loss.item() * inputs.size(0)
+                train_loss += loss1.item() * inputs.size(0)
 
                 preds = (torch.sigmoid(outputs.squeeze().data)>0.5)
                 TP_train += torch.sum(preds.long() == (labels*2-1).data.long())
@@ -108,16 +111,20 @@ for epoch in range(args.epochs):
                     inputs = inputs.cuda(); labels = labels.cuda()
 
                 with torch.no_grad():
+
                     if args.model == 'SEC':
                         mask, outputs = net(inputs)
                     elif args.model == 'resnet':
                         outputs = net(inputs)
+                        loss1 = criterion1(outputs.squeeze(), labels)
+                        params = list(net.parameters())
+                        fc_weight = params[-2]
+                        mask = common_function.cam_extract(features_blob[0].squeeze(), fc_weight)
+                        features_blob.clear()
 
-                loss = criterion(outputs.squeeze(), labels)
-                eval_loss += loss.item() * inputs.size(0)
+                eval_loss += loss1.item() * inputs.size(0)
 
-                #preds = (torch.sigmoid(outputs.squeeze().data)>0.5)
-                preds = outputs.squeeze().data>0.3
+                preds = (torch.sigmoid(outputs.squeeze().data)>0.5)
                 TP_eval += torch.sum(preds.long() == (labels*2-1).data.long())
                 T_eval += torch.sum(labels.data.long()==1)
                 P_eval += torch.sum(preds.long()==1)
@@ -142,12 +149,12 @@ for epoch in range(args.epochs):
 
     if acc_eval > max_acc:
         print('save model ' + args.model + ' with val acc: {}'.format(acc_eval))
-        torch.save(net.state_dict(), './models/top_val_acc_'+ args.model + '_06.pth')
+        torch.save(net.state_dict(), './models/M_top_val_acc_'+ args.model + '.pth')
         max_acc = acc_eval
 
     if recall_eval > max_recall:
         print('save model ' + args.model + ' with val recall: {}'.format(recall_eval))
-        torch.save(net.state_dict(), './models/top_val_rec_'+ args.model + '_06.pth')
+        torch.save(net.state_dict(), './models/M_top_val_rec_'+ args.model + '.pth')
         max_recall = recall_eval
 
     print('Epoch: {} took {:.2f}, Train Loss: {:.4f}, Acc: {:.4f}, Recall: {:.4f}; eval loss: {:.4f}, Acc: {:.4f}, Recall: {:.4f}'.format(epoch, time_took, epoch_train_loss, acc_train, recall_train, epoch_eval_loss, acc_eval, recall_eval))
