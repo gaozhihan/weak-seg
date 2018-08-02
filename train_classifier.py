@@ -19,8 +19,9 @@ flag_use_cuda = torch.cuda.is_available()
 if host_name == 'sunting':
     args.batch_size = 5
     args.data_dir = '/home/sunting/Documents/program/VOC2012_SEG_AUG'
-elif host_name == 'sunting-ThinkCenter-M90':
+elif host_name == 'sunting-ThinkCentre-M90':
     args.batch_size = 18
+    args.data_dir = '/home/sunting/Documents/data/VOC2012_SEG_AUG'
 elif host_name == 'ram-lab':
     args.data_dir = '/data_shared/Docker/ltai/ws/decoupled_net/data/VOC2012/VOC2012_SEG_AUG'
     if args.model == 'SEC':
@@ -35,8 +36,8 @@ if args.model == 'SEC':
     net = sec.SEC_NN()
     #net.load_state_dict(model_zoo.load_url(model_url), strict = False)
     net.load_state_dict(torch.load(model_path), strict = False)
-    #criterion = sec.weighted_pool_mul_class_loss(args.batch_size, args.num_classes, args.output_size, args.no_bg, flag_use_cuda)
-    criterion = nn.MultiLabelSoftMarginLoss()
+    criterion = sec.weighted_pool_mul_class_loss(args.batch_size, args.num_classes, args.output_size, args.no_bg, flag_use_cuda)
+    #criterion = nn.MultiLabelSoftMarginLoss()
 
 elif args.model == 'resnet':
     #model_path = 'models/resnet50_feat.pth'
@@ -80,8 +81,8 @@ for epoch in range(args.epochs):
 
                 optimizer.zero_grad()
                 if args.model == 'SEC':
-                    #loss, outputs = criterion(labels, outputs)
-                    loss = criterion(outputs.squeeze(), labels)
+                    loss, outputs = criterion(labels, outputs)
+                    #loss = criterion(outputs.squeeze(), labels)
                 elif args.model == 'resnet':
                     loss = criterion(outputs.squeeze(), labels)
 
@@ -108,8 +109,8 @@ for epoch in range(args.epochs):
                 with torch.no_grad():
                     outputs = net(inputs)
                     if args.model == 'SEC':
-                        # loss, outputs = criterion(labels, outputs)
-                        loss = criterion(outputs.squeeze(), labels)
+                        loss, outputs = criterion(labels, outputs)
+                        #loss = criterion(outputs.squeeze(), labels)
                     elif args.model == 'resnet':
                         loss = criterion(outputs.squeeze(), labels)
 
