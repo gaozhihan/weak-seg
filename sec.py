@@ -44,13 +44,13 @@ class SEC_NN(nn.Module):
         # nn.Dropout(0.5),
         # nn.Conv2d(1024,1024,(1, 1)),
         # nn.ReLU(),
-        nn.Dropout(0.5),
+        nn.Dropout(0.2),
         nn.Conv2d(512,21,(1, 1)),
         nn.Softmax2d()
         )
 
-        self.mask2label_pool = nn.AdaptiveMaxPool2d(1)
-        #self.mask2label_pool = nn.AdaptiveAvgPool2d(1)
+        #self.mask2label_pool = nn.AdaptiveMaxPool2d(1)
+        self.mask2label_pool = nn.AdaptiveAvgPool2d(1)
         #self.mask2label_pool = nn.Sequential(  # need to devide, since this is sum but not average
         #    nn.ReLU(),
         #    nn.LPPool2d(2, (29, 29), stride=(29, 29)))
