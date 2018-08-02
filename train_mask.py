@@ -13,6 +13,7 @@ from arguments import get_args
 import common_function
 
 args = get_args()
+args.need_mask_flag = True
 
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
@@ -32,10 +33,10 @@ elif host_name == 'ram-lab':
 
 if args.model == 'SEC':
     # model_url = 'https://download.pytorch.org/models/vgg16-397923af.pth' # 'vgg16'
-    model_path = 'models/01/top_val_acc_SEC_CPU.pth' # 'vgg16'
+    model_path = 'models/0506/top_val_rec_SEC_05_CPU.pth' # 'vgg16'
     net = sec.SEC_NN(args.batch_size, args.num_classes, args.output_size, args.no_bg, flag_use_cuda)
     #net.load_state_dict(model_zoo.load_url(model_url), strict = False)
-    net.load_state_dict(torch.load(model_path), strict = False)
+    net.load_state_dict(torch.load(model_path), strict = True)
 
 elif args.model == 'resnet':
     #model_path = 'models/resnet50_feat.pth'
@@ -50,7 +51,7 @@ elif args.model == 'resnet':
     net._modules.get('layer4').register_forward_hook(hook_feature)
 
 criterion1 = nn.MultiLabelSoftMarginLoss()
-print(args.model)
+print(args)
 
 if flag_use_cuda:
     net.cuda()
@@ -78,15 +79,17 @@ for epoch in range(args.epochs):
             net.train(True)
 
             for data in dataloader.dataloaders["train"]:
-                inputs, labels = data
+                inputs, labels, mask_gt, img = data
                 if flag_use_cuda:
                     inputs = inputs.cuda(); labels = labels.cuda()
 
                 optimizer.zero_grad()
                 if args.model == 'SEC':
                     mask, outputs = net(inputs)
+                    preds = outputs.squeeze().data>0.5
                 elif args.model == 'resnet':
                     outputs = net(inputs)
+                    preds = (torch.sigmoid(outputs.squeeze().data)>0.5)
                     mask = common_function.cam_extract(features_blob[0].squeeze(), fc_weight)
                     features_blob.clear()
 
@@ -96,7 +99,6 @@ for epoch in range(args.epochs):
 
                 train_loss += loss1.item() * inputs.size(0)
 
-                preds = (torch.sigmoid(outputs.squeeze().data)>0.5)
                 TP_train += torch.sum(preds.long() == (labels*2-1).data.long())
                 T_train += torch.sum(labels.data.long()==1)
                 P_train += torch.sum(preds.long()==1)
@@ -106,7 +108,7 @@ for epoch in range(args.epochs):
             net.train(False)
             start = time.time()
             for data in dataloader.dataloaders["val"]:
-                inputs, labels = data
+                inputs, labels, mask_gt, img = data
                 if flag_use_cuda:
                     inputs = inputs.cuda(); labels = labels.cuda()
 
@@ -114,8 +116,10 @@ for epoch in range(args.epochs):
 
                     if args.model == 'SEC':
                         mask, outputs = net(inputs)
+                        preds = outputs.squeeze().data>0.3
                     elif args.model == 'resnet':
                         outputs = net(inputs)
+                        preds = (torch.sigmoid(outputs.squeeze().data)>0.5)
                         loss1 = criterion1(outputs.squeeze(), labels)
                         params = list(net.parameters())
                         fc_weight = params[-2]
@@ -124,7 +128,6 @@ for epoch in range(args.epochs):
 
                 eval_loss += loss1.item() * inputs.size(0)
 
-                preds = (torch.sigmoid(outputs.squeeze().data)>0.5)
                 TP_eval += torch.sum(preds.long() == (labels*2-1).data.long())
                 T_eval += torch.sum(labels.data.long()==1)
                 P_eval += torch.sum(preds.long()==1)

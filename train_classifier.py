@@ -83,18 +83,17 @@ for epoch in range(args.epochs):
 
                 if args.model == 'SEC':
                     mask, outputs = net(inputs)
-
+                    preds = outputs.squeeze().data>0.3
                 elif args.model == 'resnet':
                     outputs = net(inputs)
+                    preds = (torch.sigmoid(outputs.squeeze().data)>0.5)
 
                 loss = criterion(outputs.squeeze(), labels)
                 loss.backward()
                 optimizer.step()
 
                 train_loss += loss.item() * inputs.size(0)
- 
-                #preds = (torch.sigmoid(outputs.squeeze().data)>0.5)
-                preds = outputs.squeeze().data>0.3
+
                 TP_train += torch.sum(preds.long() == (labels*2-1).data.long())
                 T_train += torch.sum(labels.data.long()==1)
                 P_train += torch.sum(preds.long()==1)
@@ -111,14 +110,14 @@ for epoch in range(args.epochs):
                 with torch.no_grad():
                     if args.model == 'SEC':
                         mask, outputs = net(inputs)
+                        preds = outputs.squeeze().data>0.3
                     elif args.model == 'resnet':
                         outputs = net(inputs)
+                        preds = (torch.sigmoid(outputs.squeeze().data)>0.5)
 
                 loss = criterion(outputs.squeeze(), labels)
                 eval_loss += loss.item() * inputs.size(0)
 
-                #preds = (torch.sigmoid(outputs.squeeze().data)>0.5)
-                preds = outputs.squeeze().data>0.3
                 TP_eval += torch.sum(preds.long() == (labels*2-1).data.long())
                 T_eval += torch.sum(labels.data.long()==1)
                 P_eval += torch.sum(preds.long()==1)
