@@ -16,7 +16,7 @@ def get_args():
     parser.add_argument('--origin_size', action='store_true', default=False,
                         help='when it is training')
     parser.add_argument('--input_size', nargs='+', type=int, default=[224,224],
-                        help='size of training images')
+                        help='size of training images [224,224]|[321,321]')
     parser.add_argument('--output_size', nargs='+', type=int, default=[29,29],
                         help='size of output mask')
     parser.add_argument('--step_size', type=int, default=20,
