@@ -90,8 +90,9 @@ for epoch in range(args.epochs):
                 optimizer.step()
 
                 train_loss += loss.item() * inputs.size(0)
-
-                preds = (torch.sigmoid(outputs.squeeze().data)>0.5)
+ 
+                #preds = (torch.sigmoid(outputs.squeeze().data)>0.5)
+                preds = outputs.squeeze().data>0.3
                 TP_train += torch.sum(preds.long() == (labels*2-1).data.long())
                 T_train += torch.sum(labels.data.long()==1)
                 P_train += torch.sum(preds.long()==1)
