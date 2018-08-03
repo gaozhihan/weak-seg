@@ -12,6 +12,7 @@ import torchvision.models.resnet as resnet
 from arguments import get_args
 
 args = get_args()
+#args.input_size = [256,256]
 
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
@@ -83,18 +84,17 @@ for epoch in range(args.epochs):
 
                 if args.model == 'SEC':
                     mask, outputs = net(inputs)
-
+                    preds = outputs.squeeze().data>0.3
                 elif args.model == 'resnet':
                     outputs = net(inputs)
+                    preds = (torch.sigmoid(outputs.squeeze().data)>0.5)
 
                 loss = criterion(outputs.squeeze(), labels)
                 loss.backward()
                 optimizer.step()
 
                 train_loss += loss.item() * inputs.size(0)
- 
-                #preds = (torch.sigmoid(outputs.squeeze().data)>0.5)
-                preds = outputs.squeeze().data>0.3
+
                 TP_train += torch.sum(preds.long() == (labels*2-1).data.long())
                 T_train += torch.sum(labels.data.long()==1)
                 P_train += torch.sum(preds.long()==1)
@@ -111,14 +111,14 @@ for epoch in range(args.epochs):
                 with torch.no_grad():
                     if args.model == 'SEC':
                         mask, outputs = net(inputs)
+                        preds = outputs.squeeze().data>0.3
                     elif args.model == 'resnet':
                         outputs = net(inputs)
+                        preds = (torch.sigmoid(outputs.squeeze().data)>0.5)
 
                 loss = criterion(outputs.squeeze(), labels)
                 eval_loss += loss.item() * inputs.size(0)
 
-                #preds = (torch.sigmoid(outputs.squeeze().data)>0.5)
-                preds = outputs.squeeze().data>0.3
                 TP_eval += torch.sum(preds.long() == (labels*2-1).data.long())
                 T_eval += torch.sum(labels.data.long()==1)
                 P_eval += torch.sum(preds.long()==1)
@@ -143,12 +143,12 @@ for epoch in range(args.epochs):
 
     if acc_eval > max_acc:
         print('save model ' + args.model + ' with val acc: {}'.format(acc_eval))
-        torch.save(net.state_dict(), './models/top_val_acc_'+ args.model + '_06.pth')
+        torch.save(net.state_dict(), './models/top_val_acc_'+ args.model + '_08.pth')
         max_acc = acc_eval
 
     if recall_eval > max_recall:
         print('save model ' + args.model + ' with val recall: {}'.format(recall_eval))
-        torch.save(net.state_dict(), './models/top_val_rec_'+ args.model + '_06.pth')
+        torch.save(net.state_dict(), './models/top_val_rec_'+ args.model + '_08.pth')
         max_recall = recall_eval
 
     print('Epoch: {} took {:.2f}, Train Loss: {:.4f}, Acc: {:.4f}, Recall: {:.4f}; eval loss: {:.4f}, Acc: {:.4f}, Recall: {:.4f}'.format(epoch, time_took, epoch_train_loss, acc_train, recall_train, epoch_eval_loss, acc_eval, recall_eval))
