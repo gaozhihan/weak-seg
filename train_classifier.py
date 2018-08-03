@@ -12,7 +12,7 @@ import torchvision.models.resnet as resnet
 from arguments import get_args
 
 args = get_args()
-args.input_size = [321,321]
+#args.input_size = [256,256]
 
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()

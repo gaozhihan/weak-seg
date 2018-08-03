@@ -37,15 +37,15 @@ class SEC_NN(nn.Module):
         nn.ReLU(),
         nn.Conv2d(512,512,(3, 3),padding=2, dilation=2),
         nn.ReLU(),
-        # nn.MaxPool2d((3, 3),(1, 1),(1, 1),ceil_mode=True),
-        # nn.AvgPool2d((3, 3),(1, 1),(1, 1),ceil_mode=True),#AvgPool2d,
-        # nn.Conv2d(512,1024,(3, 3),padding =12, dilation=12),
-        # nn.ReLU(),
-        # nn.Dropout(0.5),
-        # nn.Conv2d(1024,1024,(1, 1)),
-        # nn.ReLU(),
+        nn.MaxPool2d((3, 3),(1, 1),(1, 1),ceil_mode=True),
+        nn.AvgPool2d((3, 3),(1, 1),(1, 1),ceil_mode=True),#AvgPool2d,
+        nn.Conv2d(512,1024,(3, 3),padding =12, dilation=12),
+        nn.ReLU(),
+        nn.Dropout(0.5),
+        nn.Conv2d(1024,1024,(1, 1)),
+        nn.ReLU(),
         nn.Dropout(0.2),
-        nn.Conv2d(512,21,(1, 1)),
+        nn.Conv2d(1024,21,(1, 1)), # 1024 / 512
         nn.Softmax2d()
         )
 
