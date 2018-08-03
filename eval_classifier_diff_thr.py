@@ -129,5 +129,7 @@ for i in range(thrs_num):
 # print('TP_train: {};   T_train: {};   P_train: {};   acc_train: {};   recall_train: {} '.format(TP_train, T_train, P_train, acc_train, recall_train))
 # print('TP_eval: {};   T_eval: {};   P_eval: {};   acc_eval: {};   recall__eval: {} '.format(TP_eval, T_eval, P_eval, acc_eval, recall_eval))
 plt.plot(recall_train,acc_train,'bo',recall_eval,acc_eval,'r+')
+plt.xlabel('recall')
+plt.ylabel('accuracy')
 
 print("done")

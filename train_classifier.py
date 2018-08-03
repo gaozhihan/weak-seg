@@ -87,7 +87,8 @@ for epoch in range(args.epochs):
                     preds = outputs.squeeze().data>0.3
                 elif args.model == 'resnet':
                     outputs = net(inputs)
-                    preds = (torch.sigmoid(outputs.squeeze().data)>0.5)
+                    outputs = torch.sigmoid(outputs)
+                    preds = outputs.squeeze().data>0.3
 
                 loss = criterion(outputs.squeeze(), labels)
                 loss.backward()
@@ -114,7 +115,8 @@ for epoch in range(args.epochs):
                         preds = outputs.squeeze().data>0.3
                     elif args.model == 'resnet':
                         outputs = net(inputs)
-                        preds = (torch.sigmoid(outputs.squeeze().data)>0.5)
+                        outputs = torch.sigmoid(outputs)
+                        preds = outputs.squeeze().data>0.3
 
                 loss = criterion(outputs.squeeze(), labels)
                 eval_loss += loss.item() * inputs.size(0)
