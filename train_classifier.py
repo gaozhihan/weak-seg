@@ -84,11 +84,11 @@ for epoch in range(args.epochs):
 
                 if args.model == 'SEC':
                     mask, outputs = net(inputs)
-                    preds = outputs.squeeze().data>0.3
+                    preds = outputs.squeeze().data>args.threshold
                 elif args.model == 'resnet':
                     outputs = net(inputs)
                     outputs = torch.sigmoid(outputs)
-                    preds = outputs.squeeze().data>0.3
+                    preds = outputs.squeeze().data>args.threshold
 
                 loss = criterion(outputs.squeeze(), labels)
                 loss.backward()
@@ -112,11 +112,11 @@ for epoch in range(args.epochs):
                 with torch.no_grad():
                     if args.model == 'SEC':
                         mask, outputs = net(inputs)
-                        preds = outputs.squeeze().data>0.3
+                        preds = outputs.squeeze().data>args.threshold
                     elif args.model == 'resnet':
                         outputs = net(inputs)
                         outputs = torch.sigmoid(outputs)
-                        preds = outputs.squeeze().data>0.3
+                        preds = outputs.squeeze().data>args.threshold
 
                 loss = criterion(outputs.squeeze(), labels)
                 eval_loss += loss.item() * inputs.size(0)

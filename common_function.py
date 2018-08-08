@@ -1,11 +1,22 @@
 import torch
 import torch.nn as nn
-import  numpy as np
+import numpy as np
+import torch.nn.functional as F
 
 
-def cam_extract(feat_conv, fc_weight):
-    cam_map = torch.matmul(fc_weight, feat_conv.view(2048,-1))
-    return cam_map.view(-1,21,7,7)
+def cam_extract(feat_conv, fc_weight, relu_flag = True):
+    num_class = fc_weight.shape[0]
+    num_map = fc_weight.shape[1]
+    H = feat_conv.shape[2]
+    W = feat_conv.shape[3]
+    mask = torch.zeros(feat_conv.shape[0], num_class, H, W)
+    for i in range(feat_conv.shape[0]):
+        mask[i,:,:,:] = torch.matmul(fc_weight, feat_conv[i,:,:,:].view(num_map, -1)).view(num_class, H, W)
+
+    if relu_flag:
+        mask = F.relu(mask)
+    # mask = F.softmax(mask,dim=1)
+    return mask
 
 
 class weighted_pool(nn.Module):
