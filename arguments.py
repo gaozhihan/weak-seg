@@ -4,10 +4,12 @@ def get_args():
     parser = argparse.ArgumentParser(description='weak_supervise')
     parser.add_argument('--lr', type=float, default=1e-4,
                         help='learning rate (default: 1e-4)')
+    parser.add_argument('--threshold', type=float, default=0.3,
+                        help='threshold (default: 0.3)')
     parser.add_argument('--data_dir', type=str,
                         default="./data/VOC2012/VOC2012_SEG_AUG",
                         help='data loading directory')
-    parser.add_argument('--model', type=str, default="resnet",  # resnet SEC
+    parser.add_argument('--model', type=str, default="my_resnet",  # resnet SEC
                         help='model type resnet|SEC')
     parser.add_argument('--loss', type=str, default="BCELoss",  # resnet SEC
                         help='model type MultiLabelSoftMarginLoss|BCELoss')
@@ -15,6 +17,10 @@ def get_args():
                         help='training batch size')
     parser.add_argument('--origin_size', action='store_true', default=False,
                         help='when it is training')
+    parser.add_argument('--relu_mask', action='store_true', default=True,
+                        help='whether apply relu for not')
+    parser.add_argument('--preds_only', action='store_true', default=True,
+                        help='whether only use')
     parser.add_argument('--input_size', nargs='+', type=int, default=[224,224],
                         help='size of training images [224,224]|[321,321]')
     parser.add_argument('--output_size', nargs='+', type=int, default=[29,29],

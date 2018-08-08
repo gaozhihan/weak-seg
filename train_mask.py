@@ -9,8 +9,12 @@ import socket
 import os
 import sec
 import torchvision.models.resnet as resnet
+import my_resnet
 from arguments import get_args
 import common_function
+import CRF_all_class
+import CRF_lei
+import numpy as np
 
 args = get_args()
 args.need_mask_flag = True
@@ -29,20 +33,31 @@ elif host_name == 'ram-lab':
         args.batch_size = 50
     elif args.model == 'resnet':
         args.batch_size = 100
+    elif args.model == 'my_resnet':
+        args.batch_size = 30
 
 
 if args.model == 'SEC':
     # model_url = 'https://download.pytorch.org/models/vgg16-397923af.pth' # 'vgg16'
     model_path = 'models/0506/top_val_rec_SEC_05_CPU.pth' # 'vgg16'
     net = sec.SEC_NN(args.batch_size, args.num_classes, args.output_size, args.no_bg, flag_use_cuda)
-    #net.load_state_dict(model_zoo.load_url(model_url), strict = False)
     net.load_state_dict(torch.load(model_path), strict = True)
 
 elif args.model == 'resnet':
-    #model_path = 'models/resnet50_feat.pth'
-    model_path = 'models/resnet50_feat.pth'
+    model_path = 'models/top_val_acc_resnet_CPU.pth'
     net = resnet.resnet50(pretrained=False, num_classes=args.num_classes)
-    net.load_state_dict(torch.load(model_path), strict = False)
+    net.load_state_dict(torch.load(model_path), strict = True)
+    features_blob = []
+    params = list(net.parameters())
+    fc_weight = params[-2]
+    def hook_feature(module, input, output):
+        features_blob.append(output.data)
+    net._modules.get('layer4').register_forward_hook(hook_feature)
+
+elif args.model == 'my_resnet':
+    model_path = 'models/top_val_acc_resnet_CPU.pth'
+    net = my_resnet.resnet50(pretrained=False, num_classes=args.num_classes)
+    net.load_state_dict(torch.load(model_path), strict = True)
     features_blob = []
     params = list(net.parameters())
     fc_weight = params[-2]
@@ -57,6 +72,7 @@ if flag_use_cuda:
     net.cuda()
 
 dataloader = VOCData(args)
+crf = CRF_all_class.CRF(args)
 
 
 optimizer = optim.Adam(net.parameters(), lr=args.lr)  # L2 penalty: norm weight_decay=0.0001
@@ -65,6 +81,7 @@ main_scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=args.step_size)
 # criterion = nn.MultiLabelSoftMarginLoss()
 max_acc = 0
 max_recall = 0
+iou_np = np.zeros((21,21))
 
 for epoch in range(args.epochs):
     train_loss = 0.0
@@ -86,12 +103,18 @@ for epoch in range(args.epochs):
                 optimizer.zero_grad()
                 if args.model == 'SEC':
                     mask, outputs = net(inputs)
-                    preds = outputs.squeeze().data>0.5
-                elif args.model == 'resnet':
+                    preds = outputs.squeeze().data>args.threshold
+                elif args.model == 'resnet' or args.model == 'my_resnet':
                     outputs = net(inputs)
-                    preds = (torch.sigmoid(outputs.squeeze().data)>0.5)
-                    mask = common_function.cam_extract(features_blob[0].squeeze(), fc_weight)
+                    outputs = torch.sigmoid(outputs)
+                    preds = outputs.squeeze().data>args.threshold
+                    mask = common_function.cam_extract(features_blob[0].squeeze(), fc_weight, args.relu_mask)
                     features_blob.clear()
+
+                for i in range(args.batch_size):
+                    crf.runCRF(labels[i,:].numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().numpy(), args.preds_only)
+                    # obj = CRF_lei.CAM_iou(labels[i,:].numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().numpy())
+                    # iou_np+=obj.run()
 
                 loss1 = criterion1(outputs.squeeze(), labels)
                 loss1.backward()
@@ -116,16 +139,15 @@ for epoch in range(args.epochs):
 
                     if args.model == 'SEC':
                         mask, outputs = net(inputs)
-                        preds = outputs.squeeze().data>0.3
+                        preds = outputs.squeeze().data>args.threshold
                     elif args.model == 'resnet':
                         outputs = net(inputs)
-                        preds = (torch.sigmoid(outputs.squeeze().data)>0.5)
-                        loss1 = criterion1(outputs.squeeze(), labels)
-                        params = list(net.parameters())
-                        fc_weight = params[-2]
-                        mask = common_function.cam_extract(features_blob[0].squeeze(), fc_weight)
+                        outputs = torch.sigmoid(outputs)
+                        preds = outputs.squeeze().data>args.threshold
+                        mask = common_function.cam_extract(features_blob[0].squeeze(), fc_weight, args.relu_mask)
                         features_blob.clear()
 
+                loss1 = criterion1(outputs.squeeze(), labels)
                 eval_loss += loss1.item() * inputs.size(0)
 
                 TP_eval += torch.sum(preds.long() == (labels*2-1).data.long())
