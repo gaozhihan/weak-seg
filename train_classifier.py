@@ -9,6 +9,7 @@ import socket
 import os
 import sec
 import torchvision.models.resnet as resnet
+import my_resnet
 from arguments import get_args
 
 args = get_args()
@@ -29,6 +30,8 @@ elif host_name == 'ram-lab':
         args.batch_size = 50
     elif args.model == 'resnet':
         args.batch_size = 100
+    elif args.model == 'my_resnet':
+        args.batch_size = 30
 
 
 if args.model == 'SEC':
@@ -42,6 +45,12 @@ elif args.model == 'resnet':
     model_path = 'models/resnet50_feat.pth'
     net = resnet.resnet50(pretrained=False, num_classes=args.num_classes)
     net.load_state_dict(torch.load(model_path), strict = False)
+
+elif args.model == 'my_resnet':
+    model_path = 'models/resnet50_feat.pth'
+    net = my_resnet.resnet50(pretrained=False, num_classes=args.num_classes)
+    net.load_state_dict(torch.load(model_path), strict = False)
+
 
 if args.loss == 'BCELoss':
     criterion = nn.BCELoss()
@@ -85,7 +94,7 @@ for epoch in range(args.epochs):
                 if args.model == 'SEC':
                     mask, outputs = net(inputs)
                     preds = outputs.squeeze().data>args.threshold
-                elif args.model == 'resnet':
+                elif args.model == 'resnet' or args.model == 'my_resnet':
                     outputs = net(inputs)
                     outputs = torch.sigmoid(outputs)
                     preds = outputs.squeeze().data>args.threshold
@@ -113,7 +122,7 @@ for epoch in range(args.epochs):
                     if args.model == 'SEC':
                         mask, outputs = net(inputs)
                         preds = outputs.squeeze().data>args.threshold
-                    elif args.model == 'resnet':
+                    elif args.model == 'resnet' or args.model == 'my_resnet':
                         outputs = net(inputs)
                         outputs = torch.sigmoid(outputs)
                         preds = outputs.squeeze().data>args.threshold
