@@ -16,7 +16,7 @@ class VOCData():
             self.data_transforms = {
                 'train': transforms.Compose([
                     transforms.Resize(args.input_size),
-                    # transforms.RandomHorizontalFlip(),
+                    transforms.RandomHorizontalFlip(),
                     transforms.ToTensor(),
                     transforms.Normalize([0.485, 0.456, 0.406], [1.0, 1.0, 1.0])
                 ]),
