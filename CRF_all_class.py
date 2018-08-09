@@ -53,7 +53,7 @@ class CRF():
         temp_max[temp_max == 0] = 1
         temp_cur = temp_cur / temp_max
 
-        if preds_cur[0] == 0:
+        if preds_cur[0] == 0 and num_class_cur > 1:
             temp_cur[0,:] = 1 - np.sum(temp_cur[1:,:], axis=0)
             temp_cur[0,temp_cur[0,:]<0] = 0
 
@@ -83,15 +83,6 @@ class CRF():
 
 
     def runCRF(self, labels, mask_gt, mask_org, img, preds, preds_only ):  # run CRF on one frame, all input are numpy
-
-        # mask = self.preprocess_mask(mask_org, preds)
-        #
-        # for i in range(self.N_labels):
-        #     temp_max = mask[i,:,:].max()
-        #     if temp_max > 0.00001:
-        #         self.mask_res[i,:,:] = resize(mask[i,:,:]/temp_max, (self.H, self.W))
-        #     else:
-        #         self.mask_res[i,:,:] = resize(mask[i,:,:], (self.H, self.W))
 
         mask_res = np.zeros((self.N_labels, self.H, self.W))
         if preds_only:

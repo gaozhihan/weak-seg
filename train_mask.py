@@ -13,7 +13,6 @@ import my_resnet
 from arguments import get_args
 import common_function
 import CRF_all_class
-import CRF_lei
 import numpy as np
 
 args = get_args()
@@ -55,7 +54,7 @@ elif args.model == 'resnet':
     net._modules.get('layer4').register_forward_hook(hook_feature)
 
 elif args.model == 'my_resnet':
-    model_path = 'models/top_val_acc_resnet_CPU.pth'
+    model_path = 'models/top_val_acc_my_resnet_CPU.pth'  # top_val_acc_my_resnet_drp_CPU
     net = my_resnet.resnet50(pretrained=False, num_classes=args.num_classes)
     net.load_state_dict(torch.load(model_path), strict = True)
     features_blob = []
