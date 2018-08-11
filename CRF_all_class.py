@@ -54,13 +54,35 @@ class CRF():
         temp_cur = temp_cur / temp_max
 
         if preds_cur[0] == 0 and num_class_cur > 1:
-            temp_cur[0,:] = 1 - np.sum(temp_cur[1:,:], axis=0)
-            temp_cur[0,temp_cur[0,:]<0] = 0
+            # temp_cur[0,:] = mask[0,:,:].reshape([1,-1]) - np.sum(temp_cur[1:,:], axis=0)
+            temp_cur[0,np.sum(temp_cur[1:,:], axis=0)>0] = 0
 
         temp[preds_cur, :, :] = temp_cur.reshape([num_class_cur, mask.shape[1], mask.shape[2]])
         temp = temp * 0.9 + 0.05
 
         return temp
+
+
+    def softmax_norm_preds_only(self, mask, preds_cur):  # so far looks good
+        temp = np.zeros(mask.shape)
+        # spactial normalize
+        num_class_cur = len(preds_cur)
+        temp_cur = mask[preds_cur,:,:].reshape([num_class_cur, -1])
+
+        # caution: np.finfo(np.float32).max = 3.4028235e+38, and np.exp(90) = 1.2204032943178408e+39, np.exp(80) = 5.54062238439351e+34
+        temp_cur[temp_cur>80] = 80
+
+        if preds_cur[0] == 0 and num_class_cur > 1:
+            # temp_cur[0,:] = mask[0,:,:].reshape([1,-1]) - np.sum(temp_cur[1:,:], axis=0)
+            temp_cur[0,np.max(temp_cur[1:,:], axis=0)>0] = 0
+
+        temp_cur = np.exp(temp_cur) / np.sum(np.exp(temp_cur), axis=0)
+
+        temp[preds_cur, :, :] = temp_cur.reshape([num_class_cur, mask.shape[1], mask.shape[2]])
+
+        return temp
+
+
 
 
     def spacial_norm(self, mask):
@@ -87,7 +109,8 @@ class CRF():
         mask_res = np.zeros((self.N_labels, self.H, self.W))
         if preds_only:
             preds_cur = np.nonzero(preds)[0]
-            mask = self.spacial_norm_preds_only(mask_org, preds_cur)
+            # mask = self.spacial_norm_preds_only(mask_org, preds_cur)
+            mask = self.softmax_norm_preds_only(mask_org, preds_cur)
 
         else:
             mask = self.spacial_norm(mask_org)
@@ -106,24 +129,26 @@ class CRF():
 
 
         Q, tmp1, tmp2 = d.startInference()
+        raw_map = np.argmax(Q, axis=0).reshape((self.H,self.W))
         for i in range(self.iters[-1]):
             d.stepInference(Q, tmp1, tmp2)
 
             for ii in range(self.max_num_iters):
-                if i == self.iters[ii]:
+                if i+1 == self.iters[ii]:
                     self.kl[ii] = d.klDivergence(Q) / (self.H*self.W)
                     self.map[ii,:,:] = np.argmax(Q, axis=0).reshape((self.H,self.W))
 
 
         if self.flag_visual:
             self.num_plot = len(self.iters)
-            plt.figure(figsize=((2 + self.max_num_iters)*5,5))
+            plt.figure(figsize=((3 + self.max_num_iters)*5,5))
 
-            plt.subplot(1,(2 + self.max_num_iters),1); plt.imshow(img/255); plt.title('Input image')
-            plt.subplot(1,(2 + self.max_num_iters),2); plt.imshow(mask_gt); plt.title('true mask')
+            plt.subplot(1,(3 + self.max_num_iters),1); plt.imshow(img/255); plt.title('Input image')
+            plt.subplot(1,(3 + self.max_num_iters),2); plt.imshow(mask_gt); plt.title('true mask')
+            plt.subplot(1,(3 + self.max_num_iters),3); plt.imshow(raw_map); plt.title('raw mask')
 
-            for i in range(3,(3 + self.max_num_iters)):
-                plt.subplot(1,(2 + self.max_num_iters),i); plt.imshow(self.map[i-3,:,:]); plt.title('{} steps, KL={:.2f}'.format(self.iters[i-3], self.kl[i-3])); plt.axis('off')
+            for i in range(4,(4 + self.max_num_iters)):
+                plt.subplot(1,(3 + self.max_num_iters),i); plt.imshow(self.map[i-4,:,:]); plt.title('{} steps, KL={:.2f}'.format(self.iters[i-4], self.kl[i-4])); plt.axis('off')
 
             print('done')
 
