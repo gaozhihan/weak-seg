@@ -22,7 +22,7 @@ host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
 
 if host_name == 'sunting':
-    args.batch_size = 1 #5
+    args.batch_size = 5
     args.data_dir = '/home/sunting/Documents/program/VOC2012_SEG_AUG'
 elif host_name == 'sunting-ThinkCenter-M90':
     args.batch_size = 18
@@ -74,16 +74,12 @@ if flag_use_cuda:
 dataloader = VOCData(args)
 crf = CRF_all_class.CRF(args)
 
-
-optimizer = optim.Adam(net.parameters(), lr=args.lr)  # L2 penalty: norm weight_decay=0.0001
-main_scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=args.step_size)
-
 max_acc = 0
 max_recall = 0
 iou_obj = common_function.iou_calculator()
 
-
-for epoch in range(args.epochs):
+net.train(False)
+with torch.no_grad():
     train_loss1 = 0.0
     train_loss2 = 0.0
     eval_loss1 = 0.0
@@ -91,18 +87,15 @@ for epoch in range(args.epochs):
     TP_train = 0; TP_eval = 0
     T_train = 0;  T_eval = 0
     P_train = 0;  P_eval = 0
-    main_scheduler.step()
     start = time.time()
     for phase in ['train', 'val']:
         if phase == 'train':
-            net.train(True)
 
             for data in dataloader.dataloaders["train"]:
                 inputs, labels, mask_gt, img = data
                 if flag_use_cuda:
                     inputs = inputs.cuda(); labels = labels.cuda()
 
-                optimizer.zero_grad()
                 if args.model == 'SEC':
                     mask, outputs = net(inputs)
                     preds = outputs.squeeze().data>args.threshold
@@ -121,15 +114,10 @@ for epoch in range(args.epochs):
                         mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(labels[i,:].numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().numpy(), args.preds_only)
 
                     iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pred)
-                    # obj = CRF_lei.CAM_iou(labels[i,:].numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().numpy())
-                    # iou_np+=obj.run()
 
                 mask_s_gt = torch.from_numpy(mask_s_gt_np)
                 loss1 = criterion1(outputs.squeeze(), labels)
                 loss2 = criterion2(mask, mask_s_gt)
-                loss1.backward()
-                loss2.backward()
-                optimizer.step()
 
                 train_loss1 += loss1.item() * inputs.size(0)
                 train_loss2 += loss2.item() * inputs.size(0)
@@ -144,48 +132,42 @@ for epoch in range(args.epochs):
             iou_obj.iou_clear()
 
         else:  # evaluation
-            net.train(False)
             start = time.time()
             for data in dataloader.dataloaders["val"]:
                 inputs, labels, mask_gt, img = data
                 if flag_use_cuda:
                     inputs = inputs.cuda(); labels = labels.cuda()
 
-                with torch.no_grad():
+                if args.model == 'SEC':
+                    mask, outputs = net(inputs)
+                    preds = outputs.squeeze().data>args.threshold
+                elif args.model == 'resnet' or args.model == 'my_resnet':
+                    outputs = net(inputs)
+                    outputs = torch.sigmoid(outputs)
+                    preds = outputs.squeeze().data>args.threshold
+                    mask = common_function.cam_extract(features_blob[0].squeeze(), fc_weight, args.relu_mask)
+                    features_blob.clear()
 
-                    if args.model == 'SEC':
-                        mask, outputs = net(inputs)
-                        preds = outputs.squeeze().data>args.threshold
-                    elif args.model == 'resnet' or args.model == 'my_resnet':
-                        outputs = net(inputs)
-                        outputs = torch.sigmoid(outputs)
-                        preds = outputs.squeeze().data>args.threshold
-                        mask = common_function.cam_extract(features_blob[0].squeeze(), fc_weight, args.relu_mask)
-                        features_blob.clear()
+                mask_s_gt_np = np.zeros(mask.shape,dtype=np.float32)
+                for i in range(args.batch_size):
+                    if flag_use_cuda:
+                        mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(labels[i,:].cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().cpu().numpy(), args.preds_only)
+                    else:
+                        mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(labels[i,:].numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().numpy(), args.preds_only)
 
-                    mask_s_gt_np = np.zeros(mask.shape,dtype=np.float32)
-                    for i in range(args.batch_size):
-                        if flag_use_cuda:
-                            mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(labels[i,:].cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().cpu().numpy(), args.preds_only)
-                        else:
-                            mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(labels[i,:].numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().numpy(), args.preds_only)
+                    iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pred)
 
-                        iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pred)
-                        # obj = CRF_lei.CAM_iou(labels[i,:].numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().numpy())
-                        # iou_np+=obj.run()
+            loss1 = criterion1(outputs.squeeze(), labels)
+            loss2 = criterion2(mask, mask_s_gt)
+            eval_loss1 += loss1.item() * inputs.size(0)
+            eval_loss2 += loss2.item() * inputs.size(0)
 
-
-                loss1 = criterion1(outputs.squeeze(), labels)
-                loss2 = criterion2(mask, mask_s_gt)
-                eval_loss1 += loss1.item() * inputs.size(0)
-                eval_loss2 += loss2.item() * inputs.size(0)
-
-                TP_eval += torch.sum(preds.long() == (labels*2-1).data.long())
-                T_eval += torch.sum(labels.data.long()==1)
-                P_eval += torch.sum(preds.long()==1)
+            TP_eval += torch.sum(preds.long() == (labels*2-1).data.long())
+            T_eval += torch.sum(labels.data.long()==1)
+            P_eval += torch.sum(preds.long()==1)
 
             temp_iou = iou_obj.cal_cur_iou()
-            print('current train iou is:')
+            print('current eval iou is:')
             print(temp_iou, temp_iou.mean())
             iou_obj.iou_clear()
 
@@ -206,18 +188,6 @@ for epoch in range(args.epochs):
         recall_eval = TP_eval.numpy() / T_eval.numpy() if T_eval!=0 else 0
         acc_eval = TP_eval.numpy() / P_eval.numpy() if P_eval!=0 else 0
 
-    # print('TP_train: {};   T_train: {};   P_train: {};   acc_train: {};   recall_train: {} '.format(TP_train, T_train, P_train, acc_train, recall_train))
-    # print('TP_eval: {};   T_eval: {};   P_eval: {};   acc_eval: {};   recall__eval: {} '.format(TP_eval, T_eval, P_eval, acc_eval, recall_eval))
-
-    if acc_eval > max_acc:
-        print('save model ' + args.model + ' with val acc: {}'.format(acc_eval))
-        torch.save(net.state_dict(), './models/M_top_val_acc_'+ args.model + '.pth')
-        max_acc = acc_eval
-
-    if recall_eval > max_recall:
-        print('save model ' + args.model + ' with val recall: {}'.format(recall_eval))
-        torch.save(net.state_dict(), './models/M_top_val_rec_'+ args.model + '.pth')
-        max_recall = recall_eval
 
     print('Epoch: {} took {:.2f}, Train loss1: {:.4f}, loss2: {:.4f} , Acc: {:.4f}, Recall: {:.4f}; eval loss1: {:.4f}, loss2: {:.4f}, Acc: {:.4f}, Recall: {:.4f}'.format(epoch, time_took, epoch_train_loss1, epoch_train_loss2, acc_train, recall_train, epoch_eval_loss1, epoch_eval_loss2, acc_eval, recall_eval))
 
