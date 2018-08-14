@@ -22,7 +22,7 @@ host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
 
 if host_name == 'sunting':
-    args.batch_size = 5
+    args.batch_size = 1 #5
     args.data_dir = '/home/sunting/Documents/program/VOC2012_SEG_AUG'
 elif host_name == 'sunting-ThinkCenter-M90':
     args.batch_size = 18
@@ -115,7 +115,11 @@ for epoch in range(args.epochs):
 
                 mask_s_gt_np = np.zeros(mask.shape,dtype=np.float32)
                 for i in range(args.batch_size):
-                    mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(labels[i,:].numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().numpy(), args.preds_only)
+                    if flag_use_cuda:
+                        mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(labels[i,:].cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().cpu().numpy(), args.preds_only)
+                    else:
+                        mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(labels[i,:].numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().numpy(), args.preds_only)
+
                     iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pred)
                     # obj = CRF_lei.CAM_iou(labels[i,:].numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().numpy())
                     # iou_np+=obj.run()
@@ -161,7 +165,11 @@ for epoch in range(args.epochs):
 
                     mask_s_gt_np = np.zeros(mask.shape,dtype=np.float32)
                     for i in range(args.batch_size):
-                        mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(labels[i,:].numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().numpy(), args.preds_only)
+                        if flag_use_cuda:
+                            mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(labels[i,:].cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().cpu().numpy(), args.preds_only)
+                        else:
+                            mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(labels[i,:].numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().numpy(), args.preds_only)
+
                         iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pred)
                         # obj = CRF_lei.CAM_iou(labels[i,:].numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().numpy())
                         # iou_np+=obj.run()
