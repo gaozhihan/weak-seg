@@ -31,7 +31,7 @@ elif host_name == 'ram-lab':
     elif args.model == 'resnet':
         args.batch_size = 100
     elif args.model == 'my_resnet':
-        args.batch_size = 12
+        args.batch_size = 36
 
 
 if args.model == 'SEC':
