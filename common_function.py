@@ -4,7 +4,7 @@ import numpy as np
 import torch.nn.functional as F
 
 
-def cam_extract(feat_conv, fc_weight, relu_flag = True):
+def cam_extract(feat_conv, fc_weight, relu_flag = False):
     num_class = fc_weight.shape[0]
     num_map = fc_weight.shape[1]
     H = feat_conv.shape[2]
@@ -17,6 +17,30 @@ def cam_extract(feat_conv, fc_weight, relu_flag = True):
         mask = F.relu(mask)
     # mask = F.softmax(mask,dim=1)
     return mask
+
+
+class iou_calculator():
+    def __init__(self, num_class = 21):
+        self.num_class = num_class
+        self.iou_sum = np.zeros([num_class,num_class])
+        self.tedges = np.arange(-0.5, num_class, 1)
+        self.pedges = np.arange(-0.5, num_class, 1)
+
+    def iou_clear(self):
+        self.iou_sum = np.zeros([self.num_class,self.num_class])
+
+    def add_iou_mask_pair(self, mask_gt, mask_pred):
+        # ignore boundary
+        k = (mask_gt!=255)
+        iou_this_pair = np.histogram2d(mask_gt[k].reshape(-1), mask_pred[k].reshape(-1), bins = (self.tedges, self.pedges))
+        self.iou_sum += iou_this_pair[0]
+
+    def cal_cur_iou(self):
+        intersec = np.diag(self.iou_sum)
+        union = (self.iou_sum.sum(0) + self.iou_sum.sum(1) - intersec)
+        return intersec/union
+
+
 
 
 class weighted_pool(nn.Module):
@@ -62,3 +86,15 @@ class weighted_pool(nn.Module):
         outputs = torch.sum(outputs, dim=2)
 
         return outputs
+
+
+class MapCrossEntropyLoss(nn.Module):
+
+    def __init__(self):
+        super(MapCrossEntropyLoss, self).__init__()
+
+    def forward(self, map, map_s_gt):
+        return F.binary_cross_entropy(F.sigmoid(map), map_s_gt)
+
+
+
