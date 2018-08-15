@@ -135,5 +135,6 @@ class VOCDataset(Dataset):
             else:
                 return img_ts, label_ts
         else:
-            return img_ts, label_ts, mask, img_name, img_array
+            # return img_ts, label_ts, mask, img_name, img_array
+            return img_ts, label_ts, mask, img_array
 

@@ -174,7 +174,7 @@ for epoch in range(args.epochs):
                         # obj = CRF_lei.CAM_iou(labels[i,:].numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().numpy())
                         # iou_np+=obj.run()
 
-
+                mask_s_gt = torch.from_numpy(mask_s_gt_np)
                 loss1 = criterion1(outputs, labels)
                 loss2 = criterion2(mask, mask_s_gt)
                 eval_loss1 += loss1.item() * inputs.size(0)

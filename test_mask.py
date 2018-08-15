@@ -17,6 +17,7 @@ import numpy as np
 
 args = get_args()
 args.need_mask_flag = True
+args.test_flag = True
 
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
@@ -157,6 +158,7 @@ with torch.no_grad():
 
                     iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pred)
 
+            mask_s_gt = torch.from_numpy(mask_s_gt_np)
             loss1 = criterion1(outputs, labels)
             loss2 = criterion2(mask, mask_s_gt)
             eval_loss1 += loss1.item() * inputs.size(0)
