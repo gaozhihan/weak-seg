@@ -18,7 +18,7 @@ import cv2
 
 class CRF():
     def __init__(self, args):
-        self.flag_visual = False
+        self.flag_visual = True
         self.iters = [1, 3, 10, 15, 25]
         self.H , self.W = args.input_size
         self.N_labels = args.num_classes
@@ -77,6 +77,7 @@ class CRF():
         temp_cur = mask[class_cur,:,:].reshape([num_class_cur, -1])
         # temp_cur[temp_cur>80] = 80 # in case overflow
         temp_cur[temp_cur<-80] = -80
+        # temp_cur = temp_cur * 0.2
         temp_cur = 1/(1+np.exp(-temp_cur))
 
         if class_cur[0] == 0 and num_class_cur > 1:
@@ -168,6 +169,7 @@ class CRF():
 
 
     def runCRF(self, labels, mask_gt, mask_org, img, preds, preds_only ):  # run CRF on one frame, all input are numpy
+        mask_gt[mask_gt==255] = 0
 
         mask_res = np.zeros((self.N_labels, self.H, self.W))
         # class_cur = np.nonzero(preds)[0]
