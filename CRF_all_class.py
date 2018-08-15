@@ -35,6 +35,11 @@ class CRF():
         self.num_pixel = self.H * self.W
         self.color_score_scale = 1.5
 
+    def set_shape(self, mask_gt):
+        self.H, self.W = mask_gt.shape
+        self.map = np.zeros([self.num_maps, self.H, self.W])
+        self.num_pixel = self.H * self.W
+
 
     def preprocess_mask(self, mask, preds):
 
@@ -77,6 +82,7 @@ class CRF():
         temp_cur = mask[class_cur,:,:].reshape([num_class_cur, -1])
         # temp_cur[temp_cur>80] = 80 # in case overflow
         temp_cur[temp_cur<-80] = -80
+        # temp_cur = temp_cur * 0.2
         temp_cur = 1/(1+np.exp(-temp_cur))
 
         if class_cur[0] == 0 and num_class_cur > 1:
@@ -168,6 +174,7 @@ class CRF():
 
 
     def runCRF(self, labels, mask_gt, mask_org, img, preds, preds_only ):  # run CRF on one frame, all input are numpy
+        mask_gt[mask_gt==255] = 0
 
         mask_res = np.zeros((self.N_labels, self.H, self.W))
         # class_cur = np.nonzero(preds)[0]

@@ -13,7 +13,8 @@ from PIL import Image
 class VOCData():
     def __init__(self, args):
         if args.model ==  "SEC":
-            self.data_transforms = {
+            if args.test_flag == False:
+                self.data_transforms = {
                 'train': transforms.Compose([
                     transforms.Resize(args.input_size),
                     transforms.RandomHorizontalFlip(),
@@ -27,9 +28,24 @@ class VOCData():
                     transforms.ToTensor(),
                     transforms.Normalize([0.485, 0.456, 0.406], [1.0, 1.0, 1.0])
                 ]),
-            }
+                }
+            else:
+                self.data_transforms = {
+                'train': transforms.Compose([
+                    transforms.Resize(args.input_size),
+                    transforms.ToTensor(),
+                    transforms.Normalize([0.485, 0.456, 0.406], [1.0, 1.0, 1.0])
+                ]),
+                'val': transforms.Compose([
+                    transforms.Resize(args.input_size),
+                    transforms.ToTensor(),
+                    transforms.Normalize([0.485, 0.456, 0.406], [1.0, 1.0, 1.0])
+                ]),
+                }
+
         else:
-            self.data_transforms = {
+            if args.test_flag == False:
+                self.data_transforms = {
                 'train': transforms.Compose([
                     transforms.Resize(args.input_size),
                     transforms.RandomHorizontalFlip(),
@@ -42,7 +58,22 @@ class VOCData():
                     transforms.ToTensor(),
                     transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
                 ]),
-            }
+                }
+            else:
+                self.data_transforms = {
+                'train': transforms.Compose([
+                    transforms.Resize(args.input_size),
+                    transforms.ToTensor(),
+                    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+                ]),
+                'val': transforms.Compose([
+                    transforms.Resize(args.input_size),
+                    transforms.ToTensor(),
+                    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+                ]),
+                }
+
+
 
         self.image_datasets = {x:VOCDataset(x+".txt", args, self.data_transforms[x])
                           for x in ['train', 'val']}
@@ -135,5 +166,6 @@ class VOCDataset(Dataset):
             else:
                 return img_ts, label_ts
         else:
-            return img_ts, label_ts, mask, img_name, img_array
+            # return img_ts, label_ts, mask, img_name, img_array
+            return img_ts, label_ts, mask, img_array
 

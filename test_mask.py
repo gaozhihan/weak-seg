@@ -17,6 +17,7 @@ import numpy as np
 
 args = get_args()
 args.need_mask_flag = True
+args.test_flag = True
 
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
@@ -35,6 +36,8 @@ elif host_name == 'ram-lab':
     elif args.model == 'my_resnet':
         args.batch_size = 30
 
+if args.origin_size:
+    args.batch_size = 1
 
 if args.model == 'SEC':
     # model_url = 'https://download.pytorch.org/models/vgg16-397923af.pth' # 'vgg16'
@@ -98,16 +101,20 @@ with torch.no_grad():
 
                 if args.model == 'SEC':
                     mask, outputs = net(inputs)
-                    preds = outputs.squeeze().data>args.threshold
+                    preds = outputs.data>args.threshold
                 elif args.model == 'resnet' or args.model == 'my_resnet':
                     outputs = net(inputs)
                     outputs = torch.sigmoid(outputs)
-                    preds = outputs.squeeze().data>args.threshold
-                    mask = common_function.cam_extract(features_blob[0].squeeze(), fc_weight, args.relu_mask)
+                    preds = outputs.data>args.threshold
+                    mask = common_function.cam_extract(features_blob[0], fc_weight, args.relu_mask)
                     features_blob.clear()
 
                 mask_s_gt_np = np.zeros(mask.shape,dtype=np.float32)
                 for i in range(labels.shape[0]):
+
+                    if args.origin_size:
+                        crf.set_shape(mask_gt[i,:,:].numpy())
+
                     if flag_use_cuda:
                         mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(labels[i,:].cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().cpu().numpy(), args.preds_only)
                     else:
@@ -116,7 +123,7 @@ with torch.no_grad():
                     iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pred)
 
                 mask_s_gt = torch.from_numpy(mask_s_gt_np)
-                loss1 = criterion1(outputs.squeeze(), labels)
+                loss1 = criterion1(outputs, labels)
                 loss2 = criterion2(mask, mask_s_gt)
 
                 train_loss1 += loss1.item() * inputs.size(0)
@@ -140,12 +147,12 @@ with torch.no_grad():
 
                 if args.model == 'SEC':
                     mask, outputs = net(inputs)
-                    preds = outputs.squeeze().data>args.threshold
+                    preds = outputs.data>args.threshold
                 elif args.model == 'resnet' or args.model == 'my_resnet':
                     outputs = net(inputs)
                     outputs = torch.sigmoid(outputs)
-                    preds = outputs.squeeze().data>args.threshold
-                    mask = common_function.cam_extract(features_blob[0].squeeze(), fc_weight, args.relu_mask)
+                    preds = outputs.data>args.threshold
+                    mask = common_function.cam_extract(features_blob[0], fc_weight, args.relu_mask)
                     features_blob.clear()
 
                 mask_s_gt_np = np.zeros(mask.shape,dtype=np.float32)
@@ -158,7 +165,7 @@ with torch.no_grad():
                     iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pred)
 
             mask_s_gt = torch.from_numpy(mask_s_gt_np)
-            loss1 = criterion1(outputs.squeeze(), labels)
+            loss1 = criterion1(outputs, labels)
             loss2 = criterion2(mask, mask_s_gt)
             eval_loss1 += loss1.item() * inputs.size(0)
             eval_loss2 += loss2.item() * inputs.size(0)
