@@ -22,7 +22,7 @@ host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
 
 if host_name == 'sunting':
-    args.batch_size = 1 #5
+    args.batch_size = 5 # if this is 1, the dimension of feat_conv.shape in cam_extract will have problem
     args.data_dir = '/home/sunting/Documents/program/VOC2012_SEG_AUG'
 elif host_name == 'sunting-ThinkCenter-M90':
     args.batch_size = 18
@@ -105,16 +105,16 @@ for epoch in range(args.epochs):
                 optimizer.zero_grad()
                 if args.model == 'SEC':
                     mask, outputs = net(inputs)
-                    preds = outputs.squeeze().data>args.threshold
+                    preds = outputs.data>args.threshold
                 elif args.model == 'resnet' or args.model == 'my_resnet':
                     outputs = net(inputs)
                     outputs = torch.sigmoid(outputs)
-                    preds = outputs.squeeze().data>args.threshold
-                    mask = common_function.cam_extract(features_blob[0].squeeze(), fc_weight, args.relu_mask)
+                    preds = outputs.data>args.threshold
+                    mask = common_function.cam_extract(features_blob[0], fc_weight, args.relu_mask)
                     features_blob.clear()
 
                 mask_s_gt_np = np.zeros(mask.shape,dtype=np.float32)
-                for i in range(args.batch_size):
+                for i in range(labels.shape[0]):
                     if flag_use_cuda:
                         mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(labels[i,:].cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().cpu().numpy(), args.preds_only)
                     else:
@@ -125,7 +125,7 @@ for epoch in range(args.epochs):
                     # iou_np+=obj.run()
 
                 mask_s_gt = torch.from_numpy(mask_s_gt_np)
-                loss1 = criterion1(outputs.squeeze(), labels)
+                loss1 = criterion1(outputs, labels)
                 loss2 = criterion2(mask, mask_s_gt)
                 loss1.backward()
                 loss2.backward()
@@ -155,16 +155,16 @@ for epoch in range(args.epochs):
 
                     if args.model == 'SEC':
                         mask, outputs = net(inputs)
-                        preds = outputs.squeeze().data>args.threshold
+                        preds = outputs.data>args.threshold
                     elif args.model == 'resnet' or args.model == 'my_resnet':
                         outputs = net(inputs)
                         outputs = torch.sigmoid(outputs)
-                        preds = outputs.squeeze().data>args.threshold
-                        mask = common_function.cam_extract(features_blob[0].squeeze(), fc_weight, args.relu_mask)
+                        preds = outputs.data>args.threshold
+                        mask = common_function.cam_extract(features_blob[0], fc_weight, args.relu_mask)
                         features_blob.clear()
 
                     mask_s_gt_np = np.zeros(mask.shape,dtype=np.float32)
-                    for i in range(args.batch_size):
+                    for i in range(labels.shape[0]):
                         if flag_use_cuda:
                             mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(labels[i,:].cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().cpu().numpy(), args.preds_only)
                         else:
@@ -175,7 +175,7 @@ for epoch in range(args.epochs):
                         # iou_np+=obj.run()
 
 
-                loss1 = criterion1(outputs.squeeze(), labels)
+                loss1 = criterion1(outputs, labels)
                 loss2 = criterion2(mask, mask_s_gt)
                 eval_loss1 += loss1.item() * inputs.size(0)
                 eval_loss2 += loss2.item() * inputs.size(0)
