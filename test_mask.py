@@ -36,6 +36,8 @@ elif host_name == 'ram-lab':
     elif args.model == 'my_resnet':
         args.batch_size = 30
 
+if args.origin_size:
+    args.batch_size = 1
 
 if args.model == 'SEC':
     # model_url = 'https://download.pytorch.org/models/vgg16-397923af.pth' # 'vgg16'
@@ -109,6 +111,9 @@ with torch.no_grad():
 
                 mask_s_gt_np = np.zeros(mask.shape,dtype=np.float32)
                 for i in range(labels.shape[0]):
+                    if args.origin_size:
+                        crf.set_shape(mask_gt[i,:,:].numpy())
+
                     if flag_use_cuda:
                         mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(labels[i,:].cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().cpu().numpy(), args.preds_only)
                     else:

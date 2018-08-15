@@ -18,7 +18,7 @@ import cv2
 
 class CRF():
     def __init__(self, args):
-        self.flag_visual = True
+        self.flag_visual = False
         self.iters = [1, 3, 10, 15, 25]
         self.H , self.W = args.input_size
         self.N_labels = args.num_classes
@@ -34,6 +34,11 @@ class CRF():
         self.color_ranges = [0, 256, 0, 256, 0, 256]
         self.num_pixel = self.H * self.W
         self.color_score_scale = 1.5
+
+    def set_shape(self, mask_gt):
+        self.H, self.W = mask_gt.shape
+        self.map = np.zeros([self.num_maps, self.H, self.W])
+        self.num_pixel = self.H * self.W
 
 
     def preprocess_mask(self, mask, preds):
