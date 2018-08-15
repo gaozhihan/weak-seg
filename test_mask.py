@@ -107,7 +107,7 @@ with torch.no_grad():
                     features_blob.clear()
 
                 mask_s_gt_np = np.zeros(mask.shape,dtype=np.float32)
-                for i in range(args.batch_size):
+                for i in range(labels.shape[0]):
                     if flag_use_cuda:
                         mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(labels[i,:].cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().cpu().numpy(), args.preds_only)
                     else:
@@ -149,7 +149,7 @@ with torch.no_grad():
                     features_blob.clear()
 
                 mask_s_gt_np = np.zeros(mask.shape,dtype=np.float32)
-                for i in range(args.batch_size):
+                for i in range(labels.shape[0]):
                     if flag_use_cuda:
                         mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(labels[i,:].cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().cpu().numpy(), args.preds_only)
                     else:
@@ -157,6 +157,7 @@ with torch.no_grad():
 
                     iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pred)
 
+            mask_s_gt = torch.from_numpy(mask_s_gt_np)
             loss1 = criterion1(outputs.squeeze(), labels)
             loss2 = criterion2(mask, mask_s_gt)
             eval_loss1 += loss1.item() * inputs.size(0)

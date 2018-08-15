@@ -33,7 +33,7 @@ elif host_name == 'ram-lab':
     elif args.model == 'resnet':
         args.batch_size = 100
     elif args.model == 'my_resnet':
-        args.batch_size = 30
+        args.batch_size = 36
 
 
 if args.model == 'SEC':
@@ -54,7 +54,7 @@ elif args.model == 'resnet':
     net._modules.get('layer4').register_forward_hook(hook_feature)
 
 elif args.model == 'my_resnet':
-    model_path = 'models/top_val_acc_my_resnet_drp_28_no_spread_CPU.pth'  # top_val_acc_my_resnet_drp_CPU
+    model_path = 'models/top_val_acc_my_resnet_drp.pth'  # top_val_acc_my_resnet_drp_CPU
     net = my_resnet.resnet50(pretrained=False, num_classes=args.num_classes)
     net.load_state_dict(torch.load(model_path), strict = True)
     features_blob = []
@@ -114,7 +114,7 @@ for epoch in range(args.epochs):
                     features_blob.clear()
 
                 mask_s_gt_np = np.zeros(mask.shape,dtype=np.float32)
-                for i in range(args.batch_size):
+                for i in range(labels.shape[0]):
                     if flag_use_cuda:
                         mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(labels[i,:].cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().cpu().numpy(), args.preds_only)
                     else:
@@ -164,7 +164,7 @@ for epoch in range(args.epochs):
                         features_blob.clear()
 
                     mask_s_gt_np = np.zeros(mask.shape,dtype=np.float32)
-                    for i in range(args.batch_size):
+                    for i in range(labels.shape[0]):
                         if flag_use_cuda:
                             mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(labels[i,:].cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().cpu().numpy(), args.preds_only)
                         else:
@@ -174,7 +174,7 @@ for epoch in range(args.epochs):
                         # obj = CRF_lei.CAM_iou(labels[i,:].numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().numpy())
                         # iou_np+=obj.run()
 
-
+                mask_s_gt = torch.from_numpy(mask_s_gt_np)
                 loss1 = criterion1(outputs.squeeze(), labels)
                 loss2 = criterion2(mask, mask_s_gt)
                 eval_loss1 += loss1.item() * inputs.size(0)
