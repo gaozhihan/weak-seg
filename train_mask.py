@@ -80,6 +80,7 @@ main_scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=args.step_size)
 
 max_acc = 0
 max_recall = 0
+max_iou = 0
 iou_obj = common_function.iou_calculator()
 
 
@@ -184,10 +185,6 @@ for epoch in range(args.epochs):
                 T_eval += torch.sum(labels.data.long()==1)
                 P_eval += torch.sum(preds.long()==1)
 
-            temp_iou = iou_obj.cal_cur_iou()
-            print('current train iou is:')
-            print(temp_iou, temp_iou.mean())
-            iou_obj.iou_clear()
 
     time_took = time.time() - start
     epoch_train_loss1 = train_loss1 / dataloader.dataset_sizes["train"]
@@ -218,6 +215,20 @@ for epoch in range(args.epochs):
         print('save model ' + args.model + ' with val recall: {}'.format(recall_eval))
         torch.save(net.state_dict(), './models/M_top_val_rec_'+ args.model + '.pth')
         max_recall = recall_eval
+
+    # for iou
+    temp_iou = iou_obj.cal_cur_iou()
+    print('current eval iou is:')
+    cur_eval_iou = temp_iou.mean()
+    print(temp_iou, cur_eval_iou)
+    iou_obj.iou_clear()
+
+    if cur_eval_iou > max_iou:
+        print('save model ' + args.model + ' with val mean iou: {}'.format(cur_eval_iou))
+        torch.save(net.state_dict(), './models/M_top_val_iou_'+ args.model + '.pth')
+        max_iou = cur_eval_iou
+
+
 
     print('Epoch: {} took {:.2f}, Train loss1: {:.4f}, loss2: {:.4f} , Acc: {:.4f}, Recall: {:.4f}; eval loss1: {:.4f}, loss2: {:.4f}, Acc: {:.4f}, Recall: {:.4f}'.format(epoch, time_took, epoch_train_loss1, epoch_train_loss2, acc_train, recall_train, epoch_eval_loss1, epoch_eval_loss2, acc_eval, recall_eval))
 
