@@ -174,7 +174,8 @@ class CRF():
 
 
     def runCRF(self, labels, mask_gt, mask_org, img, preds, preds_only ):  # run CRF on one frame, all input are numpy
-        mask_gt[mask_gt==255] = 0
+        if self.flag_visual:
+            mask_gt[mask_gt==255] = 0
 
         mask_res = np.zeros((self.N_labels, self.H, self.W))
         # class_cur = np.nonzero(preds)[0]
