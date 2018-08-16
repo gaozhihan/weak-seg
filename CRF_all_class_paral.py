@@ -24,8 +24,6 @@ class CRF():
         self.N_labels = args.num_classes
 
         self.num_maps = len(self.iters)
-        self.kl = np.zeros(self.num_maps)
-        self.map = np.zeros([self.num_maps, self.H, self.W])
         self.flag_pre_method = 1
 
         # parameters for pick_mask (based on color hist and overlap with mask)
@@ -82,7 +80,7 @@ class CRF():
         temp_cur = mask[class_cur,:,:].reshape([num_class_cur, -1])
         # temp_cur[temp_cur>80] = 80 # in case overflow
         temp_cur[temp_cur<-80] = -80
-        #temp_cur = temp_cur * 0.2
+        # temp_cur = temp_cur * 0.2
         temp_cur = 1/(1+np.exp(-temp_cur))
 
         if class_cur[0] == 0 and num_class_cur > 1:
@@ -177,6 +175,8 @@ class CRF():
         if self.flag_visual:
             mask_gt[mask_gt==255] = 0
 
+        self.kl = np.zeros(self.num_maps)
+        self.map = np.zeros([self.num_maps, self.H, self.W])
         mask_res = np.zeros((self.N_labels, self.H, self.W))
         # class_cur = np.nonzero(preds)[0]
         class_cur = np.nonzero(labels)[0]
@@ -224,7 +224,7 @@ class CRF():
                 plt.subplot(1,(3 + self.num_maps),i); plt.imshow(self.map[i-4,:,:]); plt.title('{} steps, KL={:.2f}'.format(self.iters[i-4], self.kl[i-4])); plt.axis('off')
 
         best_map_idx = self.pick_mask(img, mask_res, class_cur)
-        return self.map2mask(mask_org, class_cur, self.map[best_map_idx,:,:]), self.map[best_map_idx,:,:]
+        return (self.map2mask(mask_org, class_cur, self.map[best_map_idx,:,:]), self.map[best_map_idx,:,:])
 
 
 
