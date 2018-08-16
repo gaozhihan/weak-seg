@@ -82,7 +82,7 @@ class CRF():
         temp_cur = mask[class_cur,:,:].reshape([num_class_cur, -1])
         # temp_cur[temp_cur>80] = 80 # in case overflow
         temp_cur[temp_cur<-80] = -80
-        # temp_cur = temp_cur * 0.2
+        #temp_cur = temp_cur * 0.2
         temp_cur = 1/(1+np.exp(-temp_cur))
 
         if class_cur[0] == 0 and num_class_cur > 1:
