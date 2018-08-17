@@ -138,7 +138,7 @@ class CRF():
         score_color = np.zeros(self.num_maps)
         score_over_map = np.zeros(self.num_maps)
         for i_map in range(self.num_maps):
-            hist_cur = np.zeros([len(class_cur), self.color_his_size[0], self.color_his_size[1], self.color_his_size[2]])
+            hist_cur = np.zeros([num_class_cur, self.color_his_size[0], self.color_his_size[1], self.color_his_size[2]])
             for i_idx, i_class in np.ndenumerate(class_cur):
                 mask_temp = np.zeros([self.H, self.W],dtype = np.uint8)
                 idx_temp = self.map[i_map,:,:] == i_class

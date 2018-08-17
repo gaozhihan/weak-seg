@@ -18,7 +18,7 @@ import cv2
 
 class CRF():
     def __init__(self, args):
-        self.flag_visual = False
+        self.flag_visual = True
         self.iters = [1, 3, 10, 15, 25]
         self.H , self.W = args.input_size
         self.N_labels = args.num_classes
@@ -58,15 +58,16 @@ class CRF():
         # spactial normalize
         num_class_cur = len(class_cur)
         temp_cur = mask[class_cur,:,:].reshape([num_class_cur, -1])
-        temp_min = np.min(temp_cur, axis=1, keepdims=True)
-        temp_cur = temp_cur - temp_min
+        # temp_min = np.min(temp_cur, axis=1, keepdims=True)
+        # temp_cur = temp_cur - temp_min
+        temp_cur[temp_cur<0] = 0
         temp_max = np.max(temp_cur, axis=1, keepdims=True)
         temp_max[temp_max == 0] = 1
         temp_cur = temp_cur / temp_max
 
         if class_cur[0] == 0 and num_class_cur > 1:
             # temp_cur[0,:] = mask[0,:,:].reshape([1,-1]) - np.sum(temp_cur[1:,:], axis=0)
-            temp_cur[0,np.sum(temp_cur[1:,:], axis=0)>0] = 0
+            temp_cur[0,np.sum(temp_cur[1:,:], axis=0)>0.1] = 0
 
         temp[class_cur, :, :] = temp_cur.reshape([num_class_cur, mask.shape[1], mask.shape[2]])
         temp = temp * 0.9 + 0.05
@@ -75,14 +76,20 @@ class CRF():
 
 
 
-    def spacial_norm_sig_pred_only(self, mask, class_cur): # can use without relu
+    def sig_pred_only(self, mask, class_cur): # can use without relu
         temp = np.zeros(mask.shape)
         # spactial normalize
         num_class_cur = len(class_cur)
         temp_cur = mask[class_cur,:,:].reshape([num_class_cur, -1])
+
         # temp_cur[temp_cur>80] = 80 # in case overflow
         temp_cur[temp_cur<-80] = -80
         # temp_cur = temp_cur * 0.2
+
+        idx_temp = temp_cur > 0
+        temp_cur[idx_temp] = temp_cur[idx_temp] / temp_cur[idx_temp].max() * 10
+
+
         temp_cur = 1/(1+np.exp(-temp_cur))
 
         if class_cur[0] == 0 and num_class_cur > 1:
@@ -90,13 +97,14 @@ class CRF():
             temp_cur[0,np.max(temp_cur[1:,:], axis=0)>0.5] = 0.005
 
         temp[class_cur, :, :] = temp_cur.reshape([num_class_cur, mask.shape[1], mask.shape[2]])
-        temp = temp * 0.9
+        temp = temp * 0.9 + 0.05
 
         return temp
 
 
 
     def softmax_norm_preds_only(self, mask, class_cur):  # so far looks good
+        # mask[mask<0] = 0
         temp = np.zeros(mask.shape)
         # spactial normalize
         num_class_cur = len(class_cur)
@@ -104,6 +112,8 @@ class CRF():
 
         # caution: np.finfo(np.float32).max = 3.4028235e+38, and np.exp(90) = 1.2204032943178408e+39, np.exp(80) = 5.54062238439351e+34
         temp_cur[temp_cur>80] = 80
+        # temp_cur = temp_cur * 0.2
+        # temp_cur = temp_cur/temp_cur.max()*10
 
         if class_cur[0] == 0 and num_class_cur > 1:
             # temp_cur[0,:] = mask[0,:,:].reshape([1,-1]) - np.sum(temp_cur[1:,:], axis=0)
@@ -136,11 +146,13 @@ class CRF():
 
     def pick_mask(self, image, mask, class_cur):
         # should be pick_mask(self, maps, mask, preds), since within class function, so save any self. items
+        mask_thr = np.zeros(mask.shape)
+        mask_thr[mask>0.1] = 1
         num_class_cur = len(class_cur)
         score_color = np.zeros(self.num_maps)
         score_over_map = np.zeros(self.num_maps)
         for i_map in range(self.num_maps):
-            hist_cur = np.zeros([len(class_cur), self.color_his_size[0], self.color_his_size[1], self.color_his_size[2]])
+            hist_cur = np.zeros([num_class_cur, self.color_his_size[0], self.color_his_size[1], self.color_his_size[2]])
             for i_idx, i_class in np.ndenumerate(class_cur):
                 mask_temp = np.zeros([self.H, self.W],dtype = np.uint8)
                 idx_temp = self.map[i_map,:,:] == i_class
@@ -153,7 +165,7 @@ class CRF():
 
                 # calculate score based on consisitencey (overlap with raw mask)
                 if i_class !=  0:
-                    score_over_map[i_map] += np.multiply(mask_temp, mask[i_class,:,:]).sum()
+                    score_over_map[i_map] += np.multiply(mask_temp, mask_thr[i_class,:,:]).sum()
 
             # summary
             hist_cur = hist_cur.reshape([len(class_cur), -1])
@@ -181,9 +193,9 @@ class CRF():
         # class_cur = np.nonzero(preds)[0]
         class_cur = np.nonzero(labels)[0]
         if preds_only:
-            # mask = self.spacial_norm_preds_only(mask_org, class_cur)
+            mask = self.spacial_norm_preds_only(mask_org, class_cur)
             # mask = self.softmax_norm_preds_only(mask_org, class_cur)
-            mask = self.spacial_norm_sig_pred_only(mask_org, class_cur)
+            # mask = self.sig_pred_only(mask_org, class_cur)
 
         else:
             mask = self.spacial_norm(mask_org)
