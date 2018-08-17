@@ -56,15 +56,16 @@ class CRF():
         # spactial normalize
         num_class_cur = len(class_cur)
         temp_cur = mask[class_cur,:,:].reshape([num_class_cur, -1])
-        temp_min = np.min(temp_cur, axis=1, keepdims=True)
-        temp_cur = temp_cur - temp_min
+        # temp_min = np.min(temp_cur, axis=1, keepdims=True)
+        # temp_cur = temp_cur - temp_min
+        temp_cur[temp_cur<0] = 0
         temp_max = np.max(temp_cur, axis=1, keepdims=True)
         temp_max[temp_max == 0] = 1
         temp_cur = temp_cur / temp_max
 
         if class_cur[0] == 0 and num_class_cur > 1:
             # temp_cur[0,:] = mask[0,:,:].reshape([1,-1]) - np.sum(temp_cur[1:,:], axis=0)
-            temp_cur[0,np.sum(temp_cur[1:,:], axis=0)>0] = 0
+            temp_cur[0,np.sum(temp_cur[1:,:], axis=0)>0.1] = 0
 
         temp[class_cur, :, :] = temp_cur.reshape([num_class_cur, mask.shape[1], mask.shape[2]])
         temp = temp * 0.9 + 0.05
@@ -134,6 +135,8 @@ class CRF():
 
     def pick_mask(self, image, mask, class_cur):
         # should be pick_mask(self, maps, mask, preds), since within class function, so save any self. items
+        mask_thr = np.zeros(mask.shape)
+        mask_thr[mask>0.1] = 1
         num_class_cur = len(class_cur)
         score_color = np.zeros(self.num_maps)
         score_over_map = np.zeros(self.num_maps)
@@ -151,7 +154,7 @@ class CRF():
 
                 # calculate score based on consisitencey (overlap with raw mask)
                 if i_class !=  0:
-                    score_over_map[i_map] += np.multiply(mask_temp, mask[i_class,:,:]).sum()
+                    score_over_map[i_map] += np.multiply(mask_temp, mask_thr[i_class,:,:]).sum()
 
             # summary
             hist_cur = hist_cur.reshape([len(class_cur), -1])
@@ -181,9 +184,9 @@ class CRF():
         # class_cur = np.nonzero(preds)[0]
         class_cur = np.nonzero(labels)[0]
         if preds_only:
-            # mask = self.spacial_norm_preds_only(mask_org, class_cur)
+            mask = self.spacial_norm_preds_only(mask_org, class_cur)
             # mask = self.softmax_norm_preds_only(mask_org, class_cur)
-            mask = self.spacial_norm_sig_pred_only(mask_org, class_cur)
+            # mask = self.spacial_norm_sig_pred_only(mask_org, class_cur)
 
         else:
             mask = self.spacial_norm(mask_org)
