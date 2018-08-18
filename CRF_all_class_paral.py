@@ -145,7 +145,6 @@ class CRF():
     def pick_mask(self, image, mask, class_cur):
         # should be pick_mask(self, maps, mask, preds), since within class function, so save any self. items
         mask_weight = mask * 2
-
         num_class_cur = len(class_cur)
         score_color = np.zeros(self.num_maps)
         score_over_map = np.zeros(self.num_maps)
@@ -196,6 +195,7 @@ class CRF():
             mask = self.spacial_norm_preds_only(mask_org, class_cur)
             # mask = self.softmax_norm_preds_only(mask_org, class_cur)
             # mask = self.sig_pred_only(mask_org, class_cur)
+            # mask = self.spacial_norm_sig_pred_only(mask_org, class_cur)
 
         else:
             mask = self.spacial_norm(mask_org)

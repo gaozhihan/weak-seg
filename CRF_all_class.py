@@ -89,7 +89,6 @@ class CRF():
         idx_temp = temp_cur > 0
         temp_cur[idx_temp] = temp_cur[idx_temp] / temp_cur[idx_temp].max() * 10
 
-
         temp_cur = 1/(1+np.exp(-temp_cur))
 
         if class_cur[0] == 0 and num_class_cur > 1:

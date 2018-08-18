@@ -111,6 +111,7 @@ with torch.no_grad():
 
                 mask_s_gt_np = np.zeros(mask.shape,dtype=np.float32)
                 for i in range(labels.shape[0]):
+
                     if args.origin_size:
                         crf.set_shape(mask_gt[i,:,:].numpy())
 
