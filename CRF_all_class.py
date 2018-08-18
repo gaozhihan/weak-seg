@@ -146,8 +146,8 @@ class CRF():
 
     def pick_mask(self, image, mask, class_cur):
         # should be pick_mask(self, maps, mask, preds), since within class function, so save any self. items
-        mask_thr = np.zeros(mask.shape)
-        mask_thr[mask>0.1] = 1
+        mask_weight = mask * 2
+
         num_class_cur = len(class_cur)
         score_color = np.zeros(self.num_maps)
         score_over_map = np.zeros(self.num_maps)
@@ -164,14 +164,14 @@ class CRF():
                     hist_cur[i_idx[0], :,:,:] = cv2.calcHist([image], self.color_channels, mask_temp, self.color_his_size, self.color_ranges)
 
                 # calculate score based on consisitencey (overlap with raw mask)
-                if i_class !=  0:
-                    score_over_map[i_map] += np.multiply(mask_temp, mask_thr[i_class,:,:]).sum()
+                score_over_map[i_map] += np.multiply(mask_temp, mask_weight[i_class,:,:]).sum()
 
             # summary
             hist_cur = hist_cur.reshape([len(class_cur), -1])
-            score_color[i_map] = np.min(hist_cur, axis=0).sum()
+            hist_cur = np.sort(hist_cur, axis=0)
+            score_color[i_map] += hist_cur[:-1,:].sum()
 
-        return np.argmax(score_over_map - score_color*self.color_score_scale)
+        return np.argmax(score_over_map - score_color)
 
 
     def map2mask(self, mask_org, class_cur, map_best):
@@ -210,7 +210,7 @@ class CRF():
         d.setUnaryEnergy(U)
 
         d.addPairwiseGaussian(sxy=(3,3), compat=3, kernel=dcrf.DIAG_KERNEL, normalization=dcrf.NORMALIZE_SYMMETRIC)
-        d.addPairwiseBilateral(sxy=(80,80), srgb=(13,13,13), rgbim=img.astype(np.uint8), compat=10, kernel=dcrf.DIAG_KERNEL, normalization=dcrf.NORMALIZE_SYMMETRIC)
+        d.addPairwiseBilateral(sxy=(30,30), srgb=(13,13,13), rgbim=img.astype(np.uint8), compat=20, kernel=dcrf.DIAG_KERNEL, normalization=dcrf.NORMALIZE_SYMMETRIC)
 
 
         Q, tmp1, tmp2 = d.startInference()

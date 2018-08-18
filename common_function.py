@@ -92,9 +92,10 @@ class MapCrossEntropyLoss(nn.Module):
 
     def __init__(self):
         super(MapCrossEntropyLoss, self).__init__()
+        self.scaler = 0.5
 
     def forward(self, map, map_s_gt):
-        return F.binary_cross_entropy(F.sigmoid(map), map_s_gt)
+        return F.binary_cross_entropy(F.sigmoid(map), map_s_gt) * self.scaler
 
 
 
