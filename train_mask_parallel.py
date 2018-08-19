@@ -37,7 +37,7 @@ elif host_name == 'ram-lab':
     elif args.model == 'resnet':
         args.batch_size = 100
     elif args.model == 'my_resnet':
-        args.batch_size = 30
+        args.batch_size = 32
 
 
 if args.model == 'SEC':
@@ -58,7 +58,7 @@ elif args.model == 'resnet':
     net._modules.get('layer4').register_forward_hook(hook_feature)
 
 elif args.model == 'my_resnet':
-    model_path = 'models/top_val_acc_my_resnet_drp.pth'  # top_val_acc_my_resnet_drp_CPU
+    model_path = 'models/top_val_acc_my_resnet_18.pth' #'models/top_val_acc_my_resnet_drp.pth'  # top_val_acc_my_resnet_drp_CPU
     net = my_resnet.resnet50(pretrained=False, num_classes=args.num_classes)
     net.load_state_dict(torch.load(model_path), strict = True)
     features_blob = []
