@@ -60,7 +60,7 @@ class CRF():
         temp_cur = mask[class_cur,:,:].reshape([num_class_cur, -1])
         # temp_min = np.min(temp_cur, axis=1, keepdims=True)
         # temp_cur = temp_cur - temp_min
-        temp_cur[temp_cur<0] = 0
+        temp_cur[temp_cur<0] = 0    # manual relu
         temp_max = np.max(temp_cur, axis=1, keepdims=True)
         temp_max[temp_max == 0] = 1
         temp_cur = temp_cur / temp_max
@@ -86,8 +86,9 @@ class CRF():
         temp_cur[temp_cur<-80] = -80
         # temp_cur = temp_cur * 0.2
 
+        # scale the positive part
         idx_temp = temp_cur > 0
-        temp_cur[idx_temp] = temp_cur[idx_temp] / temp_cur[idx_temp].max() * 10
+        temp_cur[idx_temp] = (temp_cur[idx_temp] / temp_cur[idx_temp].max() - 0.2) * 10
 
         temp_cur = 1/(1+np.exp(-temp_cur))
 
@@ -145,7 +146,7 @@ class CRF():
 
     def pick_mask(self, image, mask, class_cur):
         # should be pick_mask(self, maps, mask, preds), since within class function, so save any self. items
-        mask_weight = mask * 2
+        mask_weight = mask
 
         num_class_cur = len(class_cur)
         score_color = np.zeros(self.num_maps)
