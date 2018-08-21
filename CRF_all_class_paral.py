@@ -29,7 +29,7 @@ class CRF():
         # parameters for pick_mask (based on color hist and overlap with mask)
         self.color_his_size = [32, 32, 32]
         self.color_channels = [0, 1, 2]
-        self.color_ranges = [0, 256, 0, 256, 0, 256]
+        self.color_ranges = [0, 255, 0, 255, 0, 255]
         self.num_pixel = self.H * self.W
         self.color_score_scale = 1.5
 
