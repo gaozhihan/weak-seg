@@ -112,7 +112,7 @@ class ResNet(nn.Module):
         self.avgpool = nn.AdaptiveAvgPool2d(1)
         self.dropout = nn.Dropout(0.2)
 
-        self.spread_pool = nn.MaxPool2d(kernel_size=5, stride=2)
+        self.spread_pool = nn.MaxPool2d(kernel_size=5, stride=1)
         self.fc = nn.Linear(512 * block.expansion, num_classes)
 
         for m in self.modules():
@@ -152,7 +152,7 @@ class ResNet(nn.Module):
 
         x = self.dropout(x)
 
-        # x = self.spread_pool(x)
+        #x = self.spread_pool(x)
         x = self.avgpool(x)
         x = x.view(x.size(0), -1)
         x = self.fc(x)
