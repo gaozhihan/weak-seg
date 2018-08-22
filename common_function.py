@@ -98,4 +98,20 @@ class MapCrossEntropyLoss(nn.Module):
         return F.binary_cross_entropy(F.sigmoid(map), map_s_gt) * self.scaler
 
 
+class MapWeightedCrossEntropyLoss(nn.Module):
+
+    def __init__(self):
+        super(MapWeightedCrossEntropyLoss, self).__init__()
+
+    def forward(self, map, map_s_gt, weight):
+        num_batch = map.shape[0]
+        loss = 0
+        for i in range(num_batch):
+            loss += F.binary_cross_entropy(F.sigmoid(map[i,:,:,:]), map_s_gt[i,:,:,:]) * weight[i]
+        return loss/num_batch
+
+
+
+
+
 

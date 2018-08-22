@@ -152,7 +152,7 @@ class ResNet(nn.Module):
 
         x = self.dropout(x)
 
-        x = self.spread_pool(x)
+        #x = self.spread_pool(x)
         x = self.avgpool(x)
         x = x.view(x.size(0), -1)
         x = self.fc(x)

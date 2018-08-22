@@ -58,7 +58,7 @@ elif args.model == 'resnet':
     net._modules.get('layer4').register_forward_hook(hook_feature)
 
 elif args.model == 'my_resnet':
-    model_path = 'models/top_val_acc_my_resnet_18.pth' #'models/top_val_acc_my_resnet_drp.pth'  # top_val_acc_my_resnet_drp_CPU
+    model_path = 'models/top_val_acc_my_resnet_drp.pth'  # top_val_acc_my_resnet_drp_CPU
     net = my_resnet.resnet50(pretrained=False, num_classes=args.num_classes)
     net.load_state_dict(torch.load(model_path), strict = True)
     features_blob = []
@@ -69,7 +69,8 @@ elif args.model == 'my_resnet':
     net._modules.get('layer4').register_forward_hook(hook_feature)
 
 criterion1 = nn.MultiLabelSoftMarginLoss()
-criterion2 = common_function.MapCrossEntropyLoss()
+# criterion2 = common_function.MapCrossEntropyLoss()
+criterion2 = common_function.MapWeightedCrossEntropyLoss()
 print(args)
 
 if flag_use_cuda:
@@ -119,7 +120,7 @@ with Parallel(n_jobs=num_cores) as pal_worker:
                         features_blob.clear()
 
                     mask_s_gt_np = np.zeros(mask.shape,dtype=np.float32)
-
+                    confidence = np.zeros(mask.shape[0])
                     if flag_use_cuda:
                         temp = pal_worker(delayed(crf.runCRF)(labels[i,:].cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().cpu().numpy(), args.preds_only) for i in range(labels.shape[0]))
                     else:
@@ -127,11 +128,12 @@ with Parallel(n_jobs=num_cores) as pal_worker:
 
                     for i in range(labels.shape[0]):
                         mask_s_gt_np[i,:,:,:] = temp[i][0]
+                        confidence[i] = temp[i][2]
                         iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), temp[i][1])
 
                     mask_s_gt = torch.from_numpy(mask_s_gt_np)
                     loss1 = criterion1(outputs, labels)
-                    loss2 = criterion2(mask, mask_s_gt)
+                    loss2 = criterion2(mask, mask_s_gt, confidence)
                     loss1.backward()
                     loss2.backward()
                     optimizer.step()
@@ -169,6 +171,7 @@ with Parallel(n_jobs=num_cores) as pal_worker:
                             features_blob.clear()
 
                         mask_s_gt_np = np.zeros(mask.shape,dtype=np.float32)
+                        confidence = np.zeros(mask.shape[0])
                         if flag_use_cuda:
                             temp = pal_worker(delayed(crf.runCRF)(labels[i,:].cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().cpu().numpy(), args.preds_only) for i in range(labels.shape[0]))
                         else:
@@ -176,11 +179,12 @@ with Parallel(n_jobs=num_cores) as pal_worker:
 
                         for i in range(labels.shape[0]):
                             mask_s_gt_np[i,:,:,:] = temp[i][0]
+                            confidence[i] = temp[i][2]
                             iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), temp[i][1])
 
                     mask_s_gt = torch.from_numpy(mask_s_gt_np)
                     loss1 = criterion1(outputs, labels)
-                    loss2 = criterion2(mask, mask_s_gt)
+                    loss2 = criterion2(mask, mask_s_gt, confidence)
                     eval_loss1 += loss1.item() * inputs.size(0)
                     eval_loss2 += loss2.item() * inputs.size(0)
 
