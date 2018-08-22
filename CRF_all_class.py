@@ -201,7 +201,7 @@ class CRF():
                 select_bin = hist_score[i_idx,:,:,:].squeeze()>0.5
 
             select_color_idx = np.asarray(np.nonzero(select_bin))
-            select_pix_idx = np.full((img.shape[0], img.shape[1]), False)
+            select_pix_idx = np.full((img.shape[0], img.shape[1]), False, dtype=bool)
             for i_color in range(select_color_idx.shape[1]):
                 temp0 = (img_quantize[:,:,0] == select_color_idx[0,i_color])
                 temp1 = (img_quantize[:,:,1] == select_color_idx[1,i_color])
