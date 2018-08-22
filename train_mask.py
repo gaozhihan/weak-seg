@@ -65,7 +65,8 @@ elif args.model == 'my_resnet':
     net._modules.get('layer4').register_forward_hook(hook_feature)
 
 criterion1 = nn.MultiLabelSoftMarginLoss()
-criterion2 = common_function.MapCrossEntropyLoss()
+# criterion2 = common_function.MapCrossEntropyLoss()
+criterion2 = common_function.MapWeightedCrossEntropyLoss()
 print(args)
 
 if flag_use_cuda:
@@ -115,11 +116,12 @@ for epoch in range(args.epochs):
                     features_blob.clear()
 
                 mask_s_gt_np = np.zeros(mask.shape,dtype=np.float32)
+                confidence = np.zeros(mask.shape[0])
                 for i in range(labels.shape[0]):
                     if flag_use_cuda:
-                        mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(labels[i,:].cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().cpu().numpy(), args.preds_only)
+                        mask_s_gt_np[i,:,:,:], mask_pred, confidence[i] = crf.runCRF(labels[i,:].cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().cpu().numpy(), args.preds_only)
                     else:
-                        mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(labels[i,:].numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().numpy(), args.preds_only)
+                        mask_s_gt_np[i,:,:,:], mask_pred, confidence[i] = crf.runCRF(labels[i,:].numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().numpy(), args.preds_only)
 
                     iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pred)
                     # obj = CRF_lei.CAM_iou(labels[i,:].numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().numpy())
@@ -127,7 +129,7 @@ for epoch in range(args.epochs):
 
                 mask_s_gt = torch.from_numpy(mask_s_gt_np)
                 loss1 = criterion1(outputs, labels)
-                loss2 = criterion2(mask, mask_s_gt)
+                loss2 = criterion2(mask, mask_s_gt, confidence)
                 loss1.backward()
                 loss2.backward()
                 optimizer.step()
@@ -165,11 +167,12 @@ for epoch in range(args.epochs):
                         features_blob.clear()
 
                     mask_s_gt_np = np.zeros(mask.shape,dtype=np.float32)
+                    confidence = np.zeros(mask.shape[0])
                     for i in range(labels.shape[0]):
                         if flag_use_cuda:
-                            mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(labels[i,:].cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().cpu().numpy(), args.preds_only)
+                            mask_s_gt_np[i,:,:,:], mask_pred, confidence[i] = crf.runCRF(labels[i,:].cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().cpu().numpy(), args.preds_only)
                         else:
-                            mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(labels[i,:].numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().numpy(), args.preds_only)
+                            mask_s_gt_np[i,:,:,:], mask_pred, confidence[i] = crf.runCRF(labels[i,:].numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().numpy(), args.preds_only)
 
                         iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pred)
                         # obj = CRF_lei.CAM_iou(labels[i,:].numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().numpy())
@@ -177,7 +180,7 @@ for epoch in range(args.epochs):
 
                 mask_s_gt = torch.from_numpy(mask_s_gt_np)
                 loss1 = criterion1(outputs, labels)
-                loss2 = criterion2(mask, mask_s_gt)
+                loss2 = criterion2(mask, mask_s_gt, confidence)
                 eval_loss1 += loss1.item() * inputs.size(0)
                 eval_loss2 += loss2.item() * inputs.size(0)
 
