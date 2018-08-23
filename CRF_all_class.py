@@ -19,7 +19,7 @@ from scipy.signal import medfilt2d
 
 class CRF():
     def __init__(self, args):
-        self.flag_visual = False
+        self.flag_visual = True
         self.iters = [0, 1, 3, 10, 15, 25]
         self.H , self.W = args.input_size
         self.N_labels = args.num_classes
@@ -187,6 +187,11 @@ class CRF():
         hist_whole = cv2.calcHist([img], self.color_channels, None, self.color_his_size, self.color_ranges)
         hist_whole_no_zeros = hist_whole.copy() # for division
         hist_whole_no_zeros[hist_whole_no_zeros==0] = 1
+
+        foreground_sure_mask = np.full((img.shape[0], img.shape[1]), True, dtype=bool)
+        if class_cur[0] == 0:
+            foreground_sure_mask[np.max(mask_cur[1:,:,:],axis=0)>0.5] = False
+
         for i_idx, i_class in np.ndenumerate(class_cur):
             if i_class == 0:
                 cur_region_mask = (mask[i_class,:,:]>0.1).astype(np.uint8)
@@ -212,6 +217,7 @@ class CRF():
 
             # process (refine) the mask e.g. mark selected color as confident to be this class
             if i_class == 0:
+                select_pix_idx = np.logical_and(select_pix_idx,foreground_sure_mask)
                 mask[i_class,select_pix_idx] = 0.65 #(0.85 - (np.sum(mask_cur, axis=0) - mask_cur[i_idx,:,:])).squeeze()[select_pix_idx] # confident this class
             else:
                 mask[i_class,select_pix_idx] = 0.85
@@ -230,11 +236,13 @@ class CRF():
         score_color = np.zeros(self.num_maps)
         score_over_map = np.zeros(self.num_maps)
         score_map_iou = np.zeros(self.num_maps) # use to weight the confidence
+        raw_map = np.argmax(mask, axis=0)
 
         # generate whole map sum score for use
         score_whole = np.zeros(num_class_cur)
         for i_idx, i_class in np.ndenumerate(class_cur):
             score_whole[i_idx] = mask[i_class,:,:].sum()
+
         score_whole[score_whole==0] = 1 # just in case
 
 
@@ -247,7 +255,7 @@ class CRF():
                 idx_temp = self.map[i_map,:,:] == i_class
                 # calculate score based on color histogram separation
                 mask_temp[idx_temp] = 1
-                if mask_temp.sum() < 50: # based on my observation
+                if mask_temp.sum() < 100: # based on my observation
                     hist_cur[i_idx[0], :,:,:] = self.num_pixel
                 else:
                     hist_cur[i_idx[0], :,:,:] = cv2.calcHist([image], self.color_channels, mask_temp, self.color_his_size, self.color_ranges)
