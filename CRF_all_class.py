@@ -19,7 +19,7 @@ from scipy.signal import medfilt2d
 
 class CRF():
     def __init__(self, args):
-        self.flag_visual = False
+        self.flag_visual = True
         self.iters = [0, 1, 3, 10, 15, 25]
         self.H , self.W = args.input_size
         self.N_labels = args.num_classes
@@ -31,7 +31,7 @@ class CRF():
         self.flag_pre_method = 1
 
         # parameters for pick_mask (based on color hist and overlap with mask)
-        self.color_his_size = [8, 8, 8]
+        self.color_his_size = [4, 4, 4]
         self.num_color_bins = self.color_his_size[0]*self.color_his_size[1]*self.color_his_size[2]
         self.color_channels = [0, 1, 2]
         self.color_ranges = [0, 255, 0, 255, 0, 255]
@@ -187,7 +187,11 @@ class CRF():
         hist_whole = cv2.calcHist([img], self.color_channels, None, self.color_his_size, self.color_ranges)
         hist_whole_no_zeros = hist_whole.copy() # for division
         hist_whole_no_zeros[hist_whole_no_zeros==0] = 1
+
         for i_idx, i_class in np.ndenumerate(class_cur):
+            idx_except = np.ones(num_class_cur,dtype=np.int)
+            idx_except[i_idx] = 0
+            mask_max_except = np.max(mask_cur[idx_except,:,:],axis=0)
             if i_class == 0:
                 cur_region_mask = (mask[i_class,:,:]>0.1).astype(np.uint8)
             else:
@@ -211,12 +215,12 @@ class CRF():
                 select_pix_idx = np.logical_or(select_pix_idx, temp)
 
             # process (refine) the mask e.g. mark selected color as confident to be this class
+            select_pix_idx = np.logical_and(select_pix_idx,mask_max_except<0.4)
             if i_class == 0:
                 mask[i_class,select_pix_idx] = 0.65 #(0.85 - (np.sum(mask_cur, axis=0) - mask_cur[i_idx,:,:])).squeeze()[select_pix_idx] # confident this class
             else:
                 mask[i_class,select_pix_idx] = 0.85
 
-        # CRF again?
         return mask
 
 
@@ -230,40 +234,46 @@ class CRF():
         score_color = np.zeros(self.num_maps)
         score_over_map = np.zeros(self.num_maps)
         score_map_iou = np.zeros(self.num_maps) # use to weight the confidence
+        raw_map = np.argmax(mask, axis=0)
 
         # generate whole map sum score for use
         score_whole = np.zeros(num_class_cur)
         for i_idx, i_class in np.ndenumerate(class_cur):
-            score_whole[i_idx] = mask[i_class,:,:].sum()
+            # score_whole[i_idx] = mask[i_class,:,:].sum()
+            score_whole[i_idx] = (raw_map == i_class).sum()
+
         score_whole[score_whole==0] = 1 # just in case
 
 
         for i_map in range(self.num_maps):
             hist_cur = np.zeros([num_class_cur, self.color_his_size[0], self.color_his_size[1], self.color_his_size[2]])
-            temp_map_overlap = np.zeros(num_class_cur)
+            temp_map_overlap_soft = np.zeros(num_class_cur)
+            temp_map_overlap_hard = np.zeros(num_class_cur)
             pre_map_whole = np.zeros(num_class_cur)
             for i_idx, i_class in np.ndenumerate(class_cur):
                 mask_temp = np.zeros([self.H, self.W],dtype = np.uint8)
                 idx_temp = self.map[i_map,:,:] == i_class
                 # calculate score based on color histogram separation
                 mask_temp[idx_temp] = 1
-                if mask_temp.sum() < 50: # based on my observation
+                if mask_temp.sum() < 100: # based on my observation
                     hist_cur[i_idx[0], :,:,:] = self.num_pixel
                 else:
                     hist_cur[i_idx[0], :,:,:] = cv2.calcHist([image], self.color_channels, mask_temp, self.color_his_size, self.color_ranges)
 
                 # calculate score based on consisitencey (overlap with raw mask)
-                temp_map_overlap[i_idx] = np.multiply(mask_temp, mask_weight[i_class,:,:]).sum()
+                temp_map_overlap_soft[i_idx] = np.multiply(mask_temp, mask_weight[i_class,:,:]).sum()
+                temp_map_overlap_hard[i_idx] = (np.multiply(mask_temp, raw_map == i_class)).sum()
                 pre_map_whole[i_idx] = mask_temp.sum()
+
 
             # summary
             hist_cur = hist_cur.reshape([len(class_cur), -1])
             hist_cur = np.sort(hist_cur, axis=0)
             score_color[i_map] += hist_cur[:-1,:].sum()
-            score_over_map[i_map] += temp_map_overlap.sum()
-            score_map_iou[i_map] = (temp_map_overlap/(score_whole+pre_map_whole-temp_map_overlap)).mean() # like iou
+            score_over_map[i_map] += temp_map_overlap_soft.sum()
+            score_map_iou[i_map] = (temp_map_overlap_hard/(score_whole+pre_map_whole-temp_map_overlap_hard)).mean() # like iou
 
-        # print(score_map_violate)
+        print(score_map_iou)
         # print(score_color)
         best_map_idx = np.argmax(score_over_map - score_color)
         return best_map_idx, score_map_iou[best_map_idx], score_color[best_map_idx]
