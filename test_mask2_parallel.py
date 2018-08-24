@@ -18,7 +18,7 @@ from joblib import Parallel, delayed
 
 args = get_args()
 args.need_mask_flag = True
-#args.input_size = [256,256]
+args.test_flag = True
 
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
@@ -63,7 +63,7 @@ elif args.model == 'resnet':
 elif args.model == 'my_resnet':
     model_path = 'models/top_val_acc_my_resnet_2_23_CPU.pth'
     net = my_resnet2.resnet50(pretrained=False, num_classes=args.num_classes)
-    net.load_state_dict(torch.load(model_path), strict = False)
+    net.load_state_dict(torch.load(model_path), strict = True)
     feature_blob = []
     params = list(net.parameters())
     fc_weight = params[-4] # for my_resnet, it's fc_weight = params[-2], for my_resnet2, it's fc_weight = params[-4]
@@ -89,17 +89,14 @@ if flag_use_cuda:
 dataloader = VOCData(args)
 crf = CRF_all_class_paral.CRF(args)
 
-
-optimizer = optim.Adam(net.parameters(), lr=args.lr)  # L2 penalty: norm weight_decay=0.0001
-main_scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=args.step_size)
-
 max_acc = 0
 max_recall = 0
 max_iou = 0
 iou_obj = common_function.iou_calculator()
+net.train(False)
 
 with Parallel(n_jobs=num_cores) as pal_worker:
-    for epoch in range(args.epochs):
+    with torch.no_grad():
         train_loss1 = 0.0
         eval_loss1 = 0.0
         TP_train1 = 0; TP_eval1 = 0
@@ -115,7 +112,6 @@ with Parallel(n_jobs=num_cores) as pal_worker:
         train_seg_loss = 0.0
         eval_seg_loss = 0.0
 
-        main_scheduler.step()
         start = time.time()
         for phase in ['train', 'val']:
             if phase == 'train':
@@ -125,8 +121,6 @@ with Parallel(n_jobs=num_cores) as pal_worker:
                     inputs, labels, mask_gt, img = data
                     if flag_use_cuda:
                         inputs = inputs.cuda(); labels = labels.cuda()
-
-                    optimizer.zero_grad()
 
                     if args.model == 'SEC':
                         mask, outputs = net(inputs)
@@ -142,7 +136,6 @@ with Parallel(n_jobs=num_cores) as pal_worker:
                         mask = cam_mask # or mask = outputs_seg
 
                     mask_s_gt_np = np.zeros(mask.shape,dtype=np.float32)
-                    confidence = np.zeros(mask.shape[0])
                     if flag_use_cuda:
                         temp = pal_worker(delayed(crf.runCRF)(labels[i,:].cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds1[i,:].detach().cpu().numpy(), args.preds_only) for i in range(labels.shape[0]))
                     else:
@@ -150,16 +143,11 @@ with Parallel(n_jobs=num_cores) as pal_worker:
 
                     for i in range(labels.shape[0]):
                         mask_s_gt_np[i,:,:,:] = temp[i][0]
-                        confidence[i] = temp[i][2]
                         iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), temp[i][1])
 
                     mask_s_gt = torch.from_numpy(mask_s_gt_np)
                     loss1 = criterion1(outputs1.squeeze(), labels)
                     loss2 = criterion1(outputs2.squeeze(), labels)
-                    loss_seg = criterion2(mask, mask_s_gt, confidence)
-
-                    (loss1+loss2+loss_seg.cuda()).backward()  # independent backward would cause Error: Trying to backward through the graph a second time ...
-                    optimizer.step()
 
                     train_loss1 += loss1.item() * inputs.size(0)
                     TP_train1 += torch.sum(preds1.long() == (labels*2-1).data.long())
@@ -171,8 +159,6 @@ with Parallel(n_jobs=num_cores) as pal_worker:
                     T_train2 += torch.sum(labels.data.long()==1)
                     P_train2 += torch.sum(preds2.long()==1)
 
-                    train_seg_loss += loss_seg.item() * inputs.size(0)
-
                 temp_iou = iou_obj.cal_cur_iou()
                 print('current train iou is :')
                 print(temp_iou, temp_iou.mean())
@@ -180,29 +166,26 @@ with Parallel(n_jobs=num_cores) as pal_worker:
 
 
             else:  # evaluation
-                net.train(False)
                 start = time.time()
                 for data in dataloader.dataloaders["val"]:
                     inputs, labels, mask_gt, img = data
                     if flag_use_cuda:
                         inputs = inputs.cuda(); labels = labels.cuda()
 
-                    with torch.no_grad():
-                        if args.model == 'SEC':
-                            mask, outputs = net(inputs)
-                            preds = outputs.squeeze().data>args.threshold
-                        elif args.model == 'resnet' or args.model == 'my_resnet':
-                            outputs1, outputs2, outputs_seg = net(inputs)
-                            outputs1 = torch.sigmoid(outputs1)
-                            outputs2 = torch.sigmoid(outputs2)
-                            preds1 = outputs1.squeeze().data>args.threshold
-                            preds2 = outputs2.squeeze().data>args.threshold
-                            cam_mask = common_function.cam_extract(feature_blob[0], fc_weight, args.relu_mask)
-                            feature_blob.clear()
-                            mask = cam_mask # or mask = outputs_seg
+                    if args.model == 'SEC':
+                        mask, outputs = net(inputs)
+                        preds = outputs.squeeze().data>args.threshold
+                    elif args.model == 'resnet' or args.model == 'my_resnet':
+                        outputs1, outputs2, outputs_seg = net(inputs)
+                        outputs1 = torch.sigmoid(outputs1)
+                        outputs2 = torch.sigmoid(outputs2)
+                        preds1 = outputs1.squeeze().data>args.threshold
+                        preds2 = outputs2.squeeze().data>args.threshold
+                        cam_mask = common_function.cam_extract(feature_blob[0], fc_weight, args.relu_mask)
+                        feature_blob.clear()
+                        mask = cam_mask # or mask = outputs_seg
 
                         mask_s_gt_np = np.zeros(mask.shape,dtype=np.float32)
-                        confidence = np.zeros(mask.shape[0])
                         if flag_use_cuda:
                             temp = pal_worker(delayed(crf.runCRF)(labels[i,:].cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds1[i,:].detach().cpu().numpy(), args.preds_only) for i in range(labels.shape[0]))
                         else:
@@ -210,13 +193,11 @@ with Parallel(n_jobs=num_cores) as pal_worker:
 
                         for i in range(labels.shape[0]):
                             mask_s_gt_np[i,:,:,:] = temp[i][0]
-                            confidence[i] = temp[i][2]
                             iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), temp[i][1])
 
                     mask_s_gt = torch.from_numpy(mask_s_gt_np)
                     loss1 = criterion1(outputs1.squeeze(), labels)
                     loss2 = criterion1(outputs2.squeeze(), labels)
-                    loss_seg = criterion2(mask, mask_s_gt, confidence)
 
                     loss1 = criterion1(outputs1.squeeze(), labels)
                     eval_loss1 += loss1.item() * inputs.size(0)
@@ -230,15 +211,11 @@ with Parallel(n_jobs=num_cores) as pal_worker:
                     T_eval2 += torch.sum(labels.data.long()==1)
                     P_eval2 += torch.sum(preds2.long()==1)
 
-                    eval_seg_loss += loss_seg.item() * inputs.size(0)
-
         time_took = time.time() - start
         epoch_train_loss1 = train_loss1 / dataloader.dataset_sizes["train"]
         epoch_eval_loss1 = eval_loss1 / dataloader.dataset_sizes["val"]
         epoch_train_loss2 = train_loss2 / dataloader.dataset_sizes["train"]
         epoch_eval_loss2 = eval_loss2 / dataloader.dataset_sizes["val"]
-        epoch_train_seg_loss = train_seg_loss / dataloader.dataset_sizes["train"]
-        epoch_eval_seg_loss = eval_seg_loss / dataloader.dataset_sizes["val"]
 
         if flag_use_cuda:
             recall_train1 = TP_train1.cpu().numpy() / T_train1.cpu().numpy() if T_train1!=0 else 0
@@ -263,29 +240,13 @@ with Parallel(n_jobs=num_cores) as pal_worker:
             recall_eval2 = TP_eval2.numpy() / T_eval2.numpy() if T_eval2!=0 else 0
             acc_eval2 = TP_eval2.numpy() / P_eval2.numpy() if P_eval2!=0 else 0
 
-        if acc_eval1 > max_acc:
-            print('save model ' + args.model + ' with val acc: {}'.format(acc_eval1))
-            torch.save(net.state_dict(), './models/top_val_acc_'+ args.model + '_2.pth')
-            max_acc = acc_eval1
-
-        if recall_eval1 > max_recall:
-            print('save model ' + args.model + ' with val recall: {}'.format(recall_eval1))
-            torch.save(net.state_dict(), './models/top_val_rec_'+ args.model + '_2.pth')
-            max_recall = recall_eval1
-
         temp_iou = iou_obj.cal_cur_iou()
         cur_eval_iou = temp_iou.mean()
         print('current eval iou is :')
         print(temp_iou, temp_iou.mean())
         iou_obj.iou_clear()
 
-        if cur_eval_iou > max_iou:
-            print('save model ' + args.model + ' with val mean iou: {}'.format(cur_eval_iou))
-            torch.save(net.state_dict(), './models/M_top_val_iou_'+ args.model + '2.pth')
-            max_iou = cur_eval_iou
-
-        print('1 Epoch: {} took {:.2f}, Train Loss: {:.4f}, Acc: {:.4f}, Recall: {:.4f}; eval loss: {:.4f}, Acc: {:.4f}, Recall: {:.4f}'.format(epoch, time_took, epoch_train_loss1, acc_train1, recall_train1, epoch_eval_loss1, acc_eval1, recall_eval1))
-        print('2 Epoch: {} took {:.2f}, Train Loss: {:.4f}, Acc: {:.4f}, Recall: {:.4f}; eval loss: {:.4f}, Acc: {:.4f}, Recall: {:.4f}'.format(epoch, time_took, epoch_train_loss2, acc_train2, recall_train2, epoch_eval_loss2, acc_eval2, recall_eval2))
-        print('Train segmentation loss is : {:.6f}, eval segmentation loss is'.format(epoch_train_seg_loss, epoch_eval_seg_loss))
+        print('1 It took {:.2f}, Train Loss: {:.4f}, Acc: {:.4f}, Recall: {:.4f}; eval loss: {:.4f}, Acc: {:.4f}, Recall: {:.4f}'.format(time_took, epoch_train_loss1, acc_train1, recall_train1, epoch_eval_loss1, acc_eval1, recall_eval1))
+        print('2 It took {:.2f}, Train Loss: {:.4f}, Acc: {:.4f}, Recall: {:.4f}; eval loss: {:.4f}, Acc: {:.4f}, Recall: {:.4f}'.format(time_took, epoch_train_loss2, acc_train2, recall_train2, epoch_eval_loss2, acc_eval2, recall_eval2))
 
 print("done")
