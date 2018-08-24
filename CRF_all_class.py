@@ -195,7 +195,7 @@ class CRF():
             if i_class == 0:
                 cur_region_mask = (mask[i_class,:,:]>0.1).astype(np.uint8)
             else:
-                cur_region_mask = (mask[i_class,:,:]>0.4).astype(np.uint8)
+                cur_region_mask = (mask[i_class,:,:]>0.3).astype(np.uint8)
             hist_cur[i_idx,:,:,:] = cv2.calcHist([img], self.color_channels, cur_region_mask, self.color_his_size, self.color_ranges)
             hist_score[i_idx,:,:,:] = np.minimum(hist_cur[i_idx,:,:,:],hist_whole)/hist_whole_no_zeros
 
@@ -215,7 +215,7 @@ class CRF():
                 select_pix_idx = np.logical_or(select_pix_idx, temp)
 
             # process (refine) the mask e.g. mark selected color as confident to be this class
-            select_pix_idx = np.logical_and(select_pix_idx,mask_max_except<0.4)
+            select_pix_idx = np.logical_and(select_pix_idx,mask_max_except<0.2)
             if i_class == 0:
                 mask[i_class,select_pix_idx] = 0.65 #(0.85 - (np.sum(mask_cur, axis=0) - mask_cur[i_idx,:,:])).squeeze()[select_pix_idx] # confident this class
             else:
@@ -273,9 +273,14 @@ class CRF():
             score_over_map[i_map] += temp_map_overlap_soft.sum()
             score_map_iou[i_map] = (temp_map_overlap_hard/(score_whole+pre_map_whole-temp_map_overlap_hard)).mean() # like iou
 
-        print(score_map_iou)
+        iou_penalty = np.maximum(0.5 - score_map_iou, 0) * 100000
+        score_overall = score_over_map - score_color - iou_penalty
+        best_map_idx = np.argmax(score_overall)
         # print(score_color)
-        best_map_idx = np.argmax(score_over_map - score_color)
+        # print(score_map_iou)
+        # print(score_overall - score_overall.min())
+        # print(iou_penalty)
+
         return best_map_idx, score_map_iou[best_map_idx], score_color[best_map_idx]
 
 

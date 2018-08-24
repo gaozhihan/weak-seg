@@ -116,9 +116,9 @@ with torch.no_grad():
                         crf.set_shape(mask_gt[i,:,:].numpy())
 
                     if flag_use_cuda:
-                        mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(labels[i,:].cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().cpu().numpy(), args.preds_only)
+                        mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(preds[i,:].cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().cpu().numpy(), args.preds_only)
                     else:
-                        mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(labels[i,:].numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().numpy(), args.preds_only)
+                        mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(preds[i,:].numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().numpy(), args.preds_only)
 
                     iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pred)
 
@@ -158,9 +158,9 @@ with torch.no_grad():
                 mask_s_gt_np = np.zeros(mask.shape,dtype=np.float32)
                 for i in range(labels.shape[0]):
                     if flag_use_cuda:
-                        mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(labels[i,:].cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().cpu().numpy(), args.preds_only)
+                        mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(preds[i,:].cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().cpu().numpy(), args.preds_only)
                     else:
-                        mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(labels[i,:].numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().numpy(), args.preds_only)
+                        mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(preds[i,:].numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().numpy(), args.preds_only)
 
                     iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pred)
 
