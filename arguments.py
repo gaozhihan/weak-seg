@@ -21,9 +21,9 @@ def get_args():
                         help='whether apply relu for not')
     parser.add_argument('--preds_only', action='store_true', default=True,
                         help='whether only use')
-    parser.add_argument('--input_size', nargs='+', type=int, default=[224,224],
+    parser.add_argument('--input_size', nargs='+', type=int, default=[256,256],
                         help='size of training images [224,224]|[321,321]')
-    parser.add_argument('--output_size', nargs='+', type=int, default=[29,29],  # 32 for 256 input; 28 for 224 input
+    parser.add_argument('--output_size', nargs='+', type=int, default=[32,32],  # 32 for 256 input; 28 for 224 input
                         help='size of output mask')
     parser.add_argument('--step_size', type=int, default=20,
                         help='optimizer scheduler step size')
