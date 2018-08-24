@@ -42,7 +42,7 @@ if args.model == 'SEC':
     net.load_state_dict(torch.load(model_path), strict = False)
 
 elif args.model == 'resnet':
-    model_path = 'models/resnet50_feat.pth'
+    model_path = 'models/top_val_rec_my_resnet_23.pth'   # 'models/resnet50_feat.pth'
     net = resnet.resnet50(pretrained=False, num_classes=args.num_classes)
     net.load_state_dict(torch.load(model_path), strict = False)
 
@@ -192,12 +192,12 @@ for epoch in range(args.epochs):
 
     if acc_eval1 > max_acc:
         print('save model ' + args.model + ' with val acc: {}'.format(acc_eval1))
-        torch.save(net.state_dict(), './models/top_val_acc_'+ args.model + '_2.pth')
+        torch.save(net.state_dict(), './models/top_val_acc_'+ args.model + '_2_23.pth')
         max_acc = acc_eval1
 
     if recall_eval1 > max_recall:
         print('save model ' + args.model + ' with val recall: {}'.format(recall_eval1))
-        torch.save(net.state_dict(), './models/top_val_rec_'+ args.model + '_2.pth')
+        torch.save(net.state_dict(), './models/top_val_rec_'+ args.model + '_2_23.pth')
         max_recall = recall_eval1
 
     print('1 Epoch: {} took {:.2f}, Train Loss: {:.4f}, Acc: {:.4f}, Recall: {:.4f}; eval loss: {:.4f}, Acc: {:.4f}, Recall: {:.4f}'.format(epoch, time_took, epoch_train_loss1, acc_train1, recall_train1, epoch_eval_loss1, acc_eval1, recall_eval1))
