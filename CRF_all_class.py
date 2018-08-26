@@ -314,6 +314,17 @@ class CRF():
         mask_res = np.zeros((self.N_labels, self.H, self.W))
         # class_cur = np.nonzero(preds)[0]
         class_cur = np.nonzero(labels)[0]
+
+        if len(class_cur) == 1:
+            pre_mask = np.full((self.H, self.W), class_cur[0], dtype=np.float64)
+            confidence = 0.0
+
+            if self.train_flag:
+                return self.map2mask(mask_org, class_cur, pre_mask), pre_mask, confidence
+            else:
+                return self.map2mask(mask_org, class_cur, pre_mask), pre_mask
+
+
         if preds_only:
             mask = self.spacial_norm_preds_only(mask_org, class_cur)
             # mask = self.softmax_norm_preds_only(mask_org, class_cur)
