@@ -119,9 +119,9 @@ with Parallel(n_jobs=num_cores) as pal_worker:
                     mask_s_gt_np = np.zeros(mask.shape,dtype=np.float32)
 
                     if flag_use_cuda:
-                        temp = pal_worker(delayed(crf.runCRF)(labels[i,:].cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().cpu().numpy(), args.preds_only) for i in range(labels.shape[0]))
+                        temp = pal_worker(delayed(crf.runCRF)(preds[i,:].detach().cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().cpu().numpy(), args.preds_only) for i in range(labels.shape[0]))
                     else:
-                        temp = pal_worker(delayed(crf.runCRF)(labels[i,:].numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().numpy(), args.preds_only) for i in range(labels.shape[0]))
+                        temp = pal_worker(delayed(crf.runCRF)(preds[i,:].detach().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().numpy(), args.preds_only) for i in range(labels.shape[0]))
 
                     for i in range(labels.shape[0]):
                         mask_s_gt_np[i,:,:,:] = temp[i][0]
@@ -162,9 +162,9 @@ with Parallel(n_jobs=num_cores) as pal_worker:
 
                     mask_s_gt_np = np.zeros(mask.shape,dtype=np.float32)
                     if flag_use_cuda:
-                        temp = pal_worker(delayed(crf.runCRF)(labels[i,:].cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().cpu().numpy(), args.preds_only) for i in range(labels.shape[0]))
+                        temp = pal_worker(delayed(crf.runCRF)(preds[i,:].detach().cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().cpu().numpy(), args.preds_only) for i in range(labels.shape[0]))
                     else:
-                        temp = pal_worker(delayed(crf.runCRF)(labels[i,:].numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().numpy(), args.preds_only) for i in range(labels.shape[0]))
+                        temp = pal_worker(delayed(crf.runCRF)(preds[i,:].detach().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().numpy(), args.preds_only) for i in range(labels.shape[0]))
 
                     for i in range(labels.shape[0]):
                         mask_s_gt_np[i,:,:,:] = temp[i][0]

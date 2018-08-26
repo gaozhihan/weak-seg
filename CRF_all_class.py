@@ -31,7 +31,7 @@ class CRF():
         self.flag_pre_method = 1
 
         # parameters for pick_mask (based on color hist and overlap with mask)
-        self.color_his_size = [2, 2, 2]
+        self.color_his_size = [4, 4, 4]
         self.num_color_bins = self.color_his_size[0]*self.color_his_size[1]*self.color_his_size[2]
         self.color_channels = [0, 1, 2]
         self.color_ranges = [0, 255, 0, 255, 0, 255]
