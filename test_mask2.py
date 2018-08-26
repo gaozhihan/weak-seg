@@ -128,7 +128,7 @@ with torch.no_grad():
                     preds2 = outputs2.squeeze().data>args.threshold
                     cam_mask = common_function.cam_extract(feature_blob[0], fc_weight, args.relu_mask)
                     feature_blob.clear()
-                    mask = cam_mask # or mask = outputs_seg
+                    mask = outputs_seg # or mask = outputs_seg
 
                 mask_s_gt_np = np.zeros(mask.shape,dtype=np.float32)
                 for i in range(labels.shape[0]):

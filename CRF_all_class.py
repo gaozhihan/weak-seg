@@ -31,7 +31,7 @@ class CRF():
         self.flag_pre_method = 1
 
         # parameters for pick_mask (based on color hist and overlap with mask)
-        self.color_his_size = [4, 4, 4]
+        self.color_his_size = [2, 2, 2]
         self.num_color_bins = self.color_his_size[0]*self.color_his_size[1]*self.color_his_size[2]
         self.color_channels = [0, 1, 2]
         self.color_ranges = [0, 255, 0, 255, 0, 255]
@@ -189,8 +189,8 @@ class CRF():
         hist_whole_no_zeros[hist_whole_no_zeros==0] = 1
 
         for i_idx, i_class in np.ndenumerate(class_cur):
-            idx_except = np.ones(num_class_cur,dtype=np.int)
-            idx_except[i_idx] = 0
+            idx_except = np.ones(num_class_cur,dtype=np.bool)
+            idx_except[i_idx] = False
             mask_max_except = np.max(mask_cur[idx_except,:,:],axis=0)
             if i_class == 0:
                 cur_region_mask = (mask[i_class,:,:]>0.1).astype(np.uint8)
@@ -215,7 +215,7 @@ class CRF():
                 select_pix_idx = np.logical_or(select_pix_idx, temp)
 
             # process (refine) the mask e.g. mark selected color as confident to be this class
-            select_pix_idx = np.logical_and(select_pix_idx,mask_max_except<0.2)
+            select_pix_idx = np.logical_and(select_pix_idx,mask_max_except<0.3)
             if i_class == 0:
                 mask[i_class,select_pix_idx] = 0.65 #(0.85 - (np.sum(mask_cur, axis=0) - mask_cur[i_idx,:,:])).squeeze()[select_pix_idx] # confident this class
             else:
