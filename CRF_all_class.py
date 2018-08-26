@@ -31,7 +31,7 @@ class CRF():
         self.flag_pre_method = 1
 
         # parameters for pick_mask (based on color hist and overlap with mask)
-        self.color_his_size = [2, 2, 2]
+        self.color_his_size = [4, 4, 4]
         self.num_color_bins = self.color_his_size[0]*self.color_his_size[1]*self.color_his_size[2]
         self.color_channels = [0, 1, 2]
         self.color_ranges = [0, 255, 0, 255, 0, 255]
@@ -195,7 +195,7 @@ class CRF():
             if i_class == 0:
                 cur_region_mask = (mask[i_class,:,:]>0.1).astype(np.uint8)
             else:
-                cur_region_mask = (mask[i_class,:,:]>0.3).astype(np.uint8)
+                cur_region_mask = (mask[i_class,:,:]>0.2).astype(np.uint8)
             hist_cur[i_idx,:,:,:] = cv2.calcHist([img], self.color_channels, cur_region_mask, self.color_his_size, self.color_ranges)
             hist_score[i_idx,:,:,:] = np.minimum(hist_cur[i_idx,:,:,:],hist_whole)/hist_whole_no_zeros
 
