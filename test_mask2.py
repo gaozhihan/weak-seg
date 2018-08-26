@@ -60,7 +60,7 @@ elif args.model == 'resnet':
     net._modules.get('layer4').register_forward_hook(hook_feature)
 
 elif args.model == 'my_resnet':
-    model_path = 'models/top_val_acc_my_resnet_drp_28_no_spread_CPU.pth'
+    model_path = 'models/top_val_acc_my_resnet_2_23_CPU.pth'
     net = my_resnet2.resnet50(pretrained=False, num_classes=args.num_classes)
     net.load_state_dict(torch.load(model_path), strict = False)
     feature_blob = []
@@ -128,7 +128,7 @@ with torch.no_grad():
                     preds2 = outputs2.squeeze().data>args.threshold
                     cam_mask = common_function.cam_extract(feature_blob[0], fc_weight, args.relu_mask)
                     feature_blob.clear()
-                    mask = cam_mask # or mask = outputs_seg
+                    mask = outputs_seg # or mask = outputs_seg
 
                 mask_s_gt_np = np.zeros(mask.shape,dtype=np.float32)
                 for i in range(labels.shape[0]):
