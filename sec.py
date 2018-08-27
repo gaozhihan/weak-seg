@@ -50,11 +50,14 @@ class SEC_NN(nn.Module):
         )
 
         #self.mask2label_pool = nn.AdaptiveMaxPool2d(1)
-        self.mask2label_pool = nn.AdaptiveAvgPool2d(1)
+        # self.mask2label_pool = nn.AdaptiveAvgPool2d(1)
         #self.mask2label_pool = nn.Sequential(  # need to devide, since this is sum but not average
         #    nn.ReLU(),
         #    nn.LPPool2d(2, (29, 29), stride=(29, 29)))
         #self.mask2label_pool = common_function.weighted_pool(batch_size, num_classes, map_size, no_bg, flag_use_cuda)
+        self.mask2label_pool = nn.Sequential(
+            nn.MaxPool2d(kernel_size=5, stride=1),
+            nn.AdaptiveAvgPool2d(1))
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):

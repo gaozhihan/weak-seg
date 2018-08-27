@@ -18,6 +18,7 @@ import numpy as np
 args = get_args()
 args.need_mask_flag = True
 args.test_flag = True
+args.model = 'SEC'
 
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
@@ -41,7 +42,10 @@ if args.origin_size:
 
 if args.model == 'SEC':
     # model_url = 'https://download.pytorch.org/models/vgg16-397923af.pth' # 'vgg16'
-    model_path = 'models/0506/top_val_rec_SEC_05_CPU.pth' # 'vgg16'
+    # model_path = 'models/0506/top_val_rec_SEC_05_CPU.pth' # 'vgg16'
+    args.input_size = [321,321]
+    args.output_size = [41, 41]
+    model_path = 'models/sec_rename.pth' # 'vgg16'
     net = sec.SEC_NN(args.batch_size, args.num_classes, args.output_size, args.no_bg, flag_use_cuda)
     net.load_state_dict(torch.load(model_path), strict = True)
 
@@ -116,9 +120,9 @@ with torch.no_grad():
                         crf.set_shape(mask_gt[i,:,:].numpy())
 
                     if flag_use_cuda:
-                        mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(preds[i,:].cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().cpu().numpy(), args.preds_only)
+                        mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(labels[i,:].cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().cpu().numpy(), args.preds_only)
                     else:
-                        mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(preds[i,:].numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().numpy(), args.preds_only)
+                        mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(labels[i,:].numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().numpy(), args.preds_only)
 
                     iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pred)
 
