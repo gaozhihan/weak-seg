@@ -9,7 +9,7 @@ def get_args():
     parser.add_argument('--data_dir', type=str,
                         default="./data/VOC2012/VOC2012_SEG_AUG",
                         help='data loading directory')
-    parser.add_argument('--model', type=str, default="my_resnet",  # resnet SEC
+    parser.add_argument('--model', type=str, default="my_resnet3",  # resnet SEC
                         help='model type resnet|SEC')
     parser.add_argument('--loss', type=str, default="BCELoss",  # resnet SEC
                         help='model type MultiLabelSoftMarginLoss|BCELoss')

@@ -11,9 +11,10 @@ import sec
 import torchvision.models.resnet as resnet
 import my_resnet
 from arguments import get_args
+import my_resnet3
 
 args = get_args()
-#args.input_size = [256,256]
+# args.input_size = [300,300]
 
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
@@ -30,7 +31,7 @@ elif host_name == 'ram-lab':
         args.batch_size = 50
     elif args.model == 'resnet':
         args.batch_size = 100
-    elif args.model == 'my_resnet':
+    elif args.model == 'my_resnet' or args.model == 'my_resnet3':
         args.batch_size = 32
 
 
@@ -49,6 +50,11 @@ elif args.model == 'resnet':
 elif args.model == 'my_resnet':
     model_path = 'models/resnet50_feat.pth'
     net = my_resnet.resnet50(pretrained=False, num_classes=args.num_classes)
+    net.load_state_dict(torch.load(model_path), strict = False)
+
+elif args.model == 'my_resnet3':
+    model_path = 'models/resnet50_feat.pth'
+    net = my_resnet3.resnet50(pretrained=False, num_classes=args.num_classes)
     net.load_state_dict(torch.load(model_path), strict = False)
 
 
@@ -98,6 +104,11 @@ for epoch in range(args.epochs):
                     outputs = net(inputs)
                     outputs = torch.sigmoid(outputs)
                     preds = outputs.squeeze().data>args.threshold
+                elif args.model == 'my_resnet3':
+                    mask, outputs = net(inputs)
+                    outputs = torch.sigmoid(outputs)
+                    preds = outputs.squeeze().data>args.threshold
+
 
                 loss = criterion(outputs.squeeze(), labels)
                 loss.backward()
@@ -124,6 +135,10 @@ for epoch in range(args.epochs):
                         preds = outputs.squeeze().data>args.threshold
                     elif args.model == 'resnet' or args.model == 'my_resnet':
                         outputs = net(inputs)
+                        outputs = torch.sigmoid(outputs)
+                        preds = outputs.squeeze().data>args.threshold
+                    elif args.model == 'my_resnet3':
+                        mask, outputs = net(inputs)
                         outputs = torch.sigmoid(outputs)
                         preds = outputs.squeeze().data>args.threshold
 
