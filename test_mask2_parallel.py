@@ -19,6 +19,7 @@ from joblib import Parallel, delayed
 args = get_args()
 args.need_mask_flag = True
 args.test_flag = True
+args.model = 'my_resnet'
 
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
@@ -133,11 +134,11 @@ with Parallel(n_jobs=num_cores) as pal_worker:
                         preds2 = outputs2.squeeze().data>args.threshold
                         cam_mask = common_function.cam_extract(feature_blob[0], fc_weight, args.relu_mask)
                         feature_blob.clear()
-                        mask = cam_mask # or mask = outputs_seg
+                        mask = outputs_seg # mask = cam_mask or outputs_seg
 
                     mask_s_gt_np = np.zeros(mask.shape,dtype=np.float32)
                     if flag_use_cuda:
-                        temp = pal_worker(delayed(crf.runCRF)(labels[i,:].cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds2[i,:].detach().cpu().numpy(), args.preds_only) for i in range(labels.shape[0]))
+                        temp = pal_worker(delayed(crf.runCRF)(labels[i,:].cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().cpu().numpy(), img[i,:,:,:].numpy(), preds2[i,:].detach().cpu().numpy(), args.preds_only) for i in range(labels.shape[0]))
                     else:
                         temp = pal_worker(delayed(crf.runCRF)(labels[i,:].numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds2[i,:].detach().numpy(), args.preds_only) for i in range(labels.shape[0]))
 
@@ -183,11 +184,11 @@ with Parallel(n_jobs=num_cores) as pal_worker:
                         preds2 = outputs2.squeeze().data>args.threshold
                         cam_mask = common_function.cam_extract(feature_blob[0], fc_weight, args.relu_mask)
                         feature_blob.clear()
-                        mask = cam_mask # or mask = outputs_seg
+                        mask = outputs_seg # mask = cam_mask or outputs_seg
 
                         mask_s_gt_np = np.zeros(mask.shape,dtype=np.float32)
                         if flag_use_cuda:
-                            temp = pal_worker(delayed(crf.runCRF)(preds2[i,:].detach().cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds2[i,:].detach().cpu().numpy(), args.preds_only) for i in range(labels.shape[0]))
+                            temp = pal_worker(delayed(crf.runCRF)(preds2[i,:].detach().cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().cpu().numpy(), img[i,:,:,:].numpy(), preds2[i,:].detach().cpu().numpy(), args.preds_only) for i in range(labels.shape[0]))
                         else:
                             temp = pal_worker(delayed(crf.runCRF)(preds2[i,:].detach().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds2[i,:].detach().numpy(), args.preds_only) for i in range(labels.shape[0]))
 

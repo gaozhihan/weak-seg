@@ -21,6 +21,7 @@ from joblib import Parallel, delayed
 args = get_args()
 args.need_mask_flag = True
 args.test_flag = True
+args.model = 'SEC'
 
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
@@ -43,8 +44,9 @@ elif host_name == 'ram-lab':
         args.batch_size = 32
 
 if args.model == 'SEC':
-    # model_url = 'https://download.pytorch.org/models/vgg16-397923af.pth' # 'vgg16'
-    model_path = 'models/0506/top_val_rec_SEC_05_CPU.pth' # 'vgg16'
+    args.input_size = [321,321]
+    args.output_size = [41, 41]
+    model_path = 'models/sec_rename.pth' # 'vgg16'
     net = sec.SEC_NN(args.batch_size, args.num_classes, args.output_size, args.no_bg, flag_use_cuda)
     net.load_state_dict(torch.load(model_path), strict = True)
 
@@ -108,6 +110,7 @@ with Parallel(n_jobs=num_cores) as pal_worker:
 
                     if args.model == 'SEC':
                         mask, outputs = net(inputs)
+                        outputs = outputs.squeeze()
                         preds = outputs.data>args.threshold
                     elif args.model == 'resnet' or args.model == 'my_resnet':
                         outputs = net(inputs)
@@ -119,7 +122,7 @@ with Parallel(n_jobs=num_cores) as pal_worker:
                     mask_s_gt_np = np.zeros(mask.shape,dtype=np.float32)
 
                     if flag_use_cuda:
-                        temp = pal_worker(delayed(crf.runCRF)(preds[i,:].detach().cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().cpu().numpy(), args.preds_only) for i in range(labels.shape[0]))
+                        temp = pal_worker(delayed(crf.runCRF)(preds[i,:].detach().cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().cpu().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().cpu().numpy(), args.preds_only) for i in range(labels.shape[0]))
                     else:
                         temp = pal_worker(delayed(crf.runCRF)(preds[i,:].detach().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().numpy(), args.preds_only) for i in range(labels.shape[0]))
 
@@ -129,7 +132,10 @@ with Parallel(n_jobs=num_cores) as pal_worker:
 
                     mask_s_gt = torch.from_numpy(mask_s_gt_np)
                     loss1 = criterion1(outputs, labels)
-                    loss2 = criterion2(mask, mask_s_gt)
+                    if args.model == 'SEC':
+                        loss2 = criterion2(mask.cpu(), mask_s_gt)
+                    else:
+                        loss2 = criterion2(mask, mask_s_gt)
 
                     train_loss1 += loss1.item() * inputs.size(0)
                     train_loss2 += loss2.item() * inputs.size(0)
@@ -152,6 +158,7 @@ with Parallel(n_jobs=num_cores) as pal_worker:
 
                     if args.model == 'SEC':
                         mask, outputs = net(inputs)
+                        outputs = outputs.squeeze()
                         preds = outputs.data>args.threshold
                     elif args.model == 'resnet' or args.model == 'my_resnet':
                         outputs = net(inputs)
@@ -172,7 +179,11 @@ with Parallel(n_jobs=num_cores) as pal_worker:
 
                     mask_s_gt = torch.from_numpy(mask_s_gt_np)
                     loss1 = criterion1(outputs, labels)
-                    loss2 = criterion2(mask, mask_s_gt)
+                    if args.model == 'SEC':
+                        loss2 = criterion2(mask.cpu(), mask_s_gt)
+                    else:
+                        loss2 = criterion2(mask, mask_s_gt)
+
                     eval_loss1 += loss1.item() * inputs.size(0)
                     eval_loss2 += loss2.item() * inputs.size(0)
 
