@@ -1,14 +1,15 @@
 # use vgg16 weight
 import torch
 import torch.nn as nn
-import torchvision.models.vgg as vgg
+import vgg
 import torch.nn.functional as F
 
 class DecoupleNet(nn.Module):
 
     def __init__(self, num_classes):
         super(DecoupleNet, self).__init__()
-        vgg_cfg = [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'M', 512, 512, 512, 'M', 512, 512, 512]
+        # vgg_cfg = [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'M', 512, 512, 512, 'M', 512, 512, 512]
+        vgg_cfg = [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'M', 512, 512, 512, 'AM', 'A512', 'A512', 'A512']
         self.features = vgg.make_layers(vgg_cfg)
 
         # E-A
