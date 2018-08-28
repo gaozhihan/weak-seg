@@ -19,6 +19,7 @@ from joblib import Parallel, delayed
 args = get_args()
 args.need_mask_flag = True
 args.test_flag = True
+args.model = 'my_resnet'
 
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
@@ -33,7 +34,7 @@ elif host_name == 'sunting-ThinkCentre-M90':
     args.data_dir = '/home/sunting/Documents/data/VOC2012_SEG_AUG'
 elif host_name == 'ram-lab':
     args.data_dir = '/data_shared/Docker/ltai/ws/decoupled_net/data/VOC2012/VOC2012_SEG_AUG'
-    num_cores = 20
+    num_cores = 10
     if args.model == 'SEC':
         args.batch_size = 50
     elif args.model == 'resnet':
@@ -61,7 +62,7 @@ elif args.model == 'resnet':
     net._modules.get('layer4').register_forward_hook(hook_feature)
 
 elif args.model == 'my_resnet':
-    model_path = 'models/top_val_acc_my_resnet_2_23_CPU.pth'
+    model_path = 'models/top_val_acc_my_resnet_2_23.pth'
     net = my_resnet2.resnet50(pretrained=False, num_classes=args.num_classes)
     net.load_state_dict(torch.load(model_path), strict = True)
     feature_blob = []
@@ -133,13 +134,13 @@ with Parallel(n_jobs=num_cores) as pal_worker:
                         preds2 = outputs2.squeeze().data>args.threshold
                         cam_mask = common_function.cam_extract(feature_blob[0], fc_weight, args.relu_mask)
                         feature_blob.clear()
-                        mask = cam_mask # or mask = outputs_seg
+                        mask = outputs_seg # mask = cam_mask or outputs_seg
 
                     mask_s_gt_np = np.zeros(mask.shape,dtype=np.float32)
                     if flag_use_cuda:
-                        temp = pal_worker(delayed(crf.runCRF)(labels[i,:].cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds1[i,:].detach().cpu().numpy(), args.preds_only) for i in range(labels.shape[0]))
+                        temp = pal_worker(delayed(crf.runCRF)(labels[i,:].cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().cpu().numpy(), img[i,:,:,:].numpy(), preds2[i,:].detach().cpu().numpy(), args.preds_only) for i in range(labels.shape[0]))
                     else:
-                        temp = pal_worker(delayed(crf.runCRF)(labels[i,:].numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds1[i,:].detach().numpy(), args.preds_only) for i in range(labels.shape[0]))
+                        temp = pal_worker(delayed(crf.runCRF)(labels[i,:].numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds2[i,:].detach().numpy(), args.preds_only) for i in range(labels.shape[0]))
 
                     for i in range(labels.shape[0]):
                         mask_s_gt_np[i,:,:,:] = temp[i][0]
@@ -183,13 +184,13 @@ with Parallel(n_jobs=num_cores) as pal_worker:
                         preds2 = outputs2.squeeze().data>args.threshold
                         cam_mask = common_function.cam_extract(feature_blob[0], fc_weight, args.relu_mask)
                         feature_blob.clear()
-                        mask = cam_mask # or mask = outputs_seg
+                        mask = outputs_seg # mask = cam_mask or outputs_seg
 
                         mask_s_gt_np = np.zeros(mask.shape,dtype=np.float32)
                         if flag_use_cuda:
-                            temp = pal_worker(delayed(crf.runCRF)(labels[i,:].cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds1[i,:].detach().cpu().numpy(), args.preds_only) for i in range(labels.shape[0]))
+                            temp = pal_worker(delayed(crf.runCRF)(preds2[i,:].detach().cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().cpu().numpy(), img[i,:,:,:].numpy(), preds2[i,:].detach().cpu().numpy(), args.preds_only) for i in range(labels.shape[0]))
                         else:
-                            temp = pal_worker(delayed(crf.runCRF)(labels[i,:].numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds1[i,:].detach().numpy(), args.preds_only) for i in range(labels.shape[0]))
+                            temp = pal_worker(delayed(crf.runCRF)(preds2[i,:].detach().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds2[i,:].detach().numpy(), args.preds_only) for i in range(labels.shape[0]))
 
                         for i in range(labels.shape[0]):
                             mask_s_gt_np[i,:,:,:] = temp[i][0]

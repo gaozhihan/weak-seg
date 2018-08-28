@@ -33,7 +33,7 @@ elif host_name == 'sunting-ThinkCentre-M90':
     args.data_dir = '/home/sunting/Documents/data/VOC2012_SEG_AUG'
 elif host_name == 'ram-lab':
     args.data_dir = '/data_shared/Docker/ltai/ws/decoupled_net/data/VOC2012/VOC2012_SEG_AUG'
-    num_cores = 20
+    num_cores = 4
     if args.model == 'SEC':
         args.batch_size = 50
     elif args.model == 'resnet':
@@ -61,9 +61,9 @@ elif args.model == 'resnet':
     net._modules.get('layer4').register_forward_hook(hook_feature)
 
 elif args.model == 'my_resnet':
-    model_path = 'models/top_val_acc_my_resnet_2_23_CPU.pth'
+    model_path = 'models/top_val_acc_my_resnet_2_23.pth'
     net = my_resnet2.resnet50(pretrained=False, num_classes=args.num_classes)
-    net.load_state_dict(torch.load(model_path), strict = False)
+    net.load_state_dict(torch.load(model_path), strict = True)
     feature_blob = []
     params = list(net.parameters())
     fc_weight = params[-4] # for my_resnet, it's fc_weight = params[-2], for my_resnet2, it's fc_weight = params[-4]

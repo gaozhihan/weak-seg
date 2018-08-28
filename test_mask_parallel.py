@@ -22,6 +22,7 @@ import my_resnet3
 args = get_args()
 args.need_mask_flag = True
 args.test_flag = True
+args.model = 'SEC'
 
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
@@ -35,7 +36,7 @@ elif host_name == 'sunting-ThinkCenter-M90':
     num_cores = 2
 elif host_name == 'ram-lab':
     args.data_dir = '/data_shared/Docker/ltai/ws/decoupled_net/data/VOC2012/VOC2012_SEG_AUG'
-    num_cores = 20
+    num_cores = 10
     if args.model == 'SEC':
         args.batch_size = 50
     elif args.model == 'resnet':
@@ -44,8 +45,9 @@ elif host_name == 'ram-lab':
         args.batch_size = 32
 
 if args.model == 'SEC':
-    # model_url = 'https://download.pytorch.org/models/vgg16-397923af.pth' # 'vgg16'
-    model_path = 'models/0506/top_val_rec_SEC_05_CPU.pth' # 'vgg16'
+    args.input_size = [321,321]
+    args.output_size = [41, 41]
+    model_path = 'models/sec_rename.pth' # 'vgg16'
     net = sec.SEC_NN(args.batch_size, args.num_classes, args.output_size, args.no_bg, flag_use_cuda)
     net.load_state_dict(torch.load(model_path), strict = True)
 
@@ -61,7 +63,7 @@ elif args.model == 'resnet':
     net._modules.get('layer4').register_forward_hook(hook_feature)
 
 elif args.model == 'my_resnet':
-    model_path = 'models/top_val_acc_my_resnet_drp_CPU.pth'  # top_val_acc_my_resnet_drp_CPU
+    model_path = 'models/top_val_acc_my_resnet_25.pth'  # top_val_acc_my_resnet_drp_CPU
     net = my_resnet.resnet50(pretrained=False, num_classes=args.num_classes)
     net.load_state_dict(torch.load(model_path), strict = True)
     features_blob = []
@@ -109,6 +111,7 @@ with Parallel(n_jobs=num_cores) as pal_worker:
 
                     if args.model == 'SEC':
                         mask, outputs = net(inputs)
+                        outputs = outputs.squeeze()
                         preds = outputs.data>args.threshold
                     elif args.model == 'resnet' or args.model == 'my_resnet':
                         outputs = net(inputs)
@@ -120,9 +123,9 @@ with Parallel(n_jobs=num_cores) as pal_worker:
                     mask_s_gt_np = np.zeros(mask.shape,dtype=np.float32)
 
                     if flag_use_cuda:
-                        temp = pal_worker(delayed(crf.runCRF)(labels[i,:].cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().cpu().numpy(), args.preds_only) for i in range(labels.shape[0]))
+                        temp = pal_worker(delayed(crf.runCRF)(preds[i,:].detach().cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().cpu().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().cpu().numpy(), args.preds_only) for i in range(labels.shape[0]))
                     else:
-                        temp = pal_worker(delayed(crf.runCRF)(labels[i,:].numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().numpy(), args.preds_only) for i in range(labels.shape[0]))
+                        temp = pal_worker(delayed(crf.runCRF)(preds[i,:].detach().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().numpy(), args.preds_only) for i in range(labels.shape[0]))
 
                     for i in range(labels.shape[0]):
                         mask_s_gt_np[i,:,:,:] = temp[i][0]
@@ -130,7 +133,10 @@ with Parallel(n_jobs=num_cores) as pal_worker:
 
                     mask_s_gt = torch.from_numpy(mask_s_gt_np)
                     loss1 = criterion1(outputs, labels)
-                    loss2 = criterion2(mask, mask_s_gt)
+                    if args.model == 'SEC':
+                        loss2 = criterion2(mask.cpu(), mask_s_gt)
+                    else:
+                        loss2 = criterion2(mask, mask_s_gt)
 
                     train_loss1 += loss1.item() * inputs.size(0)
                     train_loss2 += loss2.item() * inputs.size(0)
@@ -153,6 +159,7 @@ with Parallel(n_jobs=num_cores) as pal_worker:
 
                     if args.model == 'SEC':
                         mask, outputs = net(inputs)
+                        outputs = outputs.squeeze()
                         preds = outputs.data>args.threshold
                     elif args.model == 'resnet' or args.model == 'my_resnet':
                         outputs = net(inputs)
@@ -163,9 +170,9 @@ with Parallel(n_jobs=num_cores) as pal_worker:
 
                     mask_s_gt_np = np.zeros(mask.shape,dtype=np.float32)
                     if flag_use_cuda:
-                        temp = pal_worker(delayed(crf.runCRF)(labels[i,:].cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().cpu().numpy(), args.preds_only) for i in range(labels.shape[0]))
+                        temp = pal_worker(delayed(crf.runCRF)(preds[i,:].detach().cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().cpu().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().cpu().numpy(), args.preds_only) for i in range(labels.shape[0]))
                     else:
-                        temp = pal_worker(delayed(crf.runCRF)(labels[i,:].numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().numpy(), args.preds_only) for i in range(labels.shape[0]))
+                        temp = pal_worker(delayed(crf.runCRF)(preds[i,:].detach().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().numpy(), args.preds_only) for i in range(labels.shape[0]))
 
                     for i in range(labels.shape[0]):
                         mask_s_gt_np[i,:,:,:] = temp[i][0]
@@ -173,7 +180,11 @@ with Parallel(n_jobs=num_cores) as pal_worker:
 
                     mask_s_gt = torch.from_numpy(mask_s_gt_np)
                     loss1 = criterion1(outputs, labels)
-                    loss2 = criterion2(mask, mask_s_gt)
+                    if args.model == 'SEC':
+                        loss2 = criterion2(mask.cpu(), mask_s_gt)
+                    else:
+                        loss2 = criterion2(mask, mask_s_gt)
+
                     eval_loss1 += loss1.item() * inputs.size(0)
                     eval_loss2 += loss2.item() * inputs.size(0)
 
