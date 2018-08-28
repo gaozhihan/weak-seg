@@ -21,6 +21,7 @@ args.need_mask_flag = True
 args.test_flag = True
 args.model = 'my_resnet3' # my_resnet; SEC; my_resnet3
 model_path = 'models/top_val_rec_my_resnet3_27' # sec: sec_rename; resnet: top_val_acc_resnet; my_resnet: top_val_acc_my_resnet_25; my_resnet3: top_val_rec_my_resnet3_27
+args.origin_size = True
 
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
@@ -129,6 +130,8 @@ with torch.no_grad():
 
                     if args.origin_size:
                         crf.set_shape(mask_gt[i,:,:].numpy())
+                        outputs = outputs.squeeze(0)
+                        preds = preds.unsqueeze(0)
 
                     if flag_use_cuda:
                         mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(labels[i,:].cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().cpu().numpy(), args.preds_only)
@@ -179,6 +182,8 @@ with torch.no_grad():
                 for i in range(labels.shape[0]):
                     if args.origin_size:
                         crf.set_shape(mask_gt[i,:,:].numpy())
+                        outputs = outputs.squeeze(0)
+                        preds = preds.unsqueeze(0)
 
                     if flag_use_cuda:
                         mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(preds[i,:].cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().cpu().numpy(), args.preds_only)
