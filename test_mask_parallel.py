@@ -143,10 +143,7 @@ with Parallel(n_jobs=num_cores) as pal_worker:
 
                     mask_s_gt = torch.from_numpy(mask_s_gt_np)
                     loss1 = criterion1(outputs, labels)
-                    if args.model == 'SEC':
-                        loss2 = criterion2(mask.cpu(), mask_s_gt)
-                    else:
-                        loss2 = criterion2(mask, mask_s_gt)
+                    loss2 = criterion2(mask.cpu(), mask_s_gt)
 
                     train_loss1 += loss1.item() * inputs.size(0)
                     train_loss2 += loss2.item() * inputs.size(0)
@@ -195,11 +192,8 @@ with Parallel(n_jobs=num_cores) as pal_worker:
 
                     mask_s_gt = torch.from_numpy(mask_s_gt_np)
                     loss1 = criterion1(outputs, labels)
-                    if args.model == 'SEC':
-                        loss2 = criterion2(mask.cpu(), mask_s_gt)
-                    else:
-                        loss2 = criterion2(mask, mask_s_gt)
-
+                    loss2 = criterion2(mask.cpu(), mask_s_gt)
+                
                     eval_loss1 += loss1.item() * inputs.size(0)
                     eval_loss2 += loss2.item() * inputs.size(0)
 
