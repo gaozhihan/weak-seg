@@ -48,6 +48,9 @@ elif host_name == 'ram-lab':
 
 model_path = model_path + '.pth'
 
+if args.origin_size:
+    args.batch_size = 1
+
 if args.model == 'SEC':
     args.input_size = [321,321]
     args.output_size = [41, 41]
