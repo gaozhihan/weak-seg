@@ -112,6 +112,7 @@ with torch.no_grad():
 
                 if args.model == 'SEC':
                     mask, outputs = net(inputs)
+                    outputs = outputs.squeeze()
                     preds = outputs.data>args.threshold
                 elif args.model == 'resnet' or args.model == 'my_resnet':
                     outputs = net(inputs)
@@ -130,7 +131,7 @@ with torch.no_grad():
 
                     if args.origin_size:
                         crf.set_shape(mask_gt[i,:,:].numpy())
-                        outputs = outputs.squeeze(0)
+                        outputs = outputs.unsqueeze(0)
                         preds = preds.unsqueeze(0)
 
                     if flag_use_cuda:
@@ -165,6 +166,7 @@ with torch.no_grad():
 
                 if args.model == 'SEC':
                     mask, outputs = net(inputs)
+                    outputs = outputs.squeeze()
                     preds = outputs.data>args.threshold
                 elif args.model == 'resnet' or args.model == 'my_resnet':
                     outputs = net(inputs)
@@ -182,7 +184,7 @@ with torch.no_grad():
                 for i in range(labels.shape[0]):
                     if args.origin_size:
                         crf.set_shape(mask_gt[i,:,:].numpy())
-                        outputs = outputs.squeeze(0)
+                        outputs = outputs.unsqueeze(0)
                         preds = preds.unsqueeze(0)
 
                     if flag_use_cuda:
