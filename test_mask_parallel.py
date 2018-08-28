@@ -17,6 +17,7 @@ import common_function
 import CRF_all_class_paral
 import numpy as np
 from joblib import Parallel, delayed
+import my_resnet3
 
 args = get_args()
 args.need_mask_flag = True
