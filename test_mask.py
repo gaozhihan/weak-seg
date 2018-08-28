@@ -19,8 +19,8 @@ import my_resnet3
 args = get_args()
 args.need_mask_flag = True
 args.test_flag = True
-args.model = 'my_resnet3' # my_resnet; SEC; my_resnet3
-model_path = 'models/top_val_rec_my_resnet3_27' # sec: sec_rename; resnet: top_val_acc_resnet; my_resnet: top_val_acc_my_resnet_25; my_resnet3: top_val_rec_my_resnet3_27
+args.model = 'SEC' # my_resnet; SEC; my_resnet3
+model_path = 'models/sec_rename' # sec: sec_rename; resnet: top_val_acc_resnet; my_resnet: top_val_acc_my_resnet_25; my_resnet3: top_val_rec_my_resnet3_27
 args.origin_size = True
 
 host_name = socket.gethostname()
@@ -134,7 +134,7 @@ with torch.no_grad():
                         preds = preds.unsqueeze(0)
 
                     if flag_use_cuda:
-                        mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(labels[i,:].cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().cpu().numpy(), args.preds_only)
+                        mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(labels[i,:].cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().cpu().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().cpu().numpy(), args.preds_only)
                     else:
                         mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(labels[i,:].numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().numpy(), args.preds_only)
 
@@ -142,7 +142,7 @@ with torch.no_grad():
 
                 mask_s_gt = torch.from_numpy(mask_s_gt_np)
                 loss1 = criterion1(outputs, labels)
-                loss2 = criterion2(mask, mask_s_gt)
+                loss2 = criterion2(mask.cpu(), mask_s_gt)
 
                 train_loss1 += loss1.item() * inputs.size(0)
                 train_loss2 += loss2.item() * inputs.size(0)
@@ -186,7 +186,7 @@ with torch.no_grad():
                         preds = preds.unsqueeze(0)
 
                     if flag_use_cuda:
-                        mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(preds[i,:].cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().cpu().numpy(), args.preds_only)
+                        mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(preds[i,:].cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().cpu().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().cpu().numpy(), args.preds_only)
                     else:
                         mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(preds[i,:].numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().numpy(), args.preds_only)
 
@@ -194,7 +194,7 @@ with torch.no_grad():
 
             mask_s_gt = torch.from_numpy(mask_s_gt_np)
             loss1 = criterion1(outputs, labels)
-            loss2 = criterion2(mask, mask_s_gt)
+            loss2 = criterion2(mask.cpu(), mask_s_gt)
             eval_loss1 += loss1.item() * inputs.size(0)
             eval_loss2 += loss2.item() * inputs.size(0)
 
