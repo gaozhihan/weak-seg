@@ -15,6 +15,7 @@ import my_resnet3
 
 args = get_args()
 # args.input_size = [300,300]
+args.model = 'my_resnet3'
 
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
