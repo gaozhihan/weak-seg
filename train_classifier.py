@@ -13,17 +13,19 @@ import my_resnet
 from arguments import get_args
 import my_resnet3
 import datetime
+import decoupled_net
 
 args = get_args()
 # args.input_size = [300,300]
-args.model = 'my_resnet3'
+args.model = 'decoupled'
+args.input_size = [321,321]
 
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
 date_str = str(datetime.datetime.now().day)
 
 if host_name == 'sunting':
-    args.batch_size = 5
+    args.batch_size = 3
     args.data_dir = '/home/sunting/Documents/program/VOC2012_SEG_AUG'
 elif host_name == 'sunting-ThinkCentre-M90':
     args.batch_size = 18
@@ -36,6 +38,8 @@ elif host_name == 'ram-lab':
         args.batch_size = 100
     elif args.model == 'my_resnet' or args.model == 'my_resnet3':
         args.batch_size = 30 #32
+    elif args.model == 'decoupled':
+        args.batch_size = 2
 
 
 if args.model == 'SEC':
@@ -58,6 +62,11 @@ elif args.model == 'my_resnet':
 elif args.model == 'my_resnet3':
     model_path = 'models/resnet50_feat.pth'
     net = my_resnet3.resnet50(pretrained=False, num_classes=args.num_classes)
+    net.load_state_dict(torch.load(model_path), strict = False)
+
+elif args.model == 'decoupled':
+    model_path = 'models/vgg16-397923af.pth'
+    net = decoupled_net.DecoupleNet(args.num_classes)
     net.load_state_dict(torch.load(model_path), strict = False)
 
 
@@ -107,7 +116,7 @@ for epoch in range(args.epochs):
                     outputs = net(inputs)
                     outputs = torch.sigmoid(outputs)
                     preds = outputs.squeeze().data>args.threshold
-                elif args.model == 'my_resnet3':
+                elif args.model == 'my_resnet3' or args.model == 'decoupled':
                     mask, outputs = net(inputs)
                     outputs = torch.sigmoid(outputs)
                     preds = outputs.squeeze().data>args.threshold
@@ -140,7 +149,7 @@ for epoch in range(args.epochs):
                         outputs = net(inputs)
                         outputs = torch.sigmoid(outputs)
                         preds = outputs.squeeze().data>args.threshold
-                    elif args.model == 'my_resnet3':
+                    elif args.model == 'my_resnet3' or args.model == 'decoupled':
                         mask, outputs = net(inputs)
                         outputs = torch.sigmoid(outputs)
                         preds = outputs.squeeze().data>args.threshold
