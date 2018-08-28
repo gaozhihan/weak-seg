@@ -19,8 +19,8 @@ import my_resnet3
 args = get_args()
 args.need_mask_flag = True
 args.test_flag = True
-args.model = 'SEC' # my_resnet; SEC; my_resnet3
-model_path = 'models/sec_rename' # sec: sec_rename; resnet: top_val_acc_resnet; my_resnet: top_val_acc_my_resnet_25; my_resnet3: top_val_rec_my_resnet3_27
+args.model = 'my_resnet3' # my_resnet; SEC; my_resnet3
+model_path = 'models/top_val_rec_my_resnet3_27' # sec: sec_rename; resnet: top_val_acc_resnet; my_resnet: top_val_acc_my_resnet_25; my_resnet3: top_val_rec_my_resnet3_27
 
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
@@ -77,7 +77,6 @@ elif args.model == 'my_resnet3':
     net = my_resnet3.resnet50(pretrained=False, num_classes=args.num_classes)
     net.load_state_dict(torch.load(model_path), strict = True)
 
-
 criterion1 = nn.MultiLabelSoftMarginLoss()
 criterion2 = common_function.MapCrossEntropyLoss()
 print(args)
@@ -121,6 +120,7 @@ with torch.no_grad():
                     features_blob.clear()
                 elif args.model == 'my_resnet3':
                     mask, outputs = net(inputs)
+                    outputs = outputs.squeeze()
                     outputs = torch.sigmoid(outputs)
                     preds = outputs.squeeze().data>args.threshold
 
@@ -171,6 +171,7 @@ with torch.no_grad():
                     features_blob.clear()
                 elif args.model == 'my_resnet3':
                     mask, outputs = net(inputs)
+                    outputs = outputs.squeeze()
                     outputs = torch.sigmoid(outputs)
                     preds = outputs.squeeze().data>args.threshold
 
