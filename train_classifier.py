@@ -40,7 +40,7 @@ elif host_name == 'ram-lab':
     elif args.model == 'my_resnet' or args.model == 'my_resnet3':
         args.batch_size = 30 #32
     elif args.model == 'decoupled':
-        args.batch_size = 30
+        args.batch_size = 38
 
 
 if args.model == 'SEC':
