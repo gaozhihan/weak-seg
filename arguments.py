@@ -33,6 +33,8 @@ def get_args():
                         help='classificiation nums')
     parser.add_argument('--no_bg', action='store_true', default=False,
                         help='no background')
+    parser.add_argument('--color_vote', action='store_true', default=False,
+                        help='no background')
     parser.add_argument('--test_flag', action='store_true', default=False,
                         help='when it is training')
     parser.add_argument('--need_mask_flag', action='store_true', default=False,
