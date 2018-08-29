@@ -18,12 +18,13 @@ import CRF_all_class_paral
 import numpy as np
 from joblib import Parallel, delayed
 import my_resnet3
+import decoupled_net
 
 args = get_args()
 args.need_mask_flag = True
 args.test_flag = True
-args.model = 'my_resnet3' # my_resnet; SEC; my_resnet3
-model_path = 'models/top_val_rec_my_resnet3_27' # sec: sec_rename; resnet: top_val_acc_resnet; my_resnet: top_val_acc_my_resnet_25; my_resnet3: top_val_rec_my_resnet3_27
+args.model = 'decoupled' # my_resnet; SEC; my_resnet3
+model_path = 'models/top_val_acc_decoupled_28' # sec: sec_rename; resnet: top_val_acc_resnet; my_resnet: top_val_acc_my_resnet_25; my_resnet3: top_val_rec_my_resnet3_27
 
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
@@ -45,6 +46,8 @@ elif host_name == 'ram-lab':
         args.batch_size = 100
     elif args.model == 'my_resnet':
         args.batch_size = 32
+    elif args.model == 'decoupled':
+        args.batch_size = 38
 
 model_path = model_path + '.pth'
 
@@ -80,6 +83,13 @@ elif args.model == 'my_resnet':
 elif args.model == 'my_resnet3':
     net = my_resnet3.resnet50(pretrained=False, num_classes=args.num_classes)
     net.load_state_dict(torch.load(model_path), strict = True)
+
+elif args.model == 'decoupled':
+    args.input_size = [321,321]
+    args.output_size = [40, 40]
+    net = decoupled_net.DecoupleNet(args.num_classes)
+    net.load_state_dict(torch.load(model_path), strict = True)
+
 
 criterion1 = nn.MultiLabelSoftMarginLoss()
 criterion2 = common_function.MapCrossEntropyLoss()
@@ -127,7 +137,7 @@ with Parallel(n_jobs=num_cores) as pal_worker:
                         preds = outputs.data>args.threshold
                         mask = common_function.cam_extract(features_blob[0], fc_weight, args.relu_mask)
                         features_blob.clear()
-                    elif args.model == 'my_resnet3':
+                    elif args.model == 'my_resnet3' or args.model == 'decoupled':
                         mask, outputs = net(inputs)
                         outputs = outputs.squeeze()
                         outputs = torch.sigmoid(outputs)
@@ -177,7 +187,7 @@ with Parallel(n_jobs=num_cores) as pal_worker:
                         preds = outputs.data>args.threshold
                         mask = common_function.cam_extract(features_blob[0], fc_weight, args.relu_mask)
                         features_blob.clear()
-                    elif args.model == 'my_resnet3':
+                    elif args.model == 'my_resnet3' or args.model == 'decoupled':
                         mask, outputs = net(inputs)
                         outputs = outputs.squeeze()
                         outputs = torch.sigmoid(outputs)
