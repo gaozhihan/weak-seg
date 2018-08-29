@@ -22,7 +22,9 @@ args.need_mask_flag = True
 args.test_flag = True
 args.model = 'decoupled' # my_resnet; SEC; my_resnet3
 model_path = 'models/top_val_acc_decoupled_28' # sec: sec_rename; resnet: top_val_acc_resnet; my_resnet: top_val_acc_my_resnet_25; my_resnet3: top_val_rec_my_resnet3_27
-args.origin_size = True
+args.input_size = [321,321]
+args.output_size = [40, 40]
+args.origin_size = False
 
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
