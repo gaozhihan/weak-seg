@@ -17,9 +17,9 @@ import decoupled_net
 
 args = get_args()
 # args.input_size = [300,300]
-args.model = 'decoupled'
-args.input_size = [321,321]
-args.output_size = [40, 40]
+args.model = 'my_resnet3'
+args.input_size = [256,256]
+args.output_size = [32, 32]
 
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()

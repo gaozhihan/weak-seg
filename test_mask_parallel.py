@@ -23,10 +23,10 @@ import decoupled_net
 args = get_args()
 args.need_mask_flag = True
 args.test_flag = True
-args.model = 'decoupled' # my_resnet; SEC; my_resnet3
-model_path = 'models/top_val_acc_decoupled_28' # sec: sec_rename; resnet: top_val_acc_resnet; my_resnet: top_val_acc_my_resnet_25; my_resnet3: top_val_rec_my_resnet3_27
-args.input_size = [321,321]
-args.output_size = [40, 40]
+args.model = 'my_resnet3' # my_resnet; SEC; my_resnet3
+model_path = 'models/top_val_rec_my_resnet3_28' # sec: sec_rename; resnet: top_val_acc_resnet; my_resnet: top_val_acc_my_resnet_25; my_resnet3: top_val_rec_my_resnet3_27
+args.input_size = [256,256]
+args.output_size = [32, 32]
 
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
@@ -41,7 +41,7 @@ elif host_name == 'sunting-ThinkCenter-M90':
     num_cores = 2
 elif host_name == 'ram-lab':
     args.data_dir = '/data_shared/Docker/ltai/ws/decoupled_net/data/VOC2012/VOC2012_SEG_AUG'
-    num_cores = 10
+    num_cores = 8
     if args.model == 'SEC':
         args.batch_size = 50
     elif args.model == 'resnet':
@@ -49,7 +49,7 @@ elif host_name == 'ram-lab':
     elif args.model == 'my_resnet':
         args.batch_size = 32
     elif args.model == 'decoupled':
-        args.batch_size = 38
+        args.batch_size = 50
 
 model_path = model_path + '.pth'
 
