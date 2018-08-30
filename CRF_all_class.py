@@ -24,6 +24,7 @@ class CRF():
         self.H , self.W = args.input_size
         self.N_labels = args.num_classes
         self.train_flag = not args.test_flag
+        self.color_vote = args.color_vote
 
         self.num_maps = len(self.iters)
         self.kl = np.zeros(self.num_maps)
@@ -354,6 +355,26 @@ class CRF():
         best_maps_iou = np.expand_dims(map_iou_score, axis=0)
         best_color_scores = np.expand_dims(color_score, axis=0)
 
+        # -----------------------------if self.color_vote = True, no need go further--------------------------------
+        if not self.color_vote:
+            pre_mask = best_maps[0,:,:]
+            pre_mask = medfilt2d(pre_mask, kernel_size=5)
+            if map_iou_score < 0.2:
+                confidence = 0.0
+            else:
+                confidence = np.maximum((self.color_score_thr - color_score), 0)/self.color_score_thr
+
+            if self.flag_visual:
+                plt.figure()
+                plt.imshow(pre_mask)
+
+            if self.train_flag:
+                return self.map2mask(mask_org, class_cur, pre_mask), pre_mask, confidence
+            else:
+                return self.map2mask(mask_org, class_cur, pre_mask), pre_mask
+
+
+        # -----------------------------start color vote ----------------------------------------------------------------
         mask_res = self.color_mask_vote(mask_res, img, class_cur)
         self.multi_iter_CRF(mask_res, img)
 

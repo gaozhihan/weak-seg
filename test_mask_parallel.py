@@ -23,10 +23,11 @@ import decoupled_net
 args = get_args()
 args.need_mask_flag = True
 args.test_flag = True
-args.model = 'my_resnet3' # my_resnet; SEC; my_resnet3
-model_path = 'models/top_val_rec_my_resnet3_28' # sec: sec_rename; resnet: top_val_acc_resnet; my_resnet: top_val_acc_my_resnet_25; my_resnet3: top_val_rec_my_resnet3_27
+args.model = 'my_resnet3' # my_resnet; SEC; my_resnet3; decoupled
+model_path = 'models/top_val_acc_my_resnet3_29' # sec: sec_rename; resnet: top_val_acc_resnet; my_resnet: top_val_acc_my_resnet_25; my_resnet3: top_val_rec_my_resnet3_27; decoupled: top_val_acc_decoupled_28
 args.input_size = [256,256]
 args.output_size = [32, 32]
+# args.color_vote = False
 
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
@@ -35,7 +36,7 @@ if host_name == 'sunting':
     args.batch_size = 5 # if this is 1, the dimension of feat_conv.shape in cam_extract will have problem
     args.data_dir = '/home/sunting/Documents/program/VOC2012_SEG_AUG'
     model_path = model_path + '_CPU'
-    num_cores = 4
+    num_cores = 2
 elif host_name == 'sunting-ThinkCenter-M90':
     args.batch_size = 18
     num_cores = 2
@@ -85,6 +86,7 @@ elif args.model == 'my_resnet':
 elif args.model == 'my_resnet3':
     net = my_resnet3.resnet50(pretrained=False, num_classes=args.num_classes)
     net.load_state_dict(torch.load(model_path), strict = True)
+    print(net.seg2label_pool)
 
 elif args.model == 'decoupled':
     args.input_size = [321,321]
