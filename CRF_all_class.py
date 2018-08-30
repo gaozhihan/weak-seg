@@ -216,7 +216,7 @@ class CRF():
                 select_pix_idx = np.logical_or(select_pix_idx, temp)
 
             # process (refine) the mask e.g. mark selected color as confident to be this class
-            select_pix_idx = np.logical_and(select_pix_idx,mask_max_except<0.3)
+            select_pix_idx = np.logical_and(select_pix_idx,mask_max_except<0.22)
             if i_class == 0:
                 mask[i_class,select_pix_idx] = 0.65 #(0.85 - (np.sum(mask_cur, axis=0) - mask_cur[i_idx,:,:])).squeeze()[select_pix_idx] # confident this class
             else:
