@@ -202,7 +202,7 @@ class CRF():
             hist_score[i_idx,:,:,:] = np.minimum(hist_cur[i_idx,:,:,:],hist_whole)/hist_whole_no_zeros
 
             if i_class == 0:
-                select_bin = hist_score[i_idx,:,:,:].squeeze()>0.5
+                select_bin = hist_score[i_idx,:,:,:].squeeze()>0.6
             else:
                 select_bin = hist_score[i_idx,:,:,:].squeeze()>0.5
 
