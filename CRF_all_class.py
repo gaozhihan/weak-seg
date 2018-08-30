@@ -356,13 +356,17 @@ class CRF():
         best_color_scores = np.expand_dims(color_score, axis=0)
 
         # -----------------------------if self.color_vote = True, no need go further--------------------------------
-        if self.color_vote:
+        if not self.color_vote:
             pre_mask = best_maps[0,:,:]
             pre_mask = medfilt2d(pre_mask, kernel_size=5)
-            if map_iou_score[0] < 0.2:
+            if map_iou_score < 0.2:
                 confidence = 0.0
             else:
-                confidence = np.maximum((self.color_score_thr - color_score[0]), 0)/self.color_score_thr
+                confidence = np.maximum((self.color_score_thr - color_score), 0)/self.color_score_thr
+
+            if self.flag_visual:
+                plt.figure()
+                plt.imshow(pre_mask)
 
             if self.train_flag:
                 return self.map2mask(mask_org, class_cur, pre_mask), pre_mask, confidence
