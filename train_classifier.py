@@ -18,8 +18,8 @@ import decoupled_net
 args = get_args()
 # args.input_size = [300,300]
 args.model = 'my_resnet3'
-args.input_size = [256,256]
-args.output_size = [32, 32]
+args.input_size = [321,321]
+args.output_size = [41, 41]
 
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
@@ -38,7 +38,7 @@ elif host_name == 'ram-lab':
     elif args.model == 'resnet':
         args.batch_size = 100
     elif args.model == 'my_resnet' or args.model == 'my_resnet3':
-        args.batch_size = 30 #32
+        args.batch_size = 18 #30 #32
     elif args.model == 'decoupled':
         args.batch_size = 38
 
@@ -64,6 +64,7 @@ elif args.model == 'my_resnet3':
     model_path = 'models/resnet50_feat.pth'
     net = my_resnet3.resnet50(pretrained=False, num_classes=args.num_classes)
     net.load_state_dict(torch.load(model_path), strict = False)
+    print(net.seg2label_pool)
 
 elif args.model == 'decoupled':
     model_path = 'models/vgg16-397923af.pth'

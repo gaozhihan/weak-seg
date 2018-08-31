@@ -24,11 +24,12 @@ args = get_args()
 args.need_mask_flag = True
 args.test_flag = True
 args.model = 'my_resnet3' # my_resnet; SEC; my_resnet3; decoupled
-model_path = 'models/top_val_acc_my_resnet3_29' # sec: sec_rename; resnet: top_val_acc_resnet; my_resnet: top_val_acc_my_resnet_25; my_resnet3: top_val_rec_my_resnet3_27; decoupled: top_val_acc_decoupled_28
+model_path = 'models/top_val_rec_my_resnet3_30' # sec: sec_rename; resnet: top_val_acc_resnet; my_resnet: top_val_acc_my_resnet_25; my_resnet3: top_val_rec_my_resnet3_27; decoupled: top_val_acc_decoupled_28
 args.input_size = [256,256]
 args.output_size = [32, 32]
-# args.color_vote = False
+args.color_vote = True
 
+args.origin_size = False # always False
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
 
@@ -98,6 +99,7 @@ elif args.model == 'decoupled':
 criterion1 = nn.MultiLabelSoftMarginLoss()
 criterion2 = common_function.MapCrossEntropyLoss()
 print(args)
+print(model_path)
 
 if flag_use_cuda:
     net.cuda()

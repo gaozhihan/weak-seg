@@ -20,12 +20,12 @@ import decoupled_net
 args = get_args()
 args.need_mask_flag = True
 args.test_flag = True
-args.model = 'decoupled' # my_resnet; SEC; my_resnet3; decoupled
-model_path = 'models/top_val_acc_decoupled_28' # sec: sec_rename; resnet: top_val_acc_resnet; my_resnet: top_val_acc_my_resnet_25; my_resnet3: top_val_rec_my_resnet3_27; decoupled: top_val_acc_decoupled_28
-args.input_size = [256,256]
-args.output_size = [32, 32]
-args.origin_size = False
-args.color_vote = True
+args.model = 'SEC' # my_resnet; SEC; my_resnet3; decoupled
+model_path = 'models/sec_rename' # sec: sec_rename; resnet: top_val_acc_resnet; my_resnet: top_val_acc_my_resnet_25; my_resnet3: top_val_rec_my_resnet3_27; decoupled: top_val_acc_decoupled_28
+args.input_size = [321,321]
+args.output_size = [41, 41]
+args.origin_size = True
+args.color_vote = False
 
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
