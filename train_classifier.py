@@ -16,14 +16,14 @@ import datetime
 import decoupled_net
 
 args = get_args()
-# args.input_size = [300,300]
 args.model = 'my_resnet3'
 args.input_size = [321,321]
 args.output_size = [41, 41]
 
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
-date_str = str(datetime.datetime.now().day)
+now = datetime.datetime.now()
+date_str = str(now.day) + '_' + str(now.day)
 
 if host_name == 'sunting':
     args.batch_size = 3

@@ -221,6 +221,7 @@ class CRF():
 
             # process (refine) the mask e.g. mark selected color as confident to be this class
             select_pix_idx = np.logical_and(select_pix_idx,mask_max_except<0.22)
+            select_pix_idx = np.logical_and(select_pix_idx, mask_cur[i_idx,:,:].squeeze()>0.05)
             if i_class == 0:
                 mask[i_class,select_pix_idx] = 0.65 #(0.85 - (np.sum(mask_cur, axis=0) - mask_cur[i_idx,:,:])).squeeze()[select_pix_idx] # confident this class
             else:
@@ -320,23 +321,21 @@ class CRF():
         # class_cur = np.nonzero(preds)[0]
         class_cur = np.nonzero(labels)[0]
 
+        if preds_only:
+            mask = self.spacial_norm_preds_only(mask_org, class_cur)
+            # mask = self.softmax_norm_preds_only(mask_org, class_cur)
+            # mask = self.sig_pred_only(mask_org, class_cur)
+        else:
+            mask = self.spacial_norm(mask_org)
+
         if len(class_cur) == 1:
             pre_mask = np.full((self.H, self.W), class_cur[0], dtype=np.float64)
             confidence = 0.0
 
             if self.train_flag:
-                return self.map2mask(mask_org, class_cur, pre_mask), pre_mask, confidence
+                return self.map2mask(mask_org, class_cur, pre_mask), pre_mask, confidence, (mask - 0.05)/0.9
             else:
                 return self.map2mask(mask_org, class_cur, pre_mask), pre_mask
-
-
-        if preds_only:
-            mask = self.spacial_norm_preds_only(mask_org, class_cur)
-            # mask = self.softmax_norm_preds_only(mask_org, class_cur)
-            # mask = self.sig_pred_only(mask_org, class_cur)
-
-        else:
-            mask = self.spacial_norm(mask_org)
 
         for i in range(self.N_labels):
             mask_res[i,:,:] = resize(mask[i,:,:], (self.H, self.W), mode='constant', anti_aliasing=True)
@@ -414,7 +413,7 @@ class CRF():
             plt.imshow(pre_mask)
 
         if self.train_flag:
-            return (self.map2mask(mask_org, class_cur, pre_mask), pre_mask, confidence)
+            return (self.map2mask(mask_org, class_cur, pre_mask), pre_mask, confidence, (mask - 0.05)/0.9)
         else:
             return (self.map2mask(mask_org, class_cur, pre_mask), pre_mask)
 

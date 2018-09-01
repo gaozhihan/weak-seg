@@ -14,13 +14,17 @@ from arguments import get_args
 import common_function
 import numpy as np
 import CRF_all_class
+import datetime
 
 args = get_args()
 args.need_mask_flag = True
-#args.input_size = [256,256]
+args.model = 'my_resnet'
+args.input_size = [321,321]
+args.output_size = [41, 41]
 
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
+date_str = str(datetime.datetime.now().day)
 
 if host_name == 'sunting':
     args.batch_size = 5
@@ -78,6 +82,7 @@ criterion2 = common_function.MapWeightedCrossEntropyLoss()
 
 
 print(args)
+print(model_path)
 
 if flag_use_cuda:
     net.cuda()
@@ -255,13 +260,13 @@ for epoch in range(args.epochs):
         acc_eval2 = TP_eval2.numpy() / P_eval2.numpy() if P_eval2!=0 else 0
 
     if acc_eval1 > max_acc:
-        print('save model ' + args.model + ' with val acc: {}'.format(acc_eval1))
-        torch.save(net.state_dict(), './models/top_val_acc_'+ args.model + '_2.pth')
+        print('save model ' + args.model + '2' + ' with val acc: {}'.format(acc_eval1))
+        torch.save(net.state_dict(), './models/top_val_acc_'+ args.model + '2_' + date_str + '.pth')
         max_acc = acc_eval1
 
     if recall_eval1 > max_recall:
         print('save model ' + args.model + ' with val recall: {}'.format(recall_eval1))
-        torch.save(net.state_dict(), './models/top_val_rec_'+ args.model + '_2.pth')
+        torch.save(net.state_dict(), './models/top_val_rec_'+ args.model + '2_' + date_str + '.pth')
         max_recall = recall_eval1
 
     temp_iou = iou_obj.cal_cur_iou()
