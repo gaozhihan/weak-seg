@@ -11,12 +11,17 @@ import sec
 import torchvision.models.resnet as resnet
 import my_resnet2
 from arguments import get_args
+import datetime
 
 args = get_args()
-#args.input_size = [256,256]
+args.model = 'my_resnet' # my_resnet; SEC; my_resnet3; decoupled
+args.input_size = [321,321]
+args.output_size = [41, 41]
 
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
+now = datetime.datetime.now()
+date_str = str(now.day) + '_' + str(now.day)
 
 if host_name == 'sunting':
     args.batch_size = 5
@@ -31,7 +36,7 @@ elif host_name == 'ram-lab':
     elif args.model == 'resnet':
         args.batch_size = 100
     elif args.model == 'my_resnet':
-        args.batch_size = 32
+        args.batch_size = 18 #32
 
 
 if args.model == 'SEC':
@@ -192,12 +197,12 @@ for epoch in range(args.epochs):
 
     if acc_eval1 > max_acc:
         print('save model ' + args.model + ' with val acc: {}'.format(acc_eval1))
-        torch.save(net.state_dict(), './models/top_val_acc_'+ args.model + '_2_23.pth')
+        torch.save(net.state_dict(), './models/top_val_acc_'+ args.model + '2_' + date_str + '.pth')
         max_acc = acc_eval1
 
     if recall_eval1 > max_recall:
         print('save model ' + args.model + ' with val recall: {}'.format(recall_eval1))
-        torch.save(net.state_dict(), './models/top_val_rec_'+ args.model + '_2_23.pth')
+        torch.save(net.state_dict(), './models/top_val_rec_'+ args.model + '2_' + date_str + '.pth')
         max_recall = recall_eval1
 
     print('1 Epoch: {} took {:.2f}, Train Loss: {:.4f}, Acc: {:.4f}, Recall: {:.4f}; eval loss: {:.4f}, Acc: {:.4f}, Recall: {:.4f}'.format(epoch, time_took, epoch_train_loss1, acc_train1, recall_train1, epoch_eval_loss1, acc_eval1, recall_eval1))

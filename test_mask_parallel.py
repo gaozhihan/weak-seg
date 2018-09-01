@@ -23,11 +23,12 @@ import decoupled_net
 args = get_args()
 args.need_mask_flag = True
 args.test_flag = True
-args.model = 'my_resnet3' # my_resnet; SEC; my_resnet3; decoupled
-model_path = 'models/top_val_rec_my_resnet3_30' # sec: sec_rename; resnet: top_val_acc_resnet; my_resnet: top_val_acc_my_resnet_25; my_resnet3: top_val_rec_my_resnet3_27; decoupled: top_val_acc_decoupled_28
-args.input_size = [256,256]
-args.output_size = [32, 32]
-args.color_vote = True
+args.model = 'my_resnet' # my_resnet; SEC; my_resnet3; decoupled
+model_path = 'models/top_val_acc_my_resnet_31' # sec: sec_rename; resnet: top_val_acc_resnet; my_resnet: top_val_acc_my_resnet_25; my_resnet3: top_val_rec_my_resnet3_27; decoupled: top_val_acc_decoupled_28
+args.input_size = [321,321]
+args.output_size = [41, 41]
+args.color_vote = False
+#args.fix_CRF_itr = True
 
 args.origin_size = False # always False
 host_name = socket.gethostname()
@@ -49,7 +50,7 @@ elif host_name == 'ram-lab':
     elif args.model == 'resnet':
         args.batch_size = 100
     elif args.model == 'my_resnet':
-        args.batch_size = 32
+        args.batch_size = 18 # 32
     elif args.model == 'decoupled':
         args.batch_size = 50
 

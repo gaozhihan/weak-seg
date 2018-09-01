@@ -17,7 +17,7 @@ import decoupled_net
 
 args = get_args()
 # args.input_size = [300,300]
-args.model = 'my_resnet3'
+args.model = 'my_resnet'
 args.input_size = [321,321]
 args.output_size = [41, 41]
 

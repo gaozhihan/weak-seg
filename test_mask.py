@@ -26,6 +26,7 @@ args.input_size = [321,321]
 args.output_size = [41, 41]
 args.origin_size = True
 args.color_vote = False
+args.fix_CRF_itr = True
 
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
@@ -95,6 +96,7 @@ elif args.model == 'decoupled':
 criterion1 = nn.MultiLabelSoftMarginLoss()
 criterion2 = common_function.MapCrossEntropyLoss()
 print(args)
+print(model_path)
 
 if flag_use_cuda:
     net.cuda()
