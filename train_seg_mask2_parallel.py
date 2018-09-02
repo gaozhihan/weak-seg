@@ -333,7 +333,7 @@ with Parallel(n_jobs=num_cores) as pal_worker:
 
         if cur_eval_iou > max_iou:
             print('save model ' + args.model + ' with val mean iou: {}'.format(cur_eval_iou))
-            torch.save(net.state_dict(), './models/M_top_val_iou_'+ args.model + '2.pth')
+            torch.save(net.state_dict(), './models/M_top_val_iou_'+ args.model + '2_' + date_str + '.pth')
             max_iou = cur_eval_iou
 
         print('1 Epoch: {} took {:.2f}, Train Loss: {:.4f}, Acc: {:.4f}, Recall: {:.4f}; eval loss: {:.4f}, Acc: {:.4f}, Recall: {:.4f}'.format(epoch, time_took, epoch_train_loss1, acc_train1, recall_train1, epoch_eval_loss1, acc_eval1, recall_eval1))
