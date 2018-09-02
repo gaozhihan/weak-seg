@@ -24,8 +24,9 @@ args.model = 'SEC' # my_resnet; SEC; my_resnet3; decoupled
 model_path = 'models/sec_rename' # sec: sec_rename; resnet: top_val_acc_resnet; my_resnet: top_val_acc_my_resnet_25; my_resnet3: top_val_rec_my_resnet3_27; decoupled: top_val_acc_decoupled_28
 args.input_size = [321,321]
 args.output_size = [41, 41]
-args.origin_size = False
-args.color_vote = True
+args.origin_size = True
+args.color_vote = False
+args.fix_CRF_itr = True
 
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
@@ -95,6 +96,7 @@ elif args.model == 'decoupled':
 criterion1 = nn.MultiLabelSoftMarginLoss()
 criterion2 = common_function.MapCrossEntropyLoss()
 print(args)
+print(model_path)
 
 if flag_use_cuda:
     net.cuda()
@@ -202,9 +204,9 @@ with torch.no_grad():
                         preds = preds.unsqueeze(0)
 
                     if flag_use_cuda:
-                        mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(preds[i,:].cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().cpu().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().cpu().numpy(), args.preds_only)
+                        mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(labels[i,:].cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().cpu().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().cpu().numpy(), args.preds_only)
                     else:
-                        mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(preds[i,:].numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().numpy(), args.preds_only)
+                        mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(labels[i,:].numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().numpy(), args.preds_only)
 
                     iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pred)
 

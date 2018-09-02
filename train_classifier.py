@@ -16,7 +16,9 @@ import datetime
 import decoupled_net
 
 args = get_args()
-args.model = 'my_resnet3'
+<<<<<<< HEAD
+# args.input_size = [300,300]
+args.model = 'my_resnet'
 args.input_size = [321,321]
 args.output_size = [41, 41]
 
@@ -38,9 +40,9 @@ elif host_name == 'ram-lab':
     elif args.model == 'resnet':
         args.batch_size = 100
     elif args.model == 'my_resnet' or args.model == 'my_resnet3':
-        args.batch_size = 30 #32
+        args.batch_size = 18 #30 #32
     elif args.model == 'decoupled':
-        args.batch_size = 2
+        args.batch_size = 38
 
 
 if args.model == 'SEC':

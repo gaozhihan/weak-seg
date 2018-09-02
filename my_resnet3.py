@@ -114,7 +114,7 @@ class ResNet(nn.Module):
 
         self.seg_conv = nn.Conv2d(2048, num_classes, 3, stride=1, padding=1)
         self.seg2label_pool = nn.Sequential(
-            # nn.MaxPool2d(kernel_size=5, stride=1),
+            nn.MaxPool2d(kernel_size=5, stride=1),
             nn.Dropout(0.2),
             nn.AdaptiveAvgPool2d(1))
         self.spread_pool = nn.MaxPool2d(kernel_size=5, stride=1)
