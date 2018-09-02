@@ -62,7 +62,7 @@ elif args.model == 'resnet':
     net._modules.get('layer4').register_forward_hook(hook_feature)
 
 elif args.model == 'my_resnet':
-    model_path = 'models/top_val_acc_my_resnet_2_23_CPU.pth'
+    model_path = 'models/top_val_acc_my_resnet2_9_1_CPU.pth'
     net = my_resnet2.resnet50(pretrained=False, num_classes=args.num_classes)
     net.load_state_dict(torch.load(model_path), strict = False)
     feature_blob = []
@@ -177,7 +177,7 @@ for epoch in range(args.epochs):
                     seed_loss = criterion_seed(outputs_seg, torch.from_numpy(mask_seed), labels)
                     boundary_loss = criterion_boundary(outputs_seg, mask_s_gt)
 
-                expension_loss = criterion_expension(outputs2, labels)
+                expension_loss = criterion_expension(outputs2.squeeze(), labels)
 
                 (seed_loss + expension_loss + boundary_loss).backward()  # independent backward would cause Error: Trying to backward through the graph a second time ...
                 optimizer.step()
@@ -245,7 +245,7 @@ for epoch in range(args.epochs):
                     seed_loss = criterion_seed(outputs_seg, torch.from_numpy(mask_seed), labels)
                     boundary_loss = criterion_boundary(outputs_seg, mask_s_gt)
 
-                expension_loss = criterion_expension(outputs2, labels)
+                expension_loss = criterion_expension(outputs2.squeeze(), labels)
 
                 loss1 = criterion1(outputs1.squeeze(), labels)
                 eval_loss1 += loss1.item() * inputs.size(0)
