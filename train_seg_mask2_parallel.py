@@ -38,13 +38,13 @@ elif host_name == 'sunting-ThinkCentre-M90':
     num_cores = 2
 elif host_name == 'ram-lab':
     args.data_dir = '/data_shared/Docker/ltai/ws/decoupled_net/data/VOC2012/VOC2012_SEG_AUG'
-    num_cores = 10
+    num_cores = 20
     if args.model == 'SEC':
         args.batch_size = 50
     elif args.model == 'resnet':
         args.batch_size = 100
     elif args.model == 'my_resnet':
-        args.batch_size = 32
+        args.batch_size = 64 # 32
 
 
 if args.model == 'SEC':
@@ -68,7 +68,7 @@ elif args.model == 'resnet':
 elif args.model == 'my_resnet':
     model_path = 'models/top_val_rec_my_resnet2_9_1.pth'
     net = my_resnet2.resnet50(pretrained=False, num_classes=args.num_classes)
-    net.load_state_dict(torch.load(model_path), strict = False)
+    net.load_state_dict(torch.load(model_path), strict = True)
     feature_blob = []
     params = list(net.parameters())
     fc_weight = params[-4] # for my_resnet, it's fc_weight = params[-2], for my_resnet2, it's fc_weight = params[-4]
@@ -333,7 +333,7 @@ with Parallel(n_jobs=num_cores) as pal_worker:
 
         if cur_eval_iou > max_iou:
             print('save model ' + args.model + ' with val mean iou: {}'.format(cur_eval_iou))
-            torch.save(net.state_dict(), './models/M_top_val_iou_'+ args.model + '2.pth')
+            torch.save(net.state_dict(), './models/M_top_val_iou_'+ args.model + '2_' + date_str + '.pth')
             max_iou = cur_eval_iou
 
         print('1 Epoch: {} took {:.2f}, Train Loss: {:.4f}, Acc: {:.4f}, Recall: {:.4f}; eval loss: {:.4f}, Acc: {:.4f}, Recall: {:.4f}'.format(epoch, time_took, epoch_train_loss1, acc_train1, recall_train1, epoch_eval_loss1, acc_eval1, recall_eval1))
