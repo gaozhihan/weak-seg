@@ -172,12 +172,12 @@ for epoch in range(args.epochs):
                 loss2 = criterion1(outputs2.squeeze(), labels)
                 if flag_use_cuda:
                     seed_loss = criterion_seed(outputs_seg, torch.from_numpy(mask_seed).cuda(), labels)
+                    boundary_loss = criterion_boundary(outputs_seg, mask_s_gt.cuda())
                 else:
                     seed_loss = criterion_seed(outputs_seg, torch.from_numpy(mask_seed), labels)
+                    boundary_loss = criterion_boundary(outputs_seg, mask_s_gt)
 
                 expension_loss = criterion_expension(outputs2, labels)
-                boundary_loss = criterion_boundary(outputs_seg, mask_s_gt)
-
 
                 (seed_loss + expension_loss + boundary_loss).backward()  # independent backward would cause Error: Trying to backward through the graph a second time ...
                 optimizer.step()
@@ -240,11 +240,12 @@ for epoch in range(args.epochs):
                 loss2 = criterion1(outputs2.squeeze(), labels)
                 if flag_use_cuda:
                     seed_loss = criterion_seed(outputs_seg, torch.from_numpy(mask_seed).cuda(), labels)
+                    boundary_loss = criterion_boundary(outputs_seg, mask_s_gt.cuda())
                 else:
                     seed_loss = criterion_seed(outputs_seg, torch.from_numpy(mask_seed), labels)
+                    boundary_loss = criterion_boundary(outputs_seg, mask_s_gt)
 
                 expension_loss = criterion_expension(outputs2, labels)
-                boundary_loss = criterion_boundary(outputs_seg, mask_s_gt)
 
                 loss1 = criterion1(outputs1.squeeze(), labels)
                 eval_loss1 += loss1.item() * inputs.size(0)
@@ -258,18 +259,21 @@ for epoch in range(args.epochs):
                 T_eval2 += torch.sum(labels.data.long()==1)
                 P_eval2 += torch.sum(preds2.long()==1)
 
-                eval_seg_loss += loss_seg.item() * inputs.size(0)
+                eval_expension_loss += expension_loss.item() * inputs.size(0)
                 eval_seed_loss += seed_loss.item() * inputs.size(0)
+                eval_boundary_loss += boundary_loss.item() * inputs.size(0)
 
     time_took = time.time() - start
     epoch_train_loss1 = train_loss1 / dataloader.dataset_sizes["train"]
     epoch_eval_loss1 = eval_loss1 / dataloader.dataset_sizes["val"]
     epoch_train_loss2 = train_loss2 / dataloader.dataset_sizes["train"]
     epoch_eval_loss2 = eval_loss2 / dataloader.dataset_sizes["val"]
-    epoch_train_seg_loss = train_seg_loss / dataloader.dataset_sizes["train"]
-    epoch_eval_seg_loss = eval_seg_loss / dataloader.dataset_sizes["val"]
     epoch_train_seed_loss = train_seed_loss / dataloader.dataset_sizes["train"]
     epoch_eval_seed_loss = eval_seed_loss / dataloader.dataset_sizes["val"]
+    epoch_train_expension_loss = train_expension_loss / dataloader.dataset_sizes["train"]
+    epoch_eval_expension_loss = eval_expension_loss / dataloader.dataset_sizes["val"]
+    epoch_train_boundary_loss = train_seed_loss / dataloader.dataset_sizes["train"]
+    epoch_eval_boundary_loss = eval_seed_loss / dataloader.dataset_sizes["val"]
 
 
     if flag_use_cuda:
@@ -318,6 +322,6 @@ for epoch in range(args.epochs):
 
     print('1 Epoch: {} took {:.2f}, Train Loss: {:.4f}, Acc: {:.4f}, Recall: {:.4f}; eval loss: {:.4f}, Acc: {:.4f}, Recall: {:.4f}'.format(epoch, time_took, epoch_train_loss1, acc_train1, recall_train1, epoch_eval_loss1, acc_eval1, recall_eval1))
     print('2 Epoch: {} took {:.2f}, Train Loss: {:.4f}, Acc: {:.4f}, Recall: {:.4f}; eval loss: {:.4f}, Acc: {:.4f}, Recall: {:.4f}'.format(epoch, time_took, epoch_train_loss2, acc_train2, recall_train2, epoch_eval_loss2, acc_eval2, recall_eval2))
-    print('Train seg loss is: {:.6f}, seed loss is: {:.6f};  eval seg loss is: {:.6f}, seed loss is: {:.6f}.'.format(epoch_train_seg_loss, epoch_train_seed_loss, epoch_eval_seg_loss, epoch_eval_seed_loss))
+    print('Train seed loss is: {:.6f}, expension loss is: {:.6f}, boundary loss is: {:.6f};  eval seed loss is: {:.6f}, expension loss is: {:.6f}, boundary loss is: {:.6f}.'.format(epoch_train_seed_loss, epoch_train_expension_loss, epoch_train_boundary_loss, epoch_eval_seed_loss, epoch_eval_expension_loss, epoch_eval_boundary_loss))
 
 print("done")
