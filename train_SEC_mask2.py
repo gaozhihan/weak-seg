@@ -87,11 +87,9 @@ if args.loss == 'BCELoss':
 elif args.loss == 'MultiLabelSoftMarginLoss':
     criterion1 = nn.MultiLabelSoftMarginLoss()
 
-if args.cross_entropy_weight:
-    criterion2 = common_function.MapWeightedCrossEntropyLoss()
-else:
-    criterion2 = common_function.MapCrossEntropyLoss()
-
+criterion_seed = common_function.SeedingLoss()
+criterion_expension = nn.BCELoss() # classification
+criterion_boundary = nn.KLDivLoss() # after CRF
 
 print(args)
 print(model_path)
@@ -125,11 +123,12 @@ for epoch in range(args.epochs):
     T_train2 = 0;  T_eval2 = 0
     P_train2 = 0;  P_eval2 = 0
 
-    train_seg_loss = 0.0
-    eval_seg_loss = 0.0
-
+    train_expension_loss = 0.0
+    eval_expension_loss = 0.0
     train_seed_loss = 0.0
     eval_seed_loss = 0.0
+    train_boundary_loss = 0.0
+    eval_boundary_loss = 0.0
 
     main_scheduler.step()
     start = time.time()
@@ -172,19 +171,15 @@ for epoch in range(args.epochs):
                 loss1 = criterion1(outputs1.squeeze(), labels)
                 loss2 = criterion1(outputs2.squeeze(), labels)
                 if flag_use_cuda:
-                    if args.cross_entropy_weight:
-                        loss_seg = criterion2(outputs_seg, mask_s_gt.cuda(), confidence)
-                    else:
-                        loss_seg = criterion2(outputs_seg, mask_s_gt.cuda())
-                    seed_loss = F.binary_cross_entropy(F.sigmoid(outputs_seg), torch.from_numpy(mask_seed).cuda())
+                    seed_loss = criterion_seed(outputs_seg, torch.from_numpy(mask_seed).cuda(), labels)
                 else:
-                    if args.cross_entropy_weight:
-                        loss_seg = criterion2(outputs_seg, mask_s_gt, confidence)
-                    else:
-                        loss_seg = criterion2(outputs_seg, mask_s_gt)
-                    seed_loss = F.binary_cross_entropy(F.sigmoid(outputs_seg), torch.from_numpy(mask_seed))
+                    seed_loss = criterion_seed(outputs_seg, torch.from_numpy(mask_seed), labels)
 
-                (loss2 + loss_seg + seed_loss).backward()  # independent backward would cause Error: Trying to backward through the graph a second time ...
+                expension_loss = criterion_expension(outputs2, labels)
+                boundary_loss = criterion_boundary(outputs_seg, mask_s_gt)
+
+
+                (seed_loss + expension_loss + boundary_loss).backward()  # independent backward would cause Error: Trying to backward through the graph a second time ...
                 optimizer.step()
 
                 train_loss1 += loss1.item() * inputs.size(0)
@@ -197,8 +192,9 @@ for epoch in range(args.epochs):
                 T_train2 += torch.sum(labels.data.long()==1)
                 P_train2 += torch.sum(preds2.long()==1)
 
-                train_seg_loss += loss_seg.item() * inputs.size(0)
+                train_expension_loss += expension_loss.item() * inputs.size(0)
                 train_seed_loss += seed_loss.item() * inputs.size(0)
+                train_boundary_loss += boundary_loss.item() * inputs.size(0)
 
             temp_iou = iou_obj.cal_cur_iou()
             print('current train iou is :')
@@ -243,17 +239,12 @@ for epoch in range(args.epochs):
                 loss1 = criterion1(outputs1.squeeze(), labels)
                 loss2 = criterion1(outputs2.squeeze(), labels)
                 if flag_use_cuda:
-                    if args.cross_entropy_weight:
-                        loss_seg = criterion2(outputs_seg, mask_s_gt.cuda(), confidence)
-                    else:
-                        loss_seg = criterion2(outputs_seg, mask_s_gt.cuda())
-                    seed_loss = F.binary_cross_entropy(F.sigmoid(outputs_seg), torch.from_numpy(mask_seed).cuda())
+                    seed_loss = criterion_seed(outputs_seg, torch.from_numpy(mask_seed).cuda(), labels)
                 else:
-                    if args.cross_entropy_weight:
-                        loss_seg = criterion2(outputs_seg, mask_s_gt, confidence)
-                    else:
-                        loss_seg = criterion2(outputs_seg, mask_s_gt)
-                    seed_loss = F.binary_cross_entropy(F.sigmoid(outputs_seg), torch.from_numpy(mask_seed))
+                    seed_loss = criterion_seed(outputs_seg, torch.from_numpy(mask_seed), labels)
+
+                expension_loss = criterion_expension(outputs2, labels)
+                boundary_loss = criterion_boundary(outputs_seg, mask_s_gt)
 
                 loss1 = criterion1(outputs1.squeeze(), labels)
                 eval_loss1 += loss1.item() * inputs.size(0)

@@ -107,11 +107,33 @@ class MapWeightedCrossEntropyLoss(nn.Module):
         num_batch = map.shape[0]
         loss = 0
         for i in range(num_batch):
-            loss += F.binary_cross_entropy(F.sigmoid(map[i,:,:,:]), map_s_gt[i,:,:,:]) * weight[i]
+            loss -= F.binary_cross_entropy(F.sigmoid(map[i,:,:,:]), map_s_gt[i,:,:,:]) * weight[i]
         return loss/num_batch
 
 
+# ===========================================================================================
+# SEC: seeding loss,  expansion loss,  constrain-to-boundary loss
+class SeedingLoss(nn.Module):
 
+    def __init__(self):
+        super(SeedingLoss, self).__init__()
+        self.seed_thr = 0.3
 
+    def forward(self, map, map_seed, labels):
+        loss = 0.0
+        num_batch = map.shape[0]
+        map = F.logsigmoid(map)
+
+        for i_batch in range(num_batch):
+            class_cur = torch.nonzero(labels[i_batch]).squeeze()
+            for i_class in class_cur:
+                mask_idx = map_seed[i_batch, i_class, :, :] > self.seed_thr
+                temp = map[i_batch, i_class, :, :]
+                loss -= temp[mask_idx].sum()/mask_idx.sum().float()
+
+        return loss/num_batch
+
+# expensiion loss is Binary Cross Entropy (torch.nn.BCELoss) between outputs & labels
+# constrain-to-boundary loss is torch.nn.KLDivLoss between outputs_seg and mask_s_gt_np
 
 

@@ -39,6 +39,8 @@ def get_args():
                         help='fix CRF iteration')
     parser.add_argument('--test_flag', action='store_true', default=False,
                         help='when it is training')
+    parser.add_argument('--SEC_loss_flag', action='store_true', default=False,
+                        help='whether to use SEC loss for training')
     parser.add_argument('--cross_entropy_weight', action='store_true', default=True,
                         help='whether to weigh the cross entropy by confidence')
     parser.add_argument('--need_mask_flag', action='store_true', default=False,
