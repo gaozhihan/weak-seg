@@ -3,7 +3,6 @@ import torch.nn as nn
 import numpy as np
 import torch.nn.functional as F
 
-
 def cam_extract(feat_conv, fc_weight, relu_flag = False):
     num_class = fc_weight.shape[0]
     num_map = fc_weight.shape[1]
@@ -39,8 +38,6 @@ class iou_calculator():
         intersec = np.diag(self.iou_sum)
         union = (self.iou_sum.sum(0) + self.iou_sum.sum(1) - intersec)
         return intersec/union
-
-
 
 
 class weighted_pool(nn.Module):
@@ -126,10 +123,16 @@ class SeedingLoss(nn.Module):
 
         for i_batch in range(num_batch):
             class_cur = torch.nonzero(labels[i_batch]).squeeze()
-            for i_class in class_cur:
-                mask_idx = map_seed[i_batch, i_class, :, :] > self.seed_thr
-                temp = map[i_batch, i_class, :, :]
+
+            if class_cur.dim() == 0:
+                mask_idx = map_seed[i_batch, class_cur, :, :] > self.seed_thr
+                temp = map[i_batch, class_cur, :, :]
                 loss -= temp[mask_idx].sum()/mask_idx.sum().float()
+            else:
+                for i_class in class_cur:
+                    mask_idx = map_seed[i_batch, i_class, :, :] > self.seed_thr
+                    temp = map[i_batch, i_class, :, :]
+                    loss -= temp[mask_idx].sum()/mask_idx.sum().float()
 
         return loss/num_batch
 

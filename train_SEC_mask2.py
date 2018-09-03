@@ -89,7 +89,7 @@ elif args.loss == 'MultiLabelSoftMarginLoss':
 
 criterion_seed = common_function.SeedingLoss()
 criterion_expension = nn.BCELoss() # classification
-criterion_boundary = nn.KLDivLoss() # after CRF
+criterion_boundary = nn.KLDivLoss(size_average=False) # after CRF; the input given is expected to contain log-probabilities
 
 print(args)
 print(model_path)
@@ -172,12 +172,12 @@ for epoch in range(args.epochs):
                 loss2 = criterion1(outputs2.squeeze(), labels)
                 if flag_use_cuda:
                     seed_loss = criterion_seed(outputs_seg, torch.from_numpy(mask_seed).cuda(), labels)
-                    boundary_loss = criterion_boundary(outputs_seg, mask_s_gt.cuda())
+                    boundary_loss = criterion_boundary(F.logsigmoid(outputs_seg), mask_s_gt.cuda())/(labels.shape[0]*outputs_seg.shape[2]*outputs_seg.shape[3])
                 else:
                     seed_loss = criterion_seed(outputs_seg, torch.from_numpy(mask_seed), labels)
-                    boundary_loss = criterion_boundary(outputs_seg, mask_s_gt)
+                    boundary_loss = criterion_boundary(F.logsigmoid(outputs_seg), mask_s_gt)/(labels.shape[0]*outputs_seg.shape[2]*outputs_seg.shape[3])
 
-                expension_loss = criterion_expension(outputs2.squeeze(), labels)
+                expension_loss = criterion_expension(outputs2.squeeze(), labels)  # notice that expension_loss = loss2
 
                 (seed_loss + expension_loss + boundary_loss).backward()  # independent backward would cause Error: Trying to backward through the graph a second time ...
                 optimizer.step()
@@ -240,10 +240,10 @@ for epoch in range(args.epochs):
                 loss2 = criterion1(outputs2.squeeze(), labels)
                 if flag_use_cuda:
                     seed_loss = criterion_seed(outputs_seg, torch.from_numpy(mask_seed).cuda(), labels)
-                    boundary_loss = criterion_boundary(outputs_seg, mask_s_gt.cuda())
+                    boundary_loss = criterion_boundary(outputs_seg, mask_s_gt.cuda())/(labels.shape[0]*outputs_seg.shape[2]*outputs_seg.shape[3])
                 else:
                     seed_loss = criterion_seed(outputs_seg, torch.from_numpy(mask_seed), labels)
-                    boundary_loss = criterion_boundary(outputs_seg, mask_s_gt)
+                    boundary_loss = criterion_boundary(outputs_seg, mask_s_gt)/(labels.shape[0]*outputs_seg.shape[2]*outputs_seg.shape[3])
 
                 expension_loss = criterion_expension(outputs2.squeeze(), labels)
 
