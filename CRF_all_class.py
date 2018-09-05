@@ -19,7 +19,7 @@ from scipy.signal import medfilt2d
 
 class CRF():
     def __init__(self, args):
-        self.flag_visual = False
+        self.flag_visual = True
         self.iters = [0, 1, 3, 10, 15, 25]
         self.H , self.W = args.input_size
         self.N_labels = args.num_classes
