@@ -342,6 +342,6 @@ for epoch in range(args.epochs):
 
     print('1 Epoch: {} took {:.2f}, Train Loss: {:.4f}, Acc: {:.4f}, Recall: {:.4f}; eval loss: {:.4f}, Acc: {:.4f}, Recall: {:.4f}'.format(epoch, time_took, epoch_train_loss1, acc_train1, recall_train1, epoch_eval_loss1, acc_eval1, recall_eval1))
     print('2 Epoch: {} took {:.2f}, Train Loss: {:.4f}, Acc: {:.4f}, Recall: {:.4f}; eval loss: {:.4f}, Acc: {:.4f}, Recall: {:.4f}'.format(epoch, time_took, epoch_train_loss2, acc_train2, recall_train2, epoch_eval_loss2, acc_eval2, recall_eval2))
-    print('Train seg loss is: {:.6f}, seed loss is: {:,6f};  eval seg loss is: {:,6f}, seed loss is: {:,6f}.'.format(epoch_train_seg_loss, epoch_train_seed_loss, epoch_eval_seg_loss, epoch_eval_seed_loss))
+    print('Train seg loss is: {:.6f}, seed loss is: {:.6f};  eval seg loss is: {:.6f}, seed loss is: {:.6f}.'.format(epoch_train_seg_loss, epoch_train_seed_loss, epoch_eval_seg_loss, epoch_eval_seed_loss))
 
 print("done")

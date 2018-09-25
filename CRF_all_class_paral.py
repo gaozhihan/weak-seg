@@ -151,6 +151,16 @@ class CRF():
         return mask * 0.9 + 0.05
 
 
+    def channel_norm(self, mask):  # the same as SEC: https://github.com/kolesman/SEC/blob/master/deploy/demo.py
+        mask_exp = np.exp(mask - np.max(mask, axis=0, keepdims=True))
+        mask = mask_exp / np.sum(mask_exp, axis=0, keepdims=True)
+        eps = 0.00001
+        mask[mask < eps] = eps
+
+        return mask
+
+
+
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #    mask generation
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -326,7 +336,8 @@ class CRF():
             # mask = self.softmax_norm_preds_only(mask_org, class_cur)
             # mask = self.sig_pred_only(mask_org, class_cur)
         else:
-            mask = self.spacial_norm(mask_org)
+            # mask = self.spacial_norm(mask_org)
+            mask = self.channel_norm(mask_org)
 
         if len(class_cur) == 1:
             pre_mask = np.full((self.H, self.W), class_cur[0], dtype=np.float64)

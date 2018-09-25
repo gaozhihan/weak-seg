@@ -46,7 +46,7 @@ class SEC_NN(nn.Module):
         nn.ReLU(),
         nn.Dropout(0.2),
         nn.Conv2d(1024,21,(1, 1)), # 1024 / 512
-        nn.Softmax2d()
+        # nn.Softmax2d()
         )
 
         #self.mask2label_pool = nn.AdaptiveMaxPool2d(1)
