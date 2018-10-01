@@ -16,6 +16,7 @@ import CRF_all_class
 import numpy as np
 import my_resnet3
 import decoupled_net
+import CRF_sec
 
 args = get_args()
 args.need_mask_flag = True
@@ -28,6 +29,7 @@ args.origin_size = True
 args.color_vote = False
 args.fix_CRF_itr = True
 args.preds_only = False
+args.CRF_model = 'SEC_CRF' # SEC_CRF or my_CRF
 
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
@@ -103,7 +105,10 @@ if flag_use_cuda:
     net.cuda()
 
 dataloader = VOCData(args)
-crf = CRF_all_class.CRF(args)
+if args.CRF_model == 'my_CRF':
+    crf = CRF_all_class.CRF(args)
+else:
+    crf = CRF_sec.CRF(args)
 
 max_acc = 0
 max_recall = 0

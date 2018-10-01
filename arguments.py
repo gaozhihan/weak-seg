@@ -11,6 +11,8 @@ def get_args():
                         help='data loading directory')
     parser.add_argument('--model', type=str, default="my_resnet3",  # resnet SEC
                         help='model type resnet|SEC')
+    parser.add_argument('--CRF_model', type=str, default="my_CRF",  # resnet SEC
+                        help='CRF model my_CRF|SEC_CRF')
     parser.add_argument('--loss', type=str, default="BCELoss",  # resnet SEC
                         help='model type MultiLabelSoftMarginLoss|BCELoss')
     parser.add_argument('--batch_size', type=int, default=15,
