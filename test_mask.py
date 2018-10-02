@@ -26,8 +26,8 @@ model_path = 'models/sec_rename' # sec: sec_rename; resnet: top_val_acc_resnet; 
 args.input_size = [321,321]
 args.output_size = [41, 41]
 args.origin_size = True
-args.color_vote = False
-args.fix_CRF_itr = True
+args.color_vote = True
+args.fix_CRF_itr = False
 args.preds_only = False
 args.CRF_model = 'SEC_CRF' # SEC_CRF or my_CRF
 
