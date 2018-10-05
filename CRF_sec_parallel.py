@@ -15,12 +15,13 @@ import matplotlib.pyplot as plt
 from skimage.transform import resize
 import cv2
 from scipy.signal import medfilt2d
-
+import krahenbuhl2013
+import scipy.ndimage as nd
 
 class CRF():
     def __init__(self, args):
-        self.flag_visual = True
-        self.iters = [0, 1, 3, 10, 15, 25]
+        self.flag_visual = False
+        self.iters = [0, 3, 10, 20]
         self.H , self.W = args.input_size
         self.N_labels = args.num_classes
         self.train_flag = not args.test_flag
@@ -169,27 +170,15 @@ class CRF():
 #    mask generation
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     def multi_iter_CRF(self, mask_res, img):
-        U = unary_from_softmax(mask_res)
+        U = np.log(np.transpose(mask_res,(1,2,0)))
+        img_uint8 = img.astype('uint8')
 
-        d = dcrf.DenseCRF2D(self.W, self.H, self.N_labels)
-        d.setUnaryEnergy(U)
+        i_map = 0
+        for idx, val in enumerate(self.iters):
+            self.map[idx,:,:] = np.argmax(krahenbuhl2013.CRF(img_uint8, U, maxiter=val, scale_factor=1.0), axis=2)
 
-        d.addPairwiseGaussian(sxy=(3,3), compat=3, kernel=dcrf.DIAG_KERNEL, normalization=dcrf.NORMALIZE_SYMMETRIC)
-        d.addPairwiseBilateral(sxy=(30,30), srgb=(13,13,13), rgbim=img.astype(np.uint8), compat=20, kernel=dcrf.DIAG_KERNEL, normalization=dcrf.NORMALIZE_SYMMETRIC)
-
-        Q, tmp1, tmp2 = d.startInference()
         if self.iters[0] == 0:
-            raw_map = np.argmax(Q, axis=0).reshape((self.H,self.W))
-            self.map[0,:,:] = raw_map
-
-        for i in range(self.iters[-1]):
-            d.stepInference(Q, tmp1, tmp2)
-
-            for ii in range(self.num_maps):
-                if i+1 == self.iters[ii]:
-                    self.kl[ii] = d.klDivergence(Q) / (self.H*self.W)
-                    self.map[ii,:,:] = np.argmax(Q, axis=0).reshape((self.H,self.W))
-
+            raw_map = self.map[0,:,:]
 
 
     def color_mask_vote(self, mask, img, class_cur):
@@ -243,7 +232,7 @@ class CRF():
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #    mask selection
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    def pick_mask(self, image, mask, class_cur):
+    def pick_mask(self, image, mask, class_cur, num_pixel_org_img, H_img, W_img):
         # should be pick_mask(self, maps, mask, preds), since within class function, so save any self. items
         mask_weight = mask
         num_class_cur = len(class_cur)
@@ -267,12 +256,12 @@ class CRF():
             temp_map_overlap_hard = np.zeros(num_class_cur)
             pre_map_whole = np.zeros(num_class_cur)
             for i_idx, i_class in np.ndenumerate(class_cur):
-                mask_temp = np.zeros([self.H, self.W],dtype = np.uint8)
+                mask_temp = np.zeros([H_img, W_img],dtype = np.uint8)
                 idx_temp = self.map[i_map,:,:] == i_class
                 # calculate score based on color histogram separation
                 mask_temp[idx_temp] = 1
                 if mask_temp.sum() < 100: # based on my observation
-                    hist_cur[i_idx[0], :,:,:] = self.num_pixel
+                    hist_cur[i_idx[0], :,:,:] = num_pixel_org_img
                 else:
                     hist_cur[i_idx[0], :,:,:] = cv2.calcHist([image], self.color_channels, mask_temp, self.color_his_size, self.color_ranges)
 
@@ -314,33 +303,36 @@ class CRF():
     def map2mask(self, mask_org, class_cur, map_best):
         map_s_gt = np.zeros(mask_org.shape)
         for i_class in class_cur:
-            temp_map = np.zeros((self.H, self.W))
+            temp_map = np.zeros(map_best)
             temp_map[map_best==i_class] = 1
-            map_s_gt[i_class,:,:] = resize(temp_map, (mask_org.shape[1], mask_org.shape[2]), mode='constant', anti_aliasing=True)
+            # map_s_gt[i_class,:,:] = resize(temp_map, (mask_org.shape[1], mask_org.shape[2]), mode='constant', anti_aliasing=True)
+            map_s_gt[i_class,:,:] = resize(temp_map, (mask_org.shape[1], mask_org.shape[2]), mode='constant')
 
         return map_s_gt
 
 
 
     def runCRF(self, labels, mask_gt, mask_org, img, preds, preds_only ):  # run CRF on one frame, all input are numpy
+        # set shape, so CRF can run in original image shape
+        H_img, W_img = mask_gt.shape
+        map = np.zeros([self.num_maps, H_img, W_img])
+        num_pixel_org_img = H_img * W_img
+        color_score_thr = H_img * W_img * 0.04
+
         if self.flag_visual:
             mask_gt[mask_gt==255] = 0
             plt.close("all")
 
-        mask_res = np.zeros((self.N_labels, self.H, self.W))
+        mask_res = np.zeros((self.N_labels, H_img, W_img))
         # class_cur = np.nonzero(preds)[0]
         class_cur = np.nonzero(labels)[0]
 
-        if preds_only:
-            mask = self.spacial_norm_preds_only(mask_org, class_cur)
-            # mask = self.softmax_norm_preds_only(mask_org, class_cur)
-            # mask = self.sig_pred_only(mask_org, class_cur)
-        else:
-            # mask = self.spacial_norm(mask_org)
-            mask = self.channel_norm(mask_org)
+        mask_exp = np.exp(mask_org - np.max(mask_org, axis=0, keepdims=True))
+        mask = mask_exp / np.sum(mask_exp, axis=0, keepdims=True)
+
 
         if len(class_cur) == 1:
-            pre_mask = np.full((self.H, self.W), class_cur[0], dtype=np.float64)
+            pre_mask = np.full((H_img, W_img), class_cur[0], dtype=np.float64)
             confidence = 0.0
 
             if self.train_flag:
@@ -348,11 +340,16 @@ class CRF():
             else:
                 return self.map2mask(mask_org, class_cur, pre_mask), pre_mask
 
-
+        eps = 0.00001
         for i in range(self.N_labels):
-            mask_res[i,:,:] = resize(mask[i,:,:], (self.H, self.W), mode='constant', anti_aliasing=True)
+            #temp = resize(mask[i,:,:], (H_img, W_img), mode='constant', anti_aliasing=True)
+            temp = resize(mask[i,:,:], (H_img, W_img), mode='constant')
+            temp[temp < eps] = eps
+            mask_res[i,:,:] = temp
 
+        #pre_mask = np.argmax(krahenbuhl2013.CRF(img.astype('uint8'), np.log(np.transpose(mask_res,(1,2,0))), scale_factor=1.0), axis=2)
         self.multi_iter_CRF(mask_res, img)
+        confidence = 0.0
 
         if self.flag_visual:
             self.num_plot = len(self.iters)
@@ -360,13 +357,13 @@ class CRF():
 
             plt.subplot(1,(3 + self.num_maps),1); plt.imshow(img/255); plt.title('Input image')
             plt.subplot(1,(3 + self.num_maps),2); plt.imshow(mask_gt); plt.title('true mask')
-            plt.subplot(1,(3 + self.num_maps),3); plt.imshow(self.map[0,:,:]); plt.title('raw mask')
+            plt.subplot(1,(3 + self.num_maps),3); plt.imshow(map[0,:,:]); plt.title('raw mask')
 
             for i in range(3,(3 + self.num_maps)):
-                plt.subplot(1,(2 + self.num_maps),i); plt.imshow(self.map[i-3,:,:]); plt.title('{} steps, KL={:.2f}'.format(self.iters[i-3], self.kl[i-3])); plt.axis('off')
+                plt.subplot(1,(2 + self.num_maps),i); plt.imshow(map[i-3,:,:]); plt.title('{} steps, KL={:.2f}'.format(self.iters[i-3], self.kl[i-3])); plt.axis('off')
 
-        best_map_idx, map_iou_score, color_score = self.pick_mask(img, mask_res, class_cur)
-        best_maps = np.expand_dims(self.map[best_map_idx,:,:], axis=0)
+        best_map_idx, map_iou_score, color_score = self.pick_mask(img, mask_res, class_cur, num_pixel_org_img, H_img, W_img)
+        best_maps = np.expand_dims(map[best_map_idx,:,:], axis=0)
         best_maps_iou = np.expand_dims(map_iou_score, axis=0)
         best_color_scores = np.expand_dims(color_score, axis=0)
 
@@ -380,7 +377,7 @@ class CRF():
             if map_iou_score < 0.2:
                 confidence = 0.0
             else:
-                confidence = np.maximum((self.color_score_thr - color_score), 0)/self.color_score_thr
+                confidence = np.maximum((color_score_thr - color_score), 0)/color_score_thr
 
             if self.flag_visual:
                 plt.figure()
@@ -402,13 +399,13 @@ class CRF():
 
             plt.subplot(1,(3 + self.num_maps),1); plt.imshow(img/255); plt.title('Input image')
             plt.subplot(1,(3 + self.num_maps),2); plt.imshow(mask_gt); plt.title('true mask')
-            plt.subplot(1,(3 + self.num_maps),3); plt.imshow(self.map[0,:,:]); plt.title('raw mask')
+            plt.subplot(1,(3 + self.num_maps),3); plt.imshow(map[0,:,:]); plt.title('raw mask')
 
             for i in range(3,(3 + self.num_maps)):
-                plt.subplot(1,(2 + self.num_maps),i); plt.imshow(self.map[i-3,:,:]); plt.title('{} steps, KL={:.2f}'.format(self.iters[i-3], self.kl[i-3])); plt.axis('off')
+                plt.subplot(1,(2 + self.num_maps),i); plt.imshow(map[i-3,:,:]); plt.title('{} steps, KL={:.2f}'.format(self.iters[i-3], self.kl[i-3])); plt.axis('off')
 
         best_map_idx, map_iou_score, color_score = self.pick_mask(img, mask_res, class_cur)
-        best_maps = np.concatenate((best_maps,np.expand_dims(self.map[best_map_idx,:,:], axis=0)), axis=0)
+        best_maps = np.concatenate((best_maps,np.expand_dims(map[best_map_idx,:,:], axis=0)), axis=0)
         best_maps_iou = np.concatenate((best_maps_iou,np.expand_dims(map_iou_score, axis=0)), axis=0)
         best_color_scores = np.concatenate((best_color_scores,np.expand_dims(color_score, axis=0)), axis=0)
 
@@ -418,7 +415,7 @@ class CRF():
             best_map_idx = 1
 
         pre_mask = best_maps[idx_the_best,:,:]
-        pre_mask = medfilt2d(pre_mask, kernel_size=5)
+        #pre_mask = medfilt2d(pre_mask, kernel_size=5)
 
         if self.flag_visual:
             plt.figure()

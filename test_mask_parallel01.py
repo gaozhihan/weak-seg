@@ -4,7 +4,8 @@ import torch
 import torch.nn as nn
 import torch.utils.model_zoo as model_zoo
 import torch.optim as optim
-from voc_data import VOCData
+#from voc_data import VOCData
+from voc_data_org_size_batch import VOCData
 import torch.nn.functional as F
 import time
 import socket
@@ -30,9 +31,9 @@ args.input_size = [321,321]
 args.output_size = [41, 41]
 args.color_vote = False
 args.CRF_model = 'SEC_CRF' # SEC_CRF or my_CRF
+args.origin_size = True
 #args.fix_CRF_itr = True
 
-args.origin_size = False # always False
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
 
@@ -57,9 +58,6 @@ elif host_name == 'ram-lab':
         args.batch_size = 50
 
 model_path = model_path + '.pth'
-
-if args.origin_size:
-    args.batch_size = 1
 
 if args.model == 'SEC':
     args.input_size = [321,321]
@@ -108,7 +106,12 @@ if flag_use_cuda:
     net.cuda()
 
 dataloader = VOCData(args)
-crf = CRF_all_class_paral.CRF(args)
+
+if args.CRF_model == 'my_CRF':
+    crf = CRF_all_class_paral.CRF(args)
+else:
+    crf = CRF_sec_parallel.CRF(args)
+
 
 max_acc = 0
 max_recall = 0
@@ -215,7 +218,7 @@ with Parallel(n_jobs=num_cores) as pal_worker:
                     mask_s_gt = torch.from_numpy(mask_s_gt_np)
                     loss1 = criterion1(outputs, labels)
                     loss2 = criterion2(mask.cpu(), mask_s_gt)
-                
+
                     eval_loss1 += loss1.item() * inputs.size(0)
                     eval_loss2 += loss2.item() * inputs.size(0)
 

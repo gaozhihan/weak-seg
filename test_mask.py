@@ -2,7 +2,8 @@ import torch
 import torch.nn as nn
 import torch.utils.model_zoo as model_zoo
 import torch.optim as optim
-from voc_data import VOCData
+#from voc_data import VOCData
+from voc_data_org_size_batch import VOCData
 import torch.nn.functional as F
 import time
 import socket
@@ -53,8 +54,8 @@ elif host_name == 'ram-lab':
 
 model_path = model_path + '.pth'
 
-if args.origin_size:
-    args.batch_size = 1
+# if args.origin_size:
+#     args.batch_size = 1
 
 if args.model == 'SEC':
     # model_url = 'https://download.pytorch.org/models/vgg16-397923af.pth' # 'vgg16'
@@ -149,19 +150,31 @@ with torch.no_grad():
                     preds = outputs.squeeze().data>args.threshold
 
                 mask_s_gt_np = np.zeros(mask.shape,dtype=np.float32)
+
+                if args.batch_size == 1:
+                    outputs = outputs.unsqueeze(0)
+                    preds = preds.unsqueeze(0)
+
                 for i in range(labels.shape[0]):
 
                     if args.origin_size:
-                        crf.set_shape(mask_gt[i,:,:].numpy())
-                        outputs = outputs.unsqueeze(0)
-                        preds = preds.unsqueeze(0)
+                        if type(mask_gt) is tuple:
+                            crf.set_shape(mask_gt[i])
+                        else:
+                            crf.set_shape(mask_gt[i,:,:].numpy())
 
-                    if flag_use_cuda:
-                        mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(labels[i,:].cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().cpu().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().cpu().numpy(), args.preds_only)
+                    if type(img) is tuple:
+                        if flag_use_cuda:
+                            mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(labels[i,:].cpu().numpy(), mask_gt[i], mask[i,:,:,:].detach().cpu().numpy(), img[i], preds[i,:].detach().cpu().numpy(), args.preds_only)
+                        else:
+                            mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(labels[i,:].numpy(), mask_gt[i], mask[i,:,:,:].detach().numpy(), img[i], preds[i,:].detach().numpy(), args.preds_only)
+                        iou_obj.add_iou_mask_pair(mask_gt[i], mask_pred)
                     else:
-                        mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(labels[i,:].numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().numpy(), args.preds_only)
-
-                    iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pred)
+                        if flag_use_cuda:
+                            mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(labels[i,:].cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().cpu().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().cpu().numpy(), args.preds_only)
+                        else:
+                            mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(labels[i,:].numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().numpy(), args.preds_only)
+                        iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pred)
 
                 mask_s_gt = torch.from_numpy(mask_s_gt_np)
                 loss1 = criterion1(outputs, labels)
@@ -203,18 +216,30 @@ with torch.no_grad():
                     preds = outputs.squeeze().data>args.threshold
 
                 mask_s_gt_np = np.zeros(mask.shape,dtype=np.float32)
+
+                if args.batch_size == 1:
+                    outputs = outputs.unsqueeze(0)
+                    preds = preds.unsqueeze(0)
+
                 for i in range(labels.shape[0]):
                     if args.origin_size:
-                        crf.set_shape(mask_gt[i,:,:].numpy())
-                        outputs = outputs.unsqueeze(0)
-                        preds = preds.unsqueeze(0)
+                        if type(mask_gt) is tuple:
+                            crf.set_shape(mask_gt[i])
+                        else:
+                            crf.set_shape(mask_gt[i,:,:].numpy())
 
-                    if flag_use_cuda:
-                        mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(labels[i,:].cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().cpu().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().cpu().numpy(), args.preds_only)
+                    if type(img) is tuple:
+                        if flag_use_cuda:
+                            mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(labels[i,:].cpu().numpy(), mask_gt[i], mask[i,:,:,:].detach().cpu().numpy(), img[i], preds[i,:].detach().cpu().numpy(), args.preds_only)
+                        else:
+                            mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(labels[i,:].numpy(), mask_gt[i], mask[i,:,:,:].detach().numpy(), img[i], preds[i,:].detach().numpy(), args.preds_only)
+                        iou_obj.add_iou_mask_pair(mask_gt[i], mask_pred)
                     else:
-                        mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(labels[i,:].numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().numpy(), args.preds_only)
-
-                    iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pred)
+                        if flag_use_cuda:
+                            mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(labels[i,:].cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().cpu().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().cpu().numpy(), args.preds_only)
+                        else:
+                            mask_s_gt_np[i,:,:,:], mask_pred = crf.runCRF(labels[i,:].numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().numpy(), args.preds_only)
+                        iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pred)
 
             mask_s_gt = torch.from_numpy(mask_s_gt_np)
             loss1 = criterion1(outputs, labels)
