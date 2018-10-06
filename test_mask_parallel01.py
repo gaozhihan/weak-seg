@@ -32,6 +32,7 @@ args.output_size = [41, 41]
 args.color_vote = False
 args.CRF_model = 'SEC_CRF' # SEC_CRF or my_CRF
 args.origin_size = True
+args.preds_only = False
 args.fix_CRF_itr = True
 
 host_name = socket.gethostname()
@@ -47,7 +48,7 @@ elif host_name == 'sunting-ThinkCenter-M90':
     num_cores = 2
 elif host_name == 'ram-lab':
     args.data_dir = '/data_shared/Docker/ltai/ws/decoupled_net/data/VOC2012/VOC2012_SEG_AUG'
-    num_cores = 8
+    num_cores = 20
     if args.model == 'SEC':
         args.batch_size = 50
     elif args.model == 'resnet':

@@ -156,7 +156,6 @@ class CRF():
         return mask * 0.9 + 0.05
 
 
-
     def channel_norm(self, mask):  # the same as SEC: https://github.com/kolesman/SEC/blob/master/deploy/demo.py
         mask_exp = np.exp(mask - np.max(mask, axis=0, keepdims=True))
         mask = mask_exp / np.sum(mask_exp, axis=0, keepdims=True)
@@ -309,7 +308,6 @@ class CRF():
             map_s_gt[i_class,:,:] = resize(temp_map, (mask_org.shape[1], mask_org.shape[2]), mode='constant')
 
         return map_s_gt
-
 
 
     def runCRF(self, labels, mask_gt, mask_org, img, preds, preds_only ):  # run CRF on one frame, all input are numpy
