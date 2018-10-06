@@ -52,6 +52,7 @@ class CRF():
 
         if self.flag_pre_method == 1: # problem: 1. since no use preds, other class appear; 2. other activation distort the present class
             mask[0,:,:] -= np.max(mask[1:,:,:], axis=0)  # get background
+
             # softmax
             temp_exp = np.exp(mask)
             mask = temp_exp / np.sum(temp_exp,axis=1,keepdims=True)
@@ -166,7 +167,7 @@ class CRF():
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     def multi_iter_CRF(self, mask_res, img):
         kl = np.zeros(self.num_maps)
-        map = np.zeros([self.num_maps, self.H, self.W])
+        h = np.zeros([self.num_maps, self.H, self.W])
 
         U = unary_from_softmax(mask_res)
 
