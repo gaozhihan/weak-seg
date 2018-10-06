@@ -32,7 +32,7 @@ args.output_size = [41, 41]
 args.color_vote = False
 args.CRF_model = 'SEC_CRF' # SEC_CRF or my_CRF
 args.origin_size = True
-#args.fix_CRF_itr = True
+args.fix_CRF_itr = True
 
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
