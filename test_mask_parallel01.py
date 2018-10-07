@@ -1,5 +1,3 @@
-# current can not use origninal size, since the obj CRF's self.H and self.W will be set to different value
-
 import torch
 import torch.nn as nn
 import torch.utils.model_zoo as model_zoo

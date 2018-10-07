@@ -366,12 +366,11 @@ class CRF():
                 plt.subplot(1,(2 + self.num_maps),i); plt.imshow(map[i-3,:,:]); plt.title('{} steps, KL={:.2f}'.format(self.iters[i-3], kl[i-3])); plt.axis('off')
 
         best_map_idx, map_iou_score, color_score = self.pick_mask(img, mask_res, class_cur, map)
+        if self.fix_CRF_itr:
+            best_map_idx = 1
         best_maps = np.expand_dims(map[best_map_idx,:,:], axis=0)
         best_maps_iou = np.expand_dims(map_iou_score, axis=0)
         best_color_scores = np.expand_dims(color_score, axis=0)
-
-        if self.fix_CRF_itr:
-            best_map_idx = 1
 
         # -----------------------------if self.color_vote = True, no need go further--------------------------------
         if not self.color_vote:
@@ -413,9 +412,6 @@ class CRF():
         best_color_scores = np.concatenate((best_color_scores,np.expand_dims(color_score, axis=0)), axis=0)
 
         idx_the_best, confidence = self.choose_and_weigh(best_maps_iou, best_color_scores)
-
-        if self.fix_CRF_itr:
-            best_map_idx = 1
 
         pre_mask = best_maps[idx_the_best,:,:]
         pre_mask = medfilt2d(pre_mask, kernel_size=5)
