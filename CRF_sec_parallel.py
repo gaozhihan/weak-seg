@@ -325,14 +325,14 @@ class CRF():
         mask = mask_exp / np.sum(mask_exp, axis=0, keepdims=True)
 
 
-        if len(class_cur) == 1:
-            pre_mask = np.full((H_img, W_img), class_cur[0], dtype=np.float64)
-            confidence = 0.0
-
-            if self.train_flag:
-                return self.map2mask(mask_org, class_cur, pre_mask), pre_mask, confidence, (mask - 0.05)/0.9
-            else:
-                return self.map2mask(mask_org, class_cur, pre_mask), pre_mask
+        # if len(class_cur) == 1:
+        #     pre_mask = np.full((H_img, W_img), class_cur[0], dtype=np.float64)
+        #     confidence = 0.0
+        #
+        #     if self.train_flag:
+        #         return self.map2mask(mask_org, class_cur, pre_mask), pre_mask, confidence, (mask - 0.05)/0.9
+        #     else:
+        #         return self.map2mask(mask_org, class_cur, pre_mask), pre_mask
 
         eps = 0.00001
         for i in range(self.N_labels):
