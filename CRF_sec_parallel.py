@@ -341,71 +341,71 @@ class CRF():
             temp[temp < eps] = eps
             mask_res[i,:,:] = temp
 
-        pre_mask = np.argmax(krahenbuhl2013.CRF(img.astype('uint8'), np.log(np.transpose(mask_res,(1,2,0))), scale_factor=1.0), axis=2)
+        # pre_mask = np.argmax(krahenbuhl2013.CRF(img.astype('uint8'), np.log(np.transpose(mask_res,(1,2,0))), scale_factor=1.0), axis=2)
         confidence = 0.0
-        # map = self.multi_iter_CRF(mask_res, img)
-        #
-        # if self.flag_visual:
-        #     self.num_plot = len(self.iters)
-        #     plt.figure(figsize=((3 + self.num_maps)*5,5))
-        #
-        #     plt.subplot(1,(3 + self.num_maps),1); plt.imshow(img/255); plt.title('Input image')
-        #     plt.subplot(1,(3 + self.num_maps),2); plt.imshow(mask_gt); plt.title('true mask')
-        #     plt.subplot(1,(3 + self.num_maps),3); plt.imshow(map[0,:,:]); plt.title('raw mask')
-        #
-        #     for i in range(3,(3 + self.num_maps)):
-        #         plt.subplot(1,(2 + self.num_maps),i); plt.imshow(map[i-3,:,:]); plt.title('{} steps'.format(self.iters[i-3])); plt.axis('off')
-        #
-        # best_map_idx, map_iou_score, color_score = self.pick_mask(img, mask_res, class_cur, num_pixel_org_img, H_img, W_img, map)
-        # if self.fix_CRF_itr:
-        #     best_map_idx = 1
-        # best_maps = np.expand_dims(map[best_map_idx,:,:], axis=0)
-        # best_maps_iou = np.expand_dims(map_iou_score, axis=0)
-        # best_color_scores = np.expand_dims(color_score, axis=0)
-        #
-        # # -----------------------------if self.color_vote = True, no need go further--------------------------------
-        # if not self.color_vote:
-        #     pre_mask = best_maps[0,:,:]
-        #     # pre_mask = medfilt2d(pre_mask, kernel_size=5)
-        #     # if map_iou_score < 0.2:
-        #     #     confidence = 0.0
-        #     # else:
-        #     #     confidence = np.maximum((color_score_thr - color_score), 0)/color_score_thr
-        #
-        #     if self.flag_visual:
-        #         plt.figure()
-        #         plt.imshow(pre_mask)
-        #
-        #     if self.train_flag:
-        #         return self.map2mask(mask_org, class_cur, pre_mask), pre_mask, confidence
-        #     else:
-        #         return self.map2mask(mask_org, class_cur, pre_mask), pre_mask
-        #
-        #
-        # # -----------------------------start color vote ----------------------------------------------------------------
-        # mask_res = self.color_mask_vote(mask_res, img, class_cur)
-        # map = self.multi_iter_CRF(mask_res, img)
-        #
-        # if self.flag_visual:
-        #     self.num_plot = len(self.iters)
-        #     plt.figure(figsize=((3 + self.num_maps)*5,5))
-        #
-        #     plt.subplot(1,(3 + self.num_maps),1); plt.imshow(img/255); plt.title('Input image')
-        #     plt.subplot(1,(3 + self.num_maps),2); plt.imshow(mask_gt); plt.title('true mask')
-        #     plt.subplot(1,(3 + self.num_maps),3); plt.imshow(map[0,:,:]); plt.title('raw mask')
-        #
-        #     for i in range(3,(3 + self.num_maps)):
-        #         plt.subplot(1,(2 + self.num_maps),i); plt.imshow(map[i-3,:,:]); plt.title('{} steps'.format(self.iters[i-3])); plt.axis('off')
-        #
-        # best_map_idx, map_iou_score, color_score = self.pick_mask(img, mask_res, class_cur, num_pixel_org_img, H_img, W_img, map)
-        # best_maps = np.concatenate((best_maps,np.expand_dims(map[best_map_idx,:,:], axis=0)), axis=0)
-        # best_maps_iou = np.concatenate((best_maps_iou,np.expand_dims(map_iou_score, axis=0)), axis=0)
-        # best_color_scores = np.concatenate((best_color_scores,np.expand_dims(color_score, axis=0)), axis=0)
-        #
-        # idx_the_best, confidence = self.choose_and_weigh(best_maps_iou, best_color_scores)
-        #
-        # pre_mask = best_maps[idx_the_best,:,:]
-        # #pre_mask = medfilt2d(pre_mask, kernel_size=5)
+        map = self.multi_iter_CRF(mask_res, img)
+
+        if self.flag_visual:
+            self.num_plot = len(self.iters)
+            plt.figure(figsize=((3 + self.num_maps)*5,5))
+
+            plt.subplot(1,(3 + self.num_maps),1); plt.imshow(img/255); plt.title('Input image')
+            plt.subplot(1,(3 + self.num_maps),2); plt.imshow(mask_gt); plt.title('true mask')
+            plt.subplot(1,(3 + self.num_maps),3); plt.imshow(map[0,:,:]); plt.title('raw mask')
+
+            for i in range(3,(3 + self.num_maps)):
+                plt.subplot(1,(2 + self.num_maps),i); plt.imshow(map[i-3,:,:]); plt.title('{} steps'.format(self.iters[i-3])); plt.axis('off')
+
+        best_map_idx, map_iou_score, color_score = self.pick_mask(img, mask_res, class_cur, num_pixel_org_img, H_img, W_img, map)
+        if self.fix_CRF_itr:
+            best_map_idx = 1
+        best_maps = np.expand_dims(map[best_map_idx,:,:], axis=0)
+        best_maps_iou = np.expand_dims(map_iou_score, axis=0)
+        best_color_scores = np.expand_dims(color_score, axis=0)
+
+        # -----------------------------if self.color_vote = True, no need go further--------------------------------
+        if not self.color_vote:
+            pre_mask = best_maps[0,:,:]
+            # pre_mask = medfilt2d(pre_mask, kernel_size=5)
+            # if map_iou_score < 0.2:
+            #     confidence = 0.0
+            # else:
+            #     confidence = np.maximum((color_score_thr - color_score), 0)/color_score_thr
+
+            if self.flag_visual:
+                plt.figure()
+                plt.imshow(pre_mask)
+
+            if self.train_flag:
+                return self.map2mask(mask_org, class_cur, pre_mask), pre_mask, confidence
+            else:
+                return self.map2mask(mask_org, class_cur, pre_mask), pre_mask
+
+
+        # -----------------------------start color vote ----------------------------------------------------------------
+        mask_res = self.color_mask_vote(mask_res, img, class_cur)
+        map = self.multi_iter_CRF(mask_res, img)
+
+        if self.flag_visual:
+            self.num_plot = len(self.iters)
+            plt.figure(figsize=((3 + self.num_maps)*5,5))
+
+            plt.subplot(1,(3 + self.num_maps),1); plt.imshow(img/255); plt.title('Input image')
+            plt.subplot(1,(3 + self.num_maps),2); plt.imshow(mask_gt); plt.title('true mask')
+            plt.subplot(1,(3 + self.num_maps),3); plt.imshow(map[0,:,:]); plt.title('raw mask')
+
+            for i in range(3,(3 + self.num_maps)):
+                plt.subplot(1,(2 + self.num_maps),i); plt.imshow(map[i-3,:,:]); plt.title('{} steps'.format(self.iters[i-3])); plt.axis('off')
+
+        best_map_idx, map_iou_score, color_score = self.pick_mask(img, mask_res, class_cur, num_pixel_org_img, H_img, W_img, map)
+        best_maps = np.concatenate((best_maps,np.expand_dims(map[best_map_idx,:,:], axis=0)), axis=0)
+        best_maps_iou = np.concatenate((best_maps_iou,np.expand_dims(map_iou_score, axis=0)), axis=0)
+        best_color_scores = np.concatenate((best_color_scores,np.expand_dims(color_score, axis=0)), axis=0)
+
+        idx_the_best, confidence = self.choose_and_weigh(best_maps_iou, best_color_scores)
+
+        pre_mask = best_maps[idx_the_best,:,:]
+        #pre_mask = medfilt2d(pre_mask, kernel_size=5)
 
         if self.flag_visual:
             plt.figure()

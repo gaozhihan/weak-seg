@@ -129,7 +129,6 @@ with Parallel(n_jobs=num_cores) as pal_worker:
         start = time.time()
         for phase in ['train', 'val']:
             if phase == 'train':
-                net.train(True)
 
                 for data in dataloader.dataloaders["train"]:
                     inputs, labels, mask_gt, img = data

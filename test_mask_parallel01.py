@@ -131,7 +131,6 @@ with Parallel(n_jobs=num_cores) as pal_worker:
         start = time.time()
         for phase in ['train', 'val']:
             if phase == 'train':
-                net.train(True)
 
                 for data in dataloader.dataloaders["train"]:
                     inputs, labels, mask_gt, img = data
@@ -162,9 +161,9 @@ with Parallel(n_jobs=num_cores) as pal_worker:
 
                     if type(img) is tuple:
                         if flag_use_cuda:
-                            temp = pal_worker(delayed(crf.runCRF)(preds[i,:].detach().cpu().numpy(), mask_gt[i], mask[i,:,:,:].detach().cpu().numpy(), img[i], preds[i,:].detach().cpu().numpy(), args.preds_only) for i in range(labels.shape[0]))
+                            temp = pal_worker(delayed(crf.runCRF)(labels[i,:].detach().cpu().numpy(), mask_gt[i], mask[i,:,:,:].detach().cpu().numpy(), img[i], preds[i,:].detach().cpu().numpy(), args.preds_only) for i in range(labels.shape[0]))
                         else:
-                            temp = pal_worker(delayed(crf.runCRF)(preds[i,:].detach().numpy(), mask_gt[i], mask[i,:,:,:].detach().numpy(), img[i], preds[i,:].detach().numpy(), args.preds_only) for i in range(labels.shape[0]))
+                            temp = pal_worker(delayed(crf.runCRF)(labels[i,:].detach().numpy(), mask_gt[i], mask[i,:,:,:].detach().numpy(), img[i], preds[i,:].detach().numpy(), args.preds_only) for i in range(labels.shape[0]))
 
                         for i in range(labels.shape[0]):
                             mask_s_gt_np[i,:,:,:] = temp[i][0]
@@ -172,9 +171,9 @@ with Parallel(n_jobs=num_cores) as pal_worker:
 
                     else:
                         if flag_use_cuda:
-                            temp = pal_worker(delayed(crf.runCRF)(preds[i,:].detach().cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().cpu().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().cpu().numpy(), args.preds_only) for i in range(labels.shape[0]))
+                            temp = pal_worker(delayed(crf.runCRF)(labels[i,:].detach().cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().cpu().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().cpu().numpy(), args.preds_only) for i in range(labels.shape[0]))
                         else:
-                            temp = pal_worker(delayed(crf.runCRF)(preds[i,:].detach().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().numpy(), args.preds_only) for i in range(labels.shape[0]))
+                            temp = pal_worker(delayed(crf.runCRF)(labels[i,:].detach().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().numpy(), args.preds_only) for i in range(labels.shape[0]))
 
                         for i in range(labels.shape[0]):
                             mask_s_gt_np[i,:,:,:] = temp[i][0]
@@ -228,9 +227,9 @@ with Parallel(n_jobs=num_cores) as pal_worker:
 
                     if type(img) is tuple:
                         if flag_use_cuda:
-                            temp = pal_worker(delayed(crf.runCRF)(preds[i,:].detach().cpu().numpy(), mask_gt[i], mask[i,:,:,:].detach().cpu().numpy(), img[i], preds[i,:].detach().cpu().numpy(), args.preds_only) for i in range(labels.shape[0]))
+                            temp = pal_worker(delayed(crf.runCRF)(labels[i,:].detach().cpu().numpy(), mask_gt[i], mask[i,:,:,:].detach().cpu().numpy(), img[i], preds[i,:].detach().cpu().numpy(), args.preds_only) for i in range(labels.shape[0]))
                         else:
-                            temp = pal_worker(delayed(crf.runCRF)(preds[i,:].detach().numpy(), mask_gt[i], mask[i,:,:,:].detach().numpy(), img[i], preds[i,:].detach().numpy(), args.preds_only) for i in range(labels.shape[0]))
+                            temp = pal_worker(delayed(crf.runCRF)(labels[i,:].detach().numpy(), mask_gt[i], mask[i,:,:,:].detach().numpy(), img[i], preds[i,:].detach().numpy(), args.preds_only) for i in range(labels.shape[0]))
 
                         for i in range(labels.shape[0]):
                             mask_s_gt_np[i,:,:,:] = temp[i][0]
@@ -238,9 +237,9 @@ with Parallel(n_jobs=num_cores) as pal_worker:
 
                     else:
                         if flag_use_cuda:
-                            temp = pal_worker(delayed(crf.runCRF)(preds[i,:].detach().cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().cpu().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().cpu().numpy(), args.preds_only) for i in range(labels.shape[0]))
+                            temp = pal_worker(delayed(crf.runCRF)(labels[i,:].detach().cpu().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().cpu().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().cpu().numpy(), args.preds_only) for i in range(labels.shape[0]))
                         else:
-                            temp = pal_worker(delayed(crf.runCRF)(preds[i,:].detach().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().numpy(), args.preds_only) for i in range(labels.shape[0]))
+                            temp = pal_worker(delayed(crf.runCRF)(labels[i,:].detach().numpy(), mask_gt[i,:,:].numpy(), mask[i,:,:,:].detach().numpy(), img[i,:,:,:].numpy(), preds[i,:].detach().numpy(), args.preds_only) for i in range(labels.shape[0]))
 
                         for i in range(labels.shape[0]):
                             mask_s_gt_np[i,:,:,:] = temp[i][0]

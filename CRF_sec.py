@@ -28,7 +28,7 @@ class CRF():
         self.color_vote = args.color_vote
         self.fix_CRF_itr = args.fix_CRF_itr
         if self.fix_CRF_itr:
-            self.iters = [0, 5]
+            self.iters = [0, 10]
 
         self.num_maps = len(self.iters)
         self.kl = np.zeros(self.num_maps)
