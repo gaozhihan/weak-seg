@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 import common_function
+import pickle
 
 class SEC_NN(nn.Module):
     def __init__(self, batch_size, num_classes, map_size, no_bg, flag_use_cuda):
@@ -46,7 +47,7 @@ class SEC_NN(nn.Module):
         nn.ReLU(),
         nn.Dropout(0.2),
         nn.Conv2d(1024,21,(1, 1)), # 1024 / 512
-        nn.Softmax2d()
+        # nn.Softmax2d()
         )
 
         #self.mask2label_pool = nn.AdaptiveMaxPool2d(1)
@@ -119,3 +120,15 @@ class weighted_pool_mul_class_loss(nn.Module):
 
         loss = nn.functional.multilabel_soft_margin_loss(outputs, labels)
         return loss, outputs
+
+
+## ---------------------- implement CRF -----------------------------------------
+class SeedLossLayer(nn.Module):
+    def __init__(self):
+        infile = open('models/localization_cues.pickle','rb')
+        new_dict = pickle.load(infile)
+        infile.close()
+
+        self.cues = np.zeros(())
+
+    def forward(self, labels, ids):

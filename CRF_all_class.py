@@ -316,7 +316,8 @@ class CRF():
         for i_class in class_cur:
             temp_map = np.zeros((self.H, self.W))
             temp_map[map_best==i_class] = 1
-            map_s_gt[i_class,:,:] = resize(temp_map, (mask_org.shape[1], mask_org.shape[2]), mode='constant', anti_aliasing=True)
+            # map_s_gt[i_class,:,:] = resize(temp_map, (mask_org.shape[1], mask_org.shape[2]), mode='constant', anti_aliasing=True)
+            map_s_gt[i_class,:,:] = resize(temp_map, (mask_org.shape[1], mask_org.shape[2]), mode='constant')
 
         return map_s_gt
 
@@ -350,7 +351,8 @@ class CRF():
 
 
         for i in range(self.N_labels):
-            mask_res[i,:,:] = resize(mask[i,:,:], (self.H, self.W), mode='constant', anti_aliasing=True)
+            # mask_res[i,:,:] = resize(mask[i,:,:], (self.H, self.W), mode='constant', anti_aliasing=True)
+            mask_res[i,:,:] = resize(mask[i,:,:], (self.H, self.W), mode='constant')
 
         self.multi_iter_CRF(mask_res, img)
 

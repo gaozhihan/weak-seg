@@ -14,7 +14,6 @@ from arguments import get_args
 import datetime
 
 args = get_args()
-<<<<<<< HEAD
 args.model = 'my_resnet' # my_resnet; SEC; my_resnet3; decoupled
 args.input_size = [321,321]
 args.output_size = [41, 41]

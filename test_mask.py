@@ -22,15 +22,15 @@ import CRF_sec
 args = get_args()
 args.need_mask_flag = True
 args.test_flag = True
-args.model = 'SEC' # my_resnet; SEC; my_resnet3; decoupled
-model_path = 'models/sec_rename' # sec: sec_rename; resnet: top_val_acc_resnet; my_resnet: top_val_acc_my_resnet_25; my_resnet3: top_val_rec_my_resnet3_27; decoupled: top_val_acc_decoupled_28
+args.model = 'my_resnet' # resnet; my_resnet; SEC; my_resnet3; decoupled
+model_path = 'models/top_val_acc_my_resnet_25' # sec: sec_rename; resnet: top_val_acc_resnet; my_resnet: top_val_acc_my_resnet_25; my_resnet3: top_val_rec_my_resnet3_27; decoupled: top_val_acc_decoupled_28
 args.input_size = [321,321]
 args.output_size = [41, 41]
 args.origin_size = True
 args.color_vote = True
 args.fix_CRF_itr = False
-args.preds_only = False
-args.CRF_model = 'SEC_CRF' # SEC_CRF or my_CRF
+args.preds_only = True
+args.CRF_model = 'my_CRF' # SEC_CRF or my_CRF
 
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()

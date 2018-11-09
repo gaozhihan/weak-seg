@@ -16,9 +16,8 @@ import datetime
 import decoupled_net
 
 args = get_args()
-<<<<<<< HEAD
 # args.input_size = [300,300]
-args.model = 'my_resnet'
+args.model = 'SEC'
 args.input_size = [321,321]
 args.output_size = [41, 41]
 
