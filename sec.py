@@ -56,7 +56,7 @@ class SEC_NN(nn.Module):
         #    nn.LPPool2d(2, (29, 29), stride=(29, 29)))
         #self.mask2label_pool = common_function.weighted_pool(batch_size, num_classes, map_size, no_bg, flag_use_cuda)
         self.mask2label_pool = nn.Sequential(
-            nn.MaxPool2d(kernel_size=5, stride=1),
+            #nn.MaxPool2d(kernel_size=5, stride=1),
             nn.AdaptiveAvgPool2d(1))
 
         for m in self.modules():

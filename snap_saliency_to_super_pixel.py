@@ -1,22 +1,21 @@
 import torch
 import torch.nn as nn
 from voc_data import VOCData
-import torch.nn.functional as F
 #from voc_data_org_size_batch import VOCData
 import time
 import socket
 from arguments import get_args
 import matplotlib.pyplot as plt
 from skimage.transform import resize
-import common_function
+from skimage.segmentation import felzenszwalb, slic, quickshift
+from skimage.segmentation import mark_boundaries
 import numpy as np
-import json
 import net_saliency
 
 # ---------------- visualize the saliency mask generated from the given feature maps ------------------------
-def visual_saliency(outputs, img, mask_gt, flag_classify):
+def generate_saliency(outputs, flag_classify, flag_sum):
     with torch.no_grad():
-        plt.figure()
+
         if flag_classify:
             features = outputs[:-1]
             predictions = outputs[-1]
@@ -35,12 +34,11 @@ def visual_saliency(outputs, img, mask_gt, flag_classify):
         for i_img in range(num_img):
             temp_img = img[i_img]
             temp_gt_mask = mask_gt[i_img]
-            plt.subplot(1,(4 + num_maps),1); plt.imshow(temp_img/255); plt.title('Input image'); plt.axis('off')
-            plt.subplot(1,(4 + num_maps),2); plt.imshow(temp_gt_mask); plt.title('true mask'); plt.axis('off')
-            sum_layer_mask_per_img = np.zeros(shape_mask)
-            max_layer_mask_per_img = np.zeros(shape_mask)
-            # if flag_classify:
-            #     print(idx2label[pred_hard[i_img]])
+
+            if flag_sum:
+                sum_layer_mask_per_img = np.zeros(shape_mask)
+            else:
+                max_layer_mask_per_img = np.zeros(shape_mask)
 
             for i_map in range(num_maps):
                 temp_feature = features[i_map][i_img].sum(axis=0)  #[1:] means no background
@@ -49,35 +47,70 @@ def visual_saliency(outputs, img, mask_gt, flag_classify):
                     temp_feature = (temp_feature - temp_feature.min())/temp_feature.max()
 
                 temp = resize(temp_feature, shape_mask, mode='constant')
-                sum_layer_mask_per_img = sum_layer_mask_per_img + temp
-                max_layer_mask_per_img = np.maximum(max_layer_mask_per_img, temp)
-                plt.subplot(1,(4 + num_maps),5+i_map); plt.imshow(temp); plt.axis('off')
+                if flag_sum:
+                    sum_layer_mask_per_img = sum_layer_mask_per_img + temp
+                    if sum_layer_mask_per_img.max() > 0:
+                        sum_layer_mask_per_img = (sum_layer_mask_per_img - sum_layer_mask_per_img.min())/sum_layer_mask_per_img.max()
+                    return sum_layer_mask_per_img
+                else:
+                    max_layer_mask_per_img = np.maximum(max_layer_mask_per_img, temp)
+                    if max_layer_mask_per_img.max() > 0:
+                        max_layer_mask_per_img = (max_layer_mask_per_img - max_layer_mask_per_img.min())/max_layer_mask_per_img.max()
+                    return max_layer_mask_per_img
 
-            if sum_layer_mask_per_img.max() > 0:
-                sum_layer_mask_per_img = (sum_layer_mask_per_img - sum_layer_mask_per_img.min())/sum_layer_mask_per_img.max()
 
-            if max_layer_mask_per_img.max() > 0:
-                max_layer_mask_per_img = (max_layer_mask_per_img - max_layer_mask_per_img.min())/max_layer_mask_per_img.max()
+def snap_saliency_to_superpixel(saliency_mask, img, arg_super_pixel):
 
-            plt.subplot(1,(4 + num_maps),3); plt.imshow(sum_layer_mask_per_img); plt.title('sum'); plt.axis('off')
-            plt.subplot(1,(4 + num_maps),4); plt.imshow(max_layer_mask_per_img); plt.title('max'); plt.axis('off')
-            print("done")
+    if img.max() > 1:
+        img = img / 255.0
+
+    img_shape = img.shape[:2]
+    saliency_mask_rez = resize(saliency_mask, img_shape, mode='constant')
+    saliency_mask_snapped = np.zeros(img_shape)
+
+    if arg_super_pixel == 'felzenszwalb':
+        seg = felzenszwalb(img, scale=100, sigma=1.5, min_size=10)
+    elif arg_super_pixel == 'slic':
+        seg = slic(img, n_segments=100, compactness=20, sigma=0.8)
+    elif arg_super_pixel == 'quickshift':
+        seg = quickshift(img, kernel_size=5, max_dist=10, ratio=0.5, sigma=1)
+
+    num_seg = int(seg.max()) + 1
+
+    for i_seg in range(num_seg):
+        cur_seg = (seg == i_seg)
+        cur_saliency_region = saliency_mask_rez[cur_seg]
+        saliency_mask_snapped[cur_seg] = cur_saliency_region.mean()
+
+    print(num_seg)
+    plt.subplot(2,3,1); plt.imshow(img); plt.title('Input image'); plt.axis('off')
+    plt.subplot(2,3,3); plt.imshow(saliency_mask_rez); plt.title('original saliency'); plt.axis('off')
+    plt.subplot(2,3,4); plt.imshow(seg); plt.title('super pixel'); plt.axis('off')
+    plt.subplot(2,3,5); plt.imshow(mark_boundaries(img,seg)); plt.title('super pixel'); plt.axis('off')
+    plt.subplot(2,3,6); plt.imshow(saliency_mask_snapped); plt.title('snapped saliency'); plt.axis('off')
+
+    return saliency_mask_snapped
+
+
 
 
 if __name__ == '__main__':
+    arg_model = 'decoupled_net' # vgg16, sec, resnet
+    flag_sum = False
+    arg_super_pixel = 'felzenszwalb' # 'felzenszwalb', 'slic', 'quickshift'
+
     args = get_args()
     args.need_mask_flag = True
     args.test_flag = True
     args.model = 'my_resnet' # resnet; my_resnet; SEC; my_resnet3; decoupled
     model_path = 'models/top_val_acc_my_resnet_25' # sec: sec_rename; resnet: top_val_acc_resnet; my_resnet: top_val_acc_my_resnet_25; my_resnet3: top_val_rec_my_resnet3_27; decoupled: top_val_acc_decoupled_28
-    args.input_size = [224,224] #[224,224] [321,321]
+    args.input_size = [321,321] #[224,224]
     args.output_size = [41, 41] #[29,29]
     args.origin_size = False
     args.color_vote = True
     args.fix_CRF_itr = False
     args.preds_only = True
     args.CRF_model = 'my_CRF' # SEC_CRF or my_CRF
-
     flag_classify = False
 
     host_name = socket.gethostname()
@@ -102,10 +135,14 @@ if __name__ == '__main__':
 
     model_path = model_path + '.pth'
     args.batch_size = 1
-    # net = net_saliency.resnet_saliency(flag_classify)
-    # net = net_saliency.Vgg16_for_saliency(flag_classify)
-    # net = net_saliency.SEC_for_saliency(flag_classify, args)
-    net = net_saliency.decouple_net_saliency(flag_classify)
+    if arg_model == 'vgg16':
+        net = net_saliency.Vgg16_for_saliency(flag_classify)
+    elif arg_model == 'sec':
+        net = net_saliency.SEC_for_saliency(flag_classify, args)
+    elif arg_model == 'resnet':
+        net = net_saliency.resnet_saliency(flag_classify)
+    elif arg_model == 'decoupled_net':
+        net = net_saliency.decouple_net_saliency(flag_classify)
 
     print(args)
 
@@ -115,6 +152,7 @@ if __name__ == '__main__':
     dataloader = VOCData(args)
 
     net.train(False)
+
     with torch.no_grad():
 
         start = time.time()
@@ -127,8 +165,11 @@ if __name__ == '__main__':
                         inputs = inputs.cuda(); labels = labels.cuda()
 
                     outputs = net(inputs)
-                    visual_saliency(outputs, img, mask_gt, flag_classify)
+                    saliency_mask = generate_saliency(outputs, flag_classify, flag_sum)
+                    snap_saliency_to_superpixel(saliency_mask, img.detach().squeeze().numpy(), arg_super_pixel)
 
+                    mask_gt[mask_gt==255] = 0
+                    plt.subplot(2,3,2); plt.imshow(mask_gt.detach().squeeze().numpy()); plt.title('gt mask'); plt.axis('off')
                     plt.close('all')
 
             else:  # evaluation
@@ -139,7 +180,7 @@ if __name__ == '__main__':
                         inputs = inputs.cuda(); labels = labels.cuda()
 
                     outputs = net(inputs)
-                    visual_saliency(outputs, img, mask_gt, flag_classify)
+                    generate_saliency(outputs, flag_classify, flag_sum)
 
                     plt.close('all')
 

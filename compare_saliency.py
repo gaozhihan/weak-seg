@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 from voc_data import VOCData
-import torch.nn.functional as F
 #from voc_data_org_size_batch import VOCData
 import time
 import socket
@@ -12,6 +11,7 @@ import common_function
 import numpy as np
 import json
 import net_saliency
+
 
 # ---------------- visualize the saliency mask generated from the given feature maps ------------------------
 def visual_saliency(outputs, img, mask_gt, flag_classify):
@@ -32,6 +32,7 @@ def visual_saliency(outputs, img, mask_gt, flag_classify):
 
         shape_mask = features[0][0][0].shape
 
+        #plt.figure(figsize=((3 + self.num_maps)*5,5))
         for i_img in range(num_img):
             temp_img = img[i_img]
             temp_gt_mask = mask_gt[i_img]
@@ -70,14 +71,13 @@ if __name__ == '__main__':
     args.test_flag = True
     args.model = 'my_resnet' # resnet; my_resnet; SEC; my_resnet3; decoupled
     model_path = 'models/top_val_acc_my_resnet_25' # sec: sec_rename; resnet: top_val_acc_resnet; my_resnet: top_val_acc_my_resnet_25; my_resnet3: top_val_rec_my_resnet3_27; decoupled: top_val_acc_decoupled_28
-    args.input_size = [224,224] #[224,224] [321,321]
+    args.input_size = [321,321] #[224,224]
     args.output_size = [41, 41] #[29,29]
     args.origin_size = False
     args.color_vote = True
     args.fix_CRF_itr = False
     args.preds_only = True
     args.CRF_model = 'my_CRF' # SEC_CRF or my_CRF
-
     flag_classify = False
 
     host_name = socket.gethostname()
@@ -102,19 +102,21 @@ if __name__ == '__main__':
 
     model_path = model_path + '.pth'
     args.batch_size = 1
-    # net = net_saliency.resnet_saliency(flag_classify)
-    # net = net_saliency.Vgg16_for_saliency(flag_classify)
-    # net = net_saliency.SEC_for_saliency(flag_classify, args)
-    net = net_saliency.decouple_net_saliency(flag_classify)
+    net_vgg16 = net_saliency.Vgg16_for_saliency(flag_classify)
+    net_sec = net_saliency.SEC_for_saliency(flag_classify, args)
+    net_decouple = net_saliency.decouple_net_saliency(flag_classify)
 
     print(args)
 
     if flag_use_cuda:
-        net.cuda()
+        net_vgg16.cuda()
+        net_sec.cuda()
 
     dataloader = VOCData(args)
 
-    net.train(False)
+    net_vgg16.train(False)
+    net_sec.train(False)
+    net_decouple.train(False)
     with torch.no_grad():
 
         start = time.time()
@@ -126,7 +128,13 @@ if __name__ == '__main__':
                     if flag_use_cuda:
                         inputs = inputs.cuda(); labels = labels.cuda()
 
-                    outputs = net(inputs)
+                    outputs = net_vgg16(inputs)
+                    visual_saliency(outputs, img, mask_gt, flag_classify)
+
+                    outputs = net_sec(inputs)
+                    visual_saliency(outputs, img, mask_gt, flag_classify)
+
+                    outputs = net_decouple(inputs)
                     visual_saliency(outputs, img, mask_gt, flag_classify)
 
                     plt.close('all')
@@ -138,7 +146,13 @@ if __name__ == '__main__':
                     if flag_use_cuda:
                         inputs = inputs.cuda(); labels = labels.cuda()
 
-                    outputs = net(inputs)
+                    outputs = net_vgg16(inputs)
+                    visual_saliency(outputs, img, mask_gt, flag_classify)
+
+                    outputs = net_sec(inputs)
+                    visual_saliency(outputs, img, mask_gt, flag_classify)
+
+                    outputs = net_decouple(inputs)
                     visual_saliency(outputs, img, mask_gt, flag_classify)
 
                     plt.close('all')
