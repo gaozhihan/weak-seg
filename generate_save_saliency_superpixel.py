@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from voc_data_img_name import VOCData
+from voc_data import VOCData
 #from voc_data_org_size_batch import VOCData
 import time
 import socket
@@ -18,10 +18,6 @@ def generate_saliency(outputs, flag_classify, flag_sum):
 
         if flag_classify:
             features = outputs[:-1]
-            predictions = outputs[-1]
-            # pred_hard = np.argmax(predictions, axis =1)
-            # class_idx = json.load(open("models/imagenet_class_index.json"))
-            # idx2label = [class_idx[str(k)][1] for k in range(len(class_idx))]
 
         else:
             features = outputs
@@ -32,8 +28,6 @@ def generate_saliency(outputs, flag_classify, flag_sum):
         shape_mask = features[0][0][0].shape
 
         for i_img in range(num_img):
-            temp_img = img[i_img]
-            temp_gt_mask = mask_gt[i_img]
 
             if flag_sum:
                 sum_layer_mask_per_img = np.zeros(shape_mask)
@@ -82,14 +76,14 @@ def snap_saliency_to_superpixel(saliency_mask, img, arg_super_pixel):
         cur_saliency_region = saliency_mask_rez[cur_seg]
         saliency_mask_snapped[cur_seg] = cur_saliency_region.mean()
 
-    print(num_seg)
-    plt.subplot(2,3,1); plt.imshow(img); plt.title('Input image'); plt.axis('off')
-    plt.subplot(2,3,3); plt.imshow(saliency_mask_rez); plt.title('original saliency'); plt.axis('off')
-    plt.subplot(2,3,4); plt.imshow(seg); plt.title('super pixel'); plt.axis('off')
-    plt.subplot(2,3,5); plt.imshow(mark_boundaries(img,seg)); plt.title('super pixel'); plt.axis('off')
-    plt.subplot(2,3,6); plt.imshow(saliency_mask_snapped); plt.title('snapped saliency'); plt.axis('off')
+    # print(num_seg)
+    # plt.subplot(2,3,1); plt.imshow(img); plt.title('Input image'); plt.axis('off')
+    # plt.subplot(2,3,3); plt.imshow(saliency_mask_rez); plt.title('original saliency'); plt.axis('off')
+    # plt.subplot(2,3,4); plt.imshow(seg); plt.title('super pixel'); plt.axis('off')
+    # plt.subplot(2,3,5); plt.imshow(mark_boundaries(img,seg)); plt.title('super pixel'); plt.axis('off')
+    # plt.subplot(2,3,6); plt.imshow(saliency_mask_snapped); plt.title('snapped saliency'); plt.axis('off')
 
-    return saliency_mask_snapped
+    return saliency_mask_snapped, seg
 
 
 
@@ -120,6 +114,9 @@ if __name__ == '__main__':
         args.batch_size = 5
         args.data_dir = '/home/sunting/Documents/program/VOC2012_SEG_AUG'
         model_path = model_path + '_CPU'
+        save_saliency_path = '/home/sunting/Documents/program/VOC2012_SEG_AUG/raw_saliency/'
+        save_superpixel_path = '/home/sunting/Documents/program/VOC2012_SEG_AUG/super_pixel/'
+        save_snapped_saliency_path = '/home/sunting/Documents/program/VOC2012_SEG_AUG/snapped_saliency/'
     elif host_name == 'sunting-ThinkCenter-M90':
         args.batch_size = 18
     elif host_name == 'ram-lab':
@@ -156,34 +153,52 @@ if __name__ == '__main__':
     with torch.no_grad():
 
         start = time.time()
+        counter = 0
         for phase in ['train', 'val']:
             if phase == 'train':
 
                 for data in dataloader.dataloaders["train"]:
-                    inputs, labels, mask_gt, img = data
+                    inputs, labels, mask_gt, img, img_name = data
                     if flag_use_cuda:
                         inputs = inputs.cuda(); labels = labels.cuda()
 
                     outputs = net(inputs)
                     saliency_mask = generate_saliency(outputs, flag_classify, flag_sum)
-                    snap_saliency_to_superpixel(saliency_mask, img.detach().squeeze().numpy(), arg_super_pixel)
+                    saliency_mask_snapped, super_pixel_seg = snap_saliency_to_superpixel(saliency_mask, img.detach().squeeze().numpy(), arg_super_pixel)
 
-                    mask_gt[mask_gt==255] = 0
-                    plt.subplot(2,3,2); plt.imshow(mask_gt.detach().squeeze().numpy()); plt.title('gt mask'); plt.axis('off')
-                    plt.close('all')
+                    # mask_gt[mask_gt==255] = 0
+                    # plt.subplot(2,3,2); plt.imshow(mask_gt.detach().squeeze().numpy()); plt.title('gt mask'); plt.axis('off')
+                    # plt.close('all')
+
+                    # save raw_saliency, super pixel seg, snapped saliency
+                    np.save(save_saliency_path+img_name[0]+'.npy', saliency_mask.astype('float16'))
+                    np.save(save_superpixel_path+img_name[0]+'.npy', super_pixel_seg.astype('uint16'))
+                    np.save(save_snapped_saliency_path+img_name[0]+'.npy', saliency_mask_snapped.astype('float16'))
+                    # d = np.load('test3.npy')
+                    print(counter)
+                    counter+=1
 
             else:  # evaluation
                 start = time.time()
                 for data in dataloader.dataloaders["val"]:
-                    inputs, labels, mask_gt, img = data
+                    inputs, labels, mask_gt, img, img_name = data
                     if flag_use_cuda:
                         inputs = inputs.cuda(); labels = labels.cuda()
 
                     outputs = net(inputs)
-                    generate_saliency(outputs, flag_classify, flag_sum)
+                    saliency_mask = generate_saliency(outputs, flag_classify, flag_sum)
+                    saliency_mask_snapped, super_pixel_seg = snap_saliency_to_superpixel(saliency_mask, img.detach().squeeze().numpy(), arg_super_pixel)
 
-                    plt.close('all')
+                    # mask_gt[mask_gt==255] = 0
+                    # plt.subplot(2,3,2); plt.imshow(mask_gt.detach().squeeze().numpy()); plt.title('gt mask'); plt.axis('off')
+                    # plt.close('all')
 
+                    # save raw_saliency, super pixel seg, snapped saliency
+                    np.save(save_saliency_path+img_name[0]+'.npy', saliency_mask.astype('float16'))
+                    np.save(save_superpixel_path+img_name[0]+'.npy', super_pixel_seg.astype('uint16'))
+                    np.save(save_snapped_saliency_path+img_name[0]+'.npy', saliency_mask_snapped.astype('float16'))
+                    print(counter)
+                    counter+=1
 
 
 
