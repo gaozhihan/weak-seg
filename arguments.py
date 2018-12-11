@@ -9,6 +9,15 @@ def get_args():
     parser.add_argument('--data_dir', type=str,
                         default="./data/VOC2012/VOC2012_SEG_AUG",
                         help='data loading directory')
+    parser.add_argument('--saliency_dir', type=str,
+                        default="./data/VOC2012/VOC2012_SEG_AUG/snapped_saliency/",
+                        help='saliency loading directory')
+    parser.add_argument('--attention_dir', type=str,
+                        default="./data/VOC2012/VOC2012_SEG_AUG/snapped_attention/",
+                        help='attention loading directory')
+    parser.add_argument('--super_pixel_dir', type=str,
+                        default="./data/VOC2012/VOC2012_SEG_AUG/super_pixel/",
+                        help='super pixel loading directory')
     parser.add_argument('--model', type=str, default="my_resnet3",  # resnet SEC
                         help='model type resnet|SEC')
     parser.add_argument('--CRF_model', type=str, default="my_CRF",  # resnet SEC

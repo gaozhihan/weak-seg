@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from voc_data import VOCData
+from voc_data_img_name import VOCData
 #from voc_data_org_size_batch import VOCData
 import time
 import socket
