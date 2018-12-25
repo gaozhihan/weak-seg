@@ -18,6 +18,12 @@ def get_args():
     parser.add_argument('--super_pixel_dir', type=str,
                         default="./data/VOC2012/VOC2012_SEG_AUG/super_pixel/",
                         help='super pixel loading directory')
+    parser.add_argument('--sec_id_img_name_list_dir', type=str,
+                        default="/home/sunting/Documents/program/SEC-master/training/input_list.txt",
+                        help='sec id image mame input list')
+    parser.add_argument('--cues_pickle_dir', type=str,
+                        default="/home/sunting/Documents/program/SEC-master/training/localization_cues/localization_cues.pickle",
+                        help='cues pickle file dir for SEC')
     parser.add_argument('--model', type=str, default="my_resnet3",  # resnet SEC
                         help='model type resnet|SEC')
     parser.add_argument('--CRF_model', type=str, default="my_CRF",  # resnet SEC
