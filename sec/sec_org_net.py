@@ -77,6 +77,7 @@ class CRFLayer():
         self.num_class = 21
         self.min_prob = 0.0001
         self.mask_size = [41, 41]
+        self.input_size = [321, 321]
 
     def run(self, mask, img, flag_train): # flag_train is for the strange dif between train & test in org SEC
         batch_size = mask.shape[0]
@@ -94,10 +95,12 @@ class CRFLayer():
             return np.log(result)
 
         else:
-            result = np.zeros([batch_size, unary.shape[1], unary.shape[2]])
+            result = np.zeros([batch_size, self.input_size[0], self.input_size[1]])
             unary[unary < self.min_prob] = self.min_prob
             for i in range(batch_size):
-                result[i, :, :] = np.argmax(CRF(img[i], np.log(unary[i]), scale_factor=1.0), axis=2)
+                temp = CRF(resize(img[i]/255.0, self.mask_size, mode='constant')*255, np.log(unary[i]), scale_factor=1.0)
+                temp = resize(temp, self.input_size, mode='constant')
+                result[i, :, :] = np.argmax(temp, axis=2)
 
             return result
 

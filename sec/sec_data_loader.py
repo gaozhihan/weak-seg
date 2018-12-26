@@ -160,7 +160,7 @@ class VOCDataset(Dataset):
         img_name = os.path.join(self.data_dir, "images", self.file_list[idx]+".png")
         mask_name = os.path.join(self.data_dir, "segmentations", self.file_list[idx]+".png")
         img = Image.open(img_name)
-        cues_numpy = self.__get_cues_from_img_name(self.file_list[idx]+".png")
+
         if self.args.origin_size:
             img_array = np.array(img).astype(np.float32)
             mask = np.array(Image.open(mask_name))
@@ -180,12 +180,14 @@ class VOCDataset(Dataset):
         for item in self.label_dict[self.file_list[idx]]:
             label[item] = 1
         label_ts = torch.from_numpy(label)
-        cues = torch.from_numpy(cues_numpy)
-        if self.train_flag:
-            if self.need_mask:
-                return img_ts, label_ts, mask, img_array, cues #self.file_list[idx]  # img_name,
-            else:
-                return img_ts, label_ts
+        if self.file_list[idx]+".png" in self.img_id_dic_SEC.keys():
+            cues_numpy = self.__get_cues_from_img_name(self.file_list[idx]+".png")
+            cues = torch.from_numpy(cues_numpy)
+
+        if self.train_flag and self.file_list[idx]+".png" in self.img_id_dic_SEC.keys():
+            cues_numpy = self.__get_cues_from_img_name(self.file_list[idx]+".png")
+            cues = torch.from_numpy(cues_numpy)
+            return img_ts, label_ts, mask, img_array, cues #self.file_list[idx]  # img_name,
         else:
             # return img_ts, label_ts, mask, img_name, img_array
             return img_ts, label_ts, mask, img_array #self.file_list[idx]
