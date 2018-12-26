@@ -119,13 +119,15 @@ class ConstrainLossLayer(nn.Module):
         super(ConstrainLossLayer, self).__init__()
         self.num_pixel = 41 * 41
 
-    def forward(self, fc_crf_log, sm_mask):
+    def forward(self, fc_crf_log, sm_mask, flag_use_cuda):
         temp = torch.from_numpy(fc_crf_log.astype('float32')).exp()
+        if flag_use_cuda:
+            temp = temp.cuda()
         return ((temp * (temp/sm_mask).log()).sum()/self.num_pixel)/sm_mask.shape[0]
 
 
 class ExpandLossLayer(nn.Module):
-    def __init__(self):
+    def __init__(self, flag_use_cuda):
         super(ExpandLossLayer, self).__init__()
         self.total_pixel_num = 41 * 41
         self.q_fg = 0.996
@@ -137,6 +139,11 @@ class ExpandLossLayer(nn.Module):
         self.w_bg = np.array([self.q_bg ** i for i in range(self.total_pixel_num)])
         self.z_bg = self.w_bg.sum()
         self.w_bg_norm = torch.from_numpy((self.w_bg/self.z_bg).astype('float32'))
+
+        if flag_use_cuda:
+            self.w_fg_norm = self.w_fg_norm.cuda()
+            self.w_bg_norm = self.w_bg_norm.cuda()
+
 
 
     def forward(self, sm_mask, labels): # output prediction acc as by product

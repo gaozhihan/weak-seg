@@ -27,8 +27,12 @@ if host_name == 'sunting':
     args.cues_pickle_dir = "/home/sunting/Documents/program/SEC-master/training/localization_cues/localization_cues.pickle"
     model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/models/vgg16-397923af.pth' # 'vgg16'
 elif host_name == 'sunting-ThinkCentre-M90':
-    args.batch_size = 18
+    args.batch_size = 2
     args.data_dir = '/home/sunting/Documents/data/VOC2012_SEG_AUG'
+    args.sec_id_img_name_list_dir = "/home/sunting/Documents/program/weak-seg/sec/input_list.txt"
+    args.cues_pickle_dir = "/home/sunting/Documents/program/weak-seg/models/sec_localization_cues/localization_cues.pickle"
+    model_path = '/home/sunting/Documents/program/weak-seg/models/vgg16-397923af.pth' # 'vgg16'
+
 elif host_name == 'ram-lab':
     args.data_dir = '/data_shared/Docker/ltai/ws/decoupled_net/data/VOC2012/VOC2012_SEG_AUG'
     if args.model == 'SEC':
@@ -46,7 +50,7 @@ net.load_state_dict(torch.load(model_path), strict = False)
 
 crf_sec_layer = sec.sec_org_net.CRFLayer()
 seed_loss_layer = sec.sec_org_net.SeedingLoss()
-expand_loss_layer = sec.sec_org_net.ExpandLossLayer()
+expand_loss_layer = sec.sec_org_net.ExpandLossLayer(flag_use_cuda)
 constrain_loss_layer = sec.sec_org_net.ConstrainLossLayer()
 
 
@@ -82,7 +86,7 @@ for epoch in range(args.epochs):
             for data in dataloader.dataloaders["train"]:
                 inputs, labels, mask_gt, img, cues = data
                 if flag_use_cuda:
-                    inputs = inputs.cuda(); labels = labels.cuda()
+                    inputs = inputs.cuda(); labels = labels.cuda(); cues = cues.cuda()
 
                 optimizer.zero_grad()
 
@@ -97,7 +101,7 @@ for epoch in range(args.epochs):
                 fc_crf_log = crf_sec_layer.run(fc_mask.detach().cpu().numpy(), img.numpy(), True)
                 # calculate the SEC loss
                 seed_loss = seed_loss_layer(sm_mask, cues)
-                constrain_loss = constrain_loss_layer(fc_crf_log, sm_mask)
+                constrain_loss = constrain_loss_layer(fc_crf_log, sm_mask, flag_use_cuda)
                 expand_loss = expand_loss_layer(sm_mask, labels)
 
                 (seed_loss + constrain_loss + expand_loss).backward()  # independent backward would cause Error: Trying to backward through the graph a second time ...
