@@ -32,15 +32,11 @@ elif host_name == 'sunting-ThinkCentre-M90':
     args.sec_id_img_name_list_dir = "/home/sunting/Documents/program/weak-seg/sec/input_list.txt"
     args.cues_pickle_dir = "/home/sunting/Documents/program/weak-seg/models/sec_localization_cues/localization_cues.pickle"
     model_path = '/home/sunting/Documents/program/weak-seg/models/vgg16-397923af.pth' # 'vgg16'
-
 elif host_name == 'ram-lab':
     args.data_dir = '/data_shared/Docker/ltai/ws/decoupled_net/data/VOC2012/VOC2012_SEG_AUG'
-    if args.model == 'SEC':
-        args.batch_size = 50
-    elif args.model == 'resnet':
-        args.batch_size = 100
-    elif args.model == 'my_resnet':
-        args.batch_size = 32
+    args.sec_id_img_name_list_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/sec/input_list.txt"
+    model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/models/vgg16-397923af.pth'
+    args.batch_size = 16
 
 
 # model_url = 'https://download.pytorch.org/models/vgg16-397923af.pth' # 'vgg16'
