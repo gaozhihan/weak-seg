@@ -72,6 +72,7 @@ for epoch in range(args.epochs):
 
     train_iou = 0
     eval_iou = 0
+    counter = 0
 
     main_scheduler.step()
     start = time.time()
@@ -101,6 +102,8 @@ for epoch in range(args.epochs):
                 constrain_loss = constrain_loss_layer(fc_crf_log, sm_mask, flag_use_cuda)
                 expand_loss = expand_loss_layer(sm_mask, labels)
 
+                print(counter)
+                counter += 1
                 (seed_loss + constrain_loss + expand_loss).backward()  # independent backward would cause Error: Trying to backward through the graph a second time ...
                 optimizer.step()
 
