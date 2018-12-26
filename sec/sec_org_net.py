@@ -98,9 +98,8 @@ class CRFLayer():
             result = np.zeros([batch_size, self.input_size[0], self.input_size[1]])
             unary[unary < self.min_prob] = self.min_prob
             for i in range(batch_size):
-                temp = CRF(resize(img[i]/255.0, self.mask_size, mode='constant')*255, np.log(unary[i]), scale_factor=1.0)
-                temp = resize(temp, self.input_size, mode='constant')
-                result[i, :, :] = np.argmax(temp, axis=2)
+                u_temp = resize(unary[i], self.input_size, mode='constant')
+                result[i, :, :] = np.argmax(CRF(img[i], np.log(u_temp), scale_factor=1.0), axis=2)
 
             return result
 

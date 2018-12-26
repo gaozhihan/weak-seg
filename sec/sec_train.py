@@ -75,7 +75,7 @@ for epoch in range(args.epochs):
 
     main_scheduler.step()
     start = time.time()
-    for phase in ['train', 'val']:
+    for phase in ['val']:
         if phase == 'train':
             net.train(True)
 
@@ -121,7 +121,7 @@ for epoch in range(args.epochs):
 
                 with torch.no_grad():
                     fc_mask, sm_mask = net(inputs)
-                    mask_pre = crf_sec_layer.run(fc_mask.detach().cpu().numpy(), img.numpy(), False)
+                    mask_pre = crf_sec_layer.run(sm_mask.detach().cpu().numpy(), img.numpy(), False)
 
                     for i in range(labels.shape[0]):
                         iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pre[i])
