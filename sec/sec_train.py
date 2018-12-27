@@ -9,6 +9,7 @@ import common_function
 import numpy as np
 import datetime
 from skimage.transform import resize
+import matplotlib.pyplot as plt
 
 args = get_args()
 args.need_mask_flag = True
@@ -100,6 +101,12 @@ for epoch in range(args.epochs):
                 seed_loss = seed_loss_layer(sm_mask, cues)
                 constrain_loss = constrain_loss_layer(fc_crf_log, sm_mask, flag_use_cuda)
                 expand_loss = expand_loss_layer(sm_mask, labels)
+
+                # for i in range(labels.shape[0]):
+                #     temp = np.argmax(np.exp(fc_crf_log[i].astype('float32')), axis=0)
+                #     plt.subplot(1,3,1); plt.imshow(img[i]/255); plt.title('Input image')
+                #     plt.subplot(1,3,2); plt.imshow(np.argmax(sm_mask[i].detach().cpu().numpy(),axis=0)); plt.title('sm mask')
+                #     plt.subplot(1,3,3); plt.imshow(temp); plt.title('fc crf log')
 
                 (seed_loss + constrain_loss + expand_loss).backward()  # independent backward would cause Error: Trying to backward through the graph a second time ...
                 optimizer.step()
