@@ -4,6 +4,7 @@ import numpy as np
 import torch.nn.functional as F
 from krahenbuhl2013 import CRF
 from skimage.transform import resize
+from joblib import Parallel, delayed
 
 class SEC_NN(nn.Module):
     def __init__(self):
@@ -102,6 +103,37 @@ class CRFLayer():
                 result[i, :, :] = np.argmax(CRF(img[i], np.log(u_temp), scale_factor=1.0), axis=2)
 
             return result
+
+# for parallel running ------------------------------
+    def run_parallel(self, mask, img, flag_train, num_cores): # flag_train is for the strange dif between train & test in org SEC
+        batch_size = mask.shape[0]
+        unary = np.transpose(mask, [0, 2, 3, 1])
+
+        with Parallel(n_jobs=num_cores) as pal_worker:
+            if flag_train:
+                result = np.zeros(unary.shape)
+
+                temp = pal_worker(delayed(CRF)(resize(img[i]/255.0, self.mask_size, mode='constant')*255, unary[i], scale_factor=12.0) for i in range(batch_size))
+                for i in range(batch_size):
+                    result[i] = temp[i]
+
+                result = np.transpose(result, [0, 3, 1, 2])
+                result[result < self.min_prob] = self.min_prob
+                result = result / np.sum(result, axis=1, keepdims=True)
+
+                return np.log(result)
+
+            else:
+                result = np.zeros([batch_size, self.input_size[0], self.input_size[1]])
+                unary[unary < self.min_prob] = self.min_prob
+
+                temp = pal_worker(delayed(CRF)(img[i], np.log(resize(unary[i], self.input_size, mode='constant')), scale_factor=1.0) for i in range(batch_size))
+                for i in range(batch_size):
+                    result[i, :, :] = np.argmax(temp[i], axis=2)
+
+                return result
+
+
 
 
 # SEC: seeding loss,  expansion loss,  constrain-to-boundary loss
