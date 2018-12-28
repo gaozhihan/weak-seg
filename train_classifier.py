@@ -25,6 +25,7 @@ host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
 now = datetime.datetime.now()
 date_str = str(now.day) + '_' + str(now.day)
+args.loss = 'BCELoss'
 
 if host_name == 'sunting':
     args.batch_size = 3
@@ -85,7 +86,6 @@ if flag_use_cuda:
     net.cuda()
 
 dataloader = VOCData(args)
-
 
 optimizer = optim.Adam(net.parameters(), lr=args.lr)  # L2 penalty: norm weight_decay=0.0001
 main_scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=args.step_size)
