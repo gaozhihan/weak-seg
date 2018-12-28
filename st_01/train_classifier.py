@@ -1,14 +1,13 @@
 import torch
 import torch.nn as nn
-import torch.utils.model_zoo as model_zoo
 import torch.optim as optim
 from voc_data import VOCData
-import torch.nn.functional as F
 import time
 import socket
 import st_01.sec_net
 from arguments import get_args
 import datetime
+import numpy as np
 
 args = get_args()
 args.need_mask_flag = False
@@ -90,7 +89,7 @@ for epoch in range(args.epochs):
                 preds_thr_numpy = (preds.data>args.threshold).detach().cpu().numpy()
                 labels_numpy = labels.detach().cpu().numpy()
 
-                TP_train += (preds_thr_numpy==labels_numpy).sum()
+                TP_train += np.logical_and(preds_thr_numpy.squeeze(),labels_numpy).sum()
                 T_train += labels_numpy.sum()
                 P_train += preds_thr_numpy.sum()
 
@@ -112,7 +111,7 @@ for epoch in range(args.epochs):
                 preds_thr_numpy = (preds.data>args.threshold).detach().cpu().numpy()
                 labels_numpy = labels.detach().cpu().numpy()
 
-                TP_eval += (preds_thr_numpy==labels_numpy).sum()
+                TP_eval += np.logical_and(preds_thr_numpy.squeeze(),labels_numpy).sum()
                 T_eval += labels_numpy.sum()
                 P_eval += preds_thr_numpy.sum()
 
