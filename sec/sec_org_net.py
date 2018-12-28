@@ -47,7 +47,7 @@ class SEC_NN(nn.Module):
         nn.Dropout(0.5),
         nn.Conv2d(1024,1024,(1, 1)),
         nn.ReLU(),
-        nn.Dropout(0.2),
+        nn.Dropout(0.5),
         nn.Conv2d(1024,21,(1, 1)) # 1024 / 512
         # nn.Softmax2d()
         )
@@ -87,7 +87,7 @@ class CRFLayer():
         if flag_train:
             result = np.zeros(unary.shape)
             for i in range(batch_size):
-                result[i] = CRF(resize(img[i]/255.0, self.mask_size, mode='constant')*255, unary[i], scale_factor=12.0)
+                result[i] = CRF(np.round(resize(img[i]/255.0, self.mask_size, mode='constant')*255), unary[i], scale_factor=12.0)
 
             result = np.transpose(result, [0, 3, 1, 2])
             result[result < self.min_prob] = self.min_prob
