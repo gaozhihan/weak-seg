@@ -78,7 +78,7 @@ for epoch in range(args.epochs):
 
     main_scheduler.step()
     start = time.time()
-    for phase in ['val']:
+    for phase in ['train', 'val']:
         if phase == 'train':
             net.train(True)
 
