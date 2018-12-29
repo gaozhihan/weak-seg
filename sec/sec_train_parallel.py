@@ -48,7 +48,7 @@ net = sec.sec_org_net.SEC_NN()
 #net.load_state_dict(model_zoo.load_url(model_url), strict = False)
 net.load_state_dict(torch.load(model_path), strict = False)
 
-crf_sec_layer = sec.sec_org_net.CRFLayer()
+crf_sec_layer = sec.sec_org_net.CRFLayer(flag_multi_process = True)
 seed_loss_layer = sec.sec_org_net.SeedingLoss()
 expand_loss_layer = sec.sec_org_net.ExpandLossLayer(flag_use_cuda)
 constrain_loss_layer = sec.sec_org_net.ConstrainLossLayer()
@@ -78,7 +78,7 @@ for epoch in range(args.epochs):
 
     main_scheduler.step()
     start = time.time()
-    for phase in ['train', 'val']:
+    for phase in ['val']:
         if phase == 'train':
             net.train(True)
 
@@ -98,7 +98,7 @@ for epoch in range(args.epochs):
                     mask_pre = np.argmax(temp, axis=2)
                     iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pre)
 
-                fc_crf_log = crf_sec_layer.run_parallel(fc_mask.detach().cpu().numpy(), img.numpy(), True, num_cores)
+                fc_crf_log = crf_sec_layer.run_parallel(fc_mask.detach().cpu().numpy(), img.numpy(), True)
                 # calculate the SEC loss
                 seed_loss = seed_loss_layer(sm_mask, cues)
                 constrain_loss = constrain_loss_layer(fc_crf_log, sm_mask, flag_use_cuda)
@@ -124,7 +124,7 @@ for epoch in range(args.epochs):
 
                 with torch.no_grad():
                     fc_mask, sm_mask = net(inputs)
-                    mask_pre = crf_sec_layer.run_parallel(sm_mask.detach().cpu().numpy(), img.numpy(), False, num_cores)
+                    mask_pre = crf_sec_layer.run_parallel(sm_mask.detach().cpu().numpy(), img.numpy(), False)
 
                     for i in range(labels.shape[0]):
                         iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pre[i])
