@@ -44,7 +44,7 @@ def get_args():
                         help='size of output mask')
     parser.add_argument('--step_size', type=int, default=20,
                         help='optimizer scheduler step size')
-    parser.add_argument('--epochs', type=int, default=100,
+    parser.add_argument('--epochs', type=int, default=1000,
                         help='training epoches (default: 100)')
     parser.add_argument('--num_classes', type=int, default=21,
                         help='classificiation nums')

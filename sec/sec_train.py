@@ -76,80 +76,79 @@ for epoch in range(args.epochs):
 
     main_scheduler.step()
     start = time.time()
-    for phase in ['train', 'val']:
-        if phase == 'train':
-            net.train(True)
 
-            num_train_batch = len(dataloader.dataloaders["train"])
-            for data in dataloader.dataloaders["train"]:
-                inputs, labels, mask_gt, img, cues = data
-                if flag_use_cuda:
-                    inputs = inputs.cuda(); labels = labels.cuda(); cues = cues.cuda()
+    net.train(True)
 
-                optimizer.zero_grad()
+    num_train_batch = len(dataloader.dataloaders["train"])
+    for data in dataloader.dataloaders["train"]:
+        inputs, labels, mask_gt, img, cues = data
+        if flag_use_cuda:
+            inputs = inputs.cuda(); labels = labels.cuda(); cues = cues.cuda()
 
-                fc_mask, sm_mask = net(inputs)
+        optimizer.zero_grad()
 
-                for i in range(labels.shape[0]):
-                    temp = np.transpose(sm_mask[i,:,:,:].detach().cpu().numpy(), [1,2,0])
-                    temp = resize(temp, args.input_size, mode='constant')
-                    mask_pre = np.argmax(temp, axis=2)
-                    iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pre)
+        fc_mask, sm_mask = net(inputs)
 
-                fc_crf_log = crf_sec_layer.run(fc_mask.detach().cpu().numpy(), img.numpy(), True)
-                # calculate the SEC loss
-                seed_loss = seed_loss_layer(sm_mask, cues)
-                constrain_loss = constrain_loss_layer(fc_crf_log, sm_mask, flag_use_cuda)
-                expand_loss = expand_loss_layer(sm_mask, labels)
+        for i in range(labels.shape[0]):
+            temp = np.transpose(sm_mask[i,:,:,:].detach().cpu().numpy(), [1,2,0])
+            temp = resize(temp, args.input_size, mode='constant')
+            mask_pre = np.argmax(temp, axis=2)
+            iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pre)
 
-                # for i in range(labels.shape[0]):
-                #     temp = np.argmax(np.exp(fc_crf_log[i].astype('float32')), axis=0)
-                #     plt.subplot(1,3,1); plt.imshow(img[i]/255); plt.title('Input image')
-                #     plt.subplot(1,3,2); plt.imshow(np.argmax(sm_mask[i].detach().cpu().numpy(),axis=0)); plt.title('sm mask')
-                #     plt.subplot(1,3,3); plt.imshow(temp); plt.title('fc crf log')
+        fc_crf_log = crf_sec_layer.run(fc_mask.detach().cpu().numpy(), img.numpy(), True)
+        # calculate the SEC loss
+        seed_loss = seed_loss_layer(sm_mask, cues)
+        constrain_loss = constrain_loss_layer(fc_crf_log, sm_mask, flag_use_cuda)
+        expand_loss = expand_loss_layer(sm_mask, labels)
 
-                (seed_loss + constrain_loss + expand_loss).backward()  # independent backward would cause Error: Trying to backward through the graph a second time ...
-                optimizer.step()
+        # for i in range(labels.shape[0]):
+        #     temp = np.argmax(np.exp(fc_crf_log[i].astype('float32')), axis=0)
+        #     plt.subplot(1,3,1); plt.imshow(img[i]/255); plt.title('Input image')
+        #     plt.subplot(1,3,2); plt.imshow(np.argmax(sm_mask[i].detach().cpu().numpy(),axis=0)); plt.title('sm mask')
+        #     plt.subplot(1,3,3); plt.imshow(temp); plt.title('fc crf log')
 
-                train_seed_loss += seed_loss.item()
-                train_constraint_loss += constrain_loss.item()
-                train_expand_loss += expand_loss.item()
+        (seed_loss + constrain_loss + expand_loss).backward()  # independent backward would cause Error: Trying to backward through the graph a second time ...
+        optimizer.step()
 
-            train_iou = iou_obj.cal_cur_iou()
-            iou_obj.iou_clear()
+        train_seed_loss += seed_loss.item()
+        train_constraint_loss += constrain_loss.item()
+        train_expand_loss += expand_loss.item()
 
-        else:  # evaluation
-            net.train(False)
-            start = time.time()
-            for data in dataloader.dataloaders["val"]:
-                inputs, labels, mask_gt, img = data
-                if flag_use_cuda:
-                    inputs = inputs.cuda(); labels = labels.cuda()
-
-                with torch.no_grad():
-                    fc_mask, sm_mask = net(inputs)
-                    mask_pre = crf_sec_layer.run(sm_mask.detach().cpu().numpy(), img.numpy(), False)
-
-                    for i in range(labels.shape[0]):
-                        iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pre[i])
-
-            eval_iou = iou_obj.cal_cur_iou()
-            iou_obj.iou_clear()
-
+        train_iou = iou_obj.cal_cur_iou()
+        iou_obj.iou_clear()
 
     time_took = time.time() - start
     epoch_train_seed_loss = train_seed_loss / num_train_batch
     epoch_train_expand_loss = train_expand_loss / num_train_batch
     epoch_train_constraint_loss = train_constraint_loss / num_train_batch
 
-    if eval_iou.mean() > max_iou:
-        print('save model ' + args.model + ' with val mean iou: {}'.format(eval_iou.mean()))
-        torch.save(net.state_dict(), './sec/models/SEC_pal_top_val_iou_'+ args.model + '.pth')
-        max_iou = eval_iou.mean()
-
     print('Epoch: {} took {:.2f}, Train seed Loss: {:.4f}, expand loss: {:.4f}, constraint loss: {:.4f}'.format(epoch, time_took, epoch_train_seed_loss, epoch_train_expand_loss, epoch_train_constraint_loss))
     print('cur train iou is : ', train_iou, ' mean: ', train_iou.mean())
-    print('cur eval iou is : ', eval_iou, ' mean: ', eval_iou.mean())
+
+    if (epoch % 50 == 0):  # evaluation
+        net.train(False)
+        start = time.time()
+        for data in dataloader.dataloaders["val"]:
+            inputs, labels, mask_gt, img = data
+            if flag_use_cuda:
+                inputs = inputs.cuda(); labels = labels.cuda()
+
+            with torch.no_grad():
+                fc_mask, sm_mask = net(inputs)
+                mask_pre = crf_sec_layer.run(sm_mask.detach().cpu().numpy(), img.numpy(), False)
+
+                for i in range(labels.shape[0]):
+                    iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pre[i])
+
+        eval_iou = iou_obj.cal_cur_iou()
+        iou_obj.iou_clear()
+
+        if eval_iou.mean() > max_iou:
+            print('save model ' + args.model + ' with val mean iou: {}'.format(eval_iou.mean()))
+            torch.save(net.state_dict(), './sec/models/SEC_pal_top_val_iou_'+ args.model + '.pth')
+            max_iou = eval_iou.mean()
+
+        print('cur eval iou is : ', eval_iou, ' mean: ', eval_iou.mean())
 
 print("done")
 
