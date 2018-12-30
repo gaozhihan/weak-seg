@@ -83,10 +83,11 @@ class SeedingLoss(nn.Module):
 
     def forward(self, sm_mask, attention_mask, labels, super_pixel, flag_use_cuda):
         # if super_pixel has too few unique elements, cues = 0
+        # RuntimeError: unique is currently CPU-only, and lacks CUDA support. Pull requests welcome!
         cues = torch.from_numpy(np.zeros(sm_mask.shape).astype('float32'))
         if flag_use_cuda:
             cues = cues.cuda()
-            
+
         for i_batch in range(sm_mask.shape[0]):
             if len(super_pixel[i_batch].unique()) > 10:
                 cues[i_batch] = torch.from_numpy(resize(attention_mask[i_batch].permute([1,2,0]), self.mask_size, mode='constant')).permute([2,0,1])
