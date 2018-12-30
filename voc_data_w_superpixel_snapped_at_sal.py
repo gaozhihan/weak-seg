@@ -169,12 +169,18 @@ class VOCDataset(Dataset):
         for item in self.label_dict[self.file_list[idx]]:
             label[item] = 1
         label_ts = torch.from_numpy(label)
+
+        attention_mask_expand = np.zeros((self.num_classes, attention_mask.shape[1], attention_mask.shape[2]))
+        temp = label_ts[1:].nonzero()
+        for i, it in enumerate(temp):
+            attention_mask_expand[it+1, :,:] = attention_mask[i]
+
         if self.train_flag:
             if self.need_mask:
-                return img_ts, label_ts, mask, img_array, super_pixel.astype('int32'), saliency_mask.astype('float32'), attention_mask.astype('float32') # img_name,
+                return img_ts, label_ts, mask, img_array, super_pixel.astype('int32'), saliency_mask.astype('float32'), attention_mask_expand.astype('float32') # img_name,
             else:
                 return img_ts, label_ts
         else:
             # return img_ts, label_ts, mask, img_name, img_array
-            return img_ts, label_ts, mask, img_array, super_pixel.astype('int32'), saliency_mask.astype('float32'), attention_mask.astype('float32')
+            return img_ts, label_ts, mask, img_array, super_pixel.astype('int32'), saliency_mask.astype('float32'), attention_mask_expand.astype('float32')
 
