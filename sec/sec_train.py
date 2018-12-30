@@ -114,8 +114,8 @@ for epoch in range(args.epochs):
         train_constraint_loss += constrain_loss.item()
         train_expand_loss += expand_loss.item()
 
-        train_iou = iou_obj.cal_cur_iou()
-        iou_obj.iou_clear()
+    train_iou = iou_obj.cal_cur_iou()
+    iou_obj.iou_clear()
 
     time_took = time.time() - start
     epoch_train_seed_loss = train_seed_loss / num_train_batch
@@ -127,7 +127,6 @@ for epoch in range(args.epochs):
 
     if (epoch % 50 == 0):  # evaluation
         net.train(False)
-        start = time.time()
         for data in dataloader.dataloaders["val"]:
             inputs, labels, mask_gt, img = data
             if flag_use_cuda:
@@ -145,7 +144,7 @@ for epoch in range(args.epochs):
 
         if eval_iou.mean() > max_iou:
             print('save model ' + args.model + ' with val mean iou: {}'.format(eval_iou.mean()))
-            torch.save(net.state_dict(), './sec/models/SEC_pal_top_val_iou_'+ args.model + '.pth')
+            torch.save(net.state_dict(), './sec/models/SEC_top_val_iou_'+ args.model + '.pth')
             max_iou = eval_iou.mean()
 
         print('cur eval iou is : ', eval_iou, ' mean: ', eval_iou.mean())
