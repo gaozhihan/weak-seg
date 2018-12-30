@@ -147,7 +147,7 @@ for epoch in range(args.epochs):
                 iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pre)
 
             loss_BCE = criterion_BCE(preds.squeeze(), labels)
-            loss_seed = criterion_seed(sm_mask, attention_mask, labels, flag_use_cuda)
+            loss_seed = criterion_seed(sm_mask, attention_mask, labels, super_pixel, flag_use_cuda)
 
             eval_BCE_loss += loss_BCE.item() * inputs.size(0)
             eval_seed_loss += loss_seed.item()
