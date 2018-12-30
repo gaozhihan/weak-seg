@@ -86,7 +86,7 @@ for epoch in range(args.epochs):
     for data in dataloader.dataloaders["train"]:
         inputs, labels, mask_gt, img, super_pixel, saliency_mask, attention_mask = data
         if flag_use_cuda:
-            inputs = inputs.cuda(); labels = labels.cuda()
+            inputs = inputs.cuda(); labels = labels.cuda(); super_pixel = super_pixel.cuda(); saliency_mask = saliency_mask.cuda(); attention_mask = attention_mask.cuda()
 
         optimizer.zero_grad()
 
@@ -100,7 +100,7 @@ for epoch in range(args.epochs):
 
 
         loss_BCE = criterion_BCE(preds.squeeze(), labels)
-        loss_seed = criterion_seed(sm_mask, attention_mask, labels, super_pixel)
+        loss_seed = criterion_seed(sm_mask, attention_mask, labels, super_pixel, flag_use_cuda)
 
         (loss_BCE + loss_seed).backward()
         optimizer.step()
@@ -133,9 +133,9 @@ for epoch in range(args.epochs):
         net.train(False)
         start = time.time()
         for data in dataloader.dataloaders["val"]:
-            inputs, labels = data
+            inputs, labels, mask_gt, img, super_pixel, saliency_mask, attention_mask = data
             if flag_use_cuda:
-                inputs = inputs.cuda(); labels = labels.cuda()
+                inputs = inputs.cuda(); labels = labels.cuda(); super_pixel = super_pixel.cuda(); saliency_mask = saliency_mask.cuda(); attention_mask = attention_mask.cuda()
 
             with torch.no_grad():
                 sm_mask, preds = net(inputs)
@@ -147,7 +147,7 @@ for epoch in range(args.epochs):
                 iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pre)
 
             loss_BCE = criterion_BCE(preds.squeeze(), labels)
-            loss_seed = criterion_seed(sm_mask, attention_mask, labels)
+            loss_seed = criterion_seed(sm_mask, attention_mask, labels, flag_use_cuda)
 
             eval_BCE_loss += loss_BCE.item() * inputs.size(0)
             eval_seed_loss += loss_seed.item()
