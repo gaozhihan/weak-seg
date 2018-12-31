@@ -93,7 +93,7 @@ class SeedingLoss(nn.Module):
 
         for i_batch in range(sm_mask.shape[0]):
             if len(super_pixel[i_batch].unique()) > 10:
-                cues[i_batch] = torch.from_numpy(resize(attention_mask[i_batch].permute([1,2,0]), self.mask_size, mode='constant')).permute([2,0,1])
+                cues[i_batch] = torch.from_numpy(resize(attention_mask[i_batch].permute([1,2,0]).numpy(), self.mask_size, mode='constant')).permute([2,0,1])
 
         thr_value = cues.max()*self.thr
         cues[cues < thr_value] = 0
