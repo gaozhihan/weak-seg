@@ -33,9 +33,10 @@ if host_name == 'sunting':
 elif host_name == 'sunting-ThinkCentre-M90':
     args.batch_size = 2
     args.data_dir = '/home/sunting/Documents/data/VOC2012_SEG_AUG'
-    args.sec_id_img_name_list_dir = "/home/sunting/Documents/program/weak-seg/sec/input_list.txt"
-    args.cues_pickle_dir = "/home/sunting/Documents/program/weak-seg/models/sec_localization_cues/localization_cues.pickle"
-    model_path = '/home/sunting/Documents/program/weak-seg/models/vgg16-397923af.pth' # 'vgg16'
+    args.super_pixel_dir = '/home/sunting/Documents/data/VOC2012_SEG_AUG/super_pixel/'
+    args.saliency_dir = '/home/sunting/Documents/data/VOC2012_SEG_AUG/snapped_saliency/'
+    args.attention_dir = '/home/sunting/Documents/data/VOC2012_SEG_AUG/snapped_attention/'
+    model_path = '/home/sunting/Documents/program/weak-seg/models/sec_rename_CPU.pth' # 'vgg16'
 elif host_name == 'ram-lab-server01':
     args.data_dir = '/data_shared/Docker/tsun/data/VOC2012/VOC2012_SEG_AUG'
     args.sec_id_img_name_list_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/sec/input_list.txt"
@@ -48,9 +49,10 @@ elif host_name == 'ram-lab-server01':
 net = st_01.sec_net.SEC_NN()
 net.load_state_dict(torch.load(model_path), strict = False)
 
-crf_sec_layer = st_01.sec_net.CRFLayer()
+crf_layer = st_01.sec_net.CRFLayer(True)
 criterion_BCE = nn.BCELoss()
 criterion_seed = st_01.sec_net.SeedingLoss()
+criterion_constrain = st_01.sec_net.ConstrainLossLayer()
 
 print(args)
 
@@ -68,6 +70,9 @@ max_recall = 0
 max_iou = 0
 iou_obj = common_function.iou_calculator()
 
+num_train_batch = len(dataloader.dataloaders["train"])
+num_eval_batch = len(dataloader.dataloaders["val"])
+
 for epoch in range(args.epochs):
 
     train_iou = 0
@@ -75,8 +80,10 @@ for epoch in range(args.epochs):
 
     train_seed_loss = 0.0
     train_BCE_loss = 0.0
+    train_constrain_loss = 0.0
     eval_seed_loss = 0.0
     eval_BCE_loss = 0.0
+    eval_constrain_loss = 0.0
     TP_train = 0; TP_eval = 0
     T_train = 0;  T_eval = 0
     P_train = 0;  P_eval = 0
@@ -88,7 +95,7 @@ for epoch in range(args.epochs):
     for data in dataloader.dataloaders["train"]:
         inputs, labels, mask_gt, img, super_pixel, saliency_mask, attention_mask = data
         if flag_use_cuda:
-            inputs = inputs.cuda(); labels = labels.cuda(); saliency_mask = saliency_mask.cuda(); attention_mask = attention_mask.cuda()
+            inputs = inputs.cuda(); labels = labels.cuda()  # saliency_mask = saliency_mask.cuda(); attention_mask = attention_mask.cuda()
 
         optimizer.zero_grad()
 
@@ -101,14 +108,17 @@ for epoch in range(args.epochs):
             iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pre)
 
 
+        crf_sm_mask = crf_layer.run_parallel(sm_mask.detach().cpu().numpy(), img.numpy())
         loss_BCE = criterion_BCE(preds.squeeze(), labels)
         loss_seed = criterion_seed(sm_mask, attention_mask, labels, super_pixel, flag_use_cuda)
+        loss_constrain = criterion_constrain(crf_sm_mask, sm_mask, flag_use_cuda)
 
-        (loss_BCE + loss_seed).backward()
+        (loss_BCE + loss_seed + loss_constrain).backward()
         optimizer.step()
 
         train_BCE_loss += loss_BCE.item() * inputs.size(0)
         train_seed_loss += loss_seed.item()
+        train_constrain_loss += loss_constrain.item()
 
         preds_thr_numpy = (preds.data>args.threshold).detach().cpu().numpy()
         labels_numpy = labels.detach().cpu().numpy()
@@ -123,10 +133,11 @@ for epoch in range(args.epochs):
     recall_train = TP_train / T_train if T_train!=0 else 0
     acc_train = TP_train / P_train if P_train!=0 else 0
     time_took = time.time() - start
-    epoch_train_BCE_loss = train_BCE_loss / dataloader.dataset_sizes["train"]
-    epoch_train_seed_loss = train_seed_loss / dataloader.dataset_sizes["train"]
+    epoch_train_BCE_loss = train_BCE_loss / num_train_batch
+    epoch_train_seed_loss = train_seed_loss / num_train_batch
+    epoch_train_constrain_loss = loss_constrain / num_train_batch
 
-    print('Epoch: {} took {:.2f}, Train seed Loss: {:.4f}, BCE loss: {:.4f}, acc: {:.4f}, rec: {:.4f}'.format(epoch, time_took, epoch_train_seed_loss, epoch_train_BCE_loss, acc_train, recall_train))
+    print('Epoch: {} took {:.2f}, Train seed Loss: {:.4f}, constrain loss: {:.4f}, BCE loss: {:.4f}, acc: {:.4f}, rec: {:.4f}'.format(epoch, time_took, epoch_train_seed_loss, epoch_train_constrain_loss, epoch_train_BCE_loss, acc_train, recall_train))
     print('cur train iou is : ', train_iou, ' mean: ', train_iou.mean())
 
 
@@ -137,7 +148,7 @@ for epoch in range(args.epochs):
         for data in dataloader.dataloaders["val"]:
             inputs, labels, mask_gt, img, super_pixel, saliency_mask, attention_mask = data
             if flag_use_cuda:
-                inputs = inputs.cuda(); labels = labels.cuda(); saliency_mask = saliency_mask.cuda(); attention_mask = attention_mask.cuda()
+                inputs = inputs.cuda(); labels = labels.cuda()  # saliency_mask = saliency_mask.cuda(); attention_mask = attention_mask.cuda()
 
             with torch.no_grad():
                 sm_mask, preds = net(inputs)
@@ -150,9 +161,11 @@ for epoch in range(args.epochs):
 
             loss_BCE = criterion_BCE(preds.squeeze(), labels)
             loss_seed = criterion_seed(sm_mask, attention_mask, labels, super_pixel, flag_use_cuda)
+            loss_constrain = criterion_constrain(crf_sm_mask, sm_mask, flag_use_cuda)
 
             eval_BCE_loss += loss_BCE.item() * inputs.size(0)
             eval_seed_loss += loss_seed.item()
+            eval_constrain_loss += loss_constrain.item()
 
 
             preds_thr_numpy = (preds.data>args.threshold).detach().cpu().numpy()
@@ -166,18 +179,19 @@ for epoch in range(args.epochs):
         iou_obj.iou_clear()
 
         time_took = time.time() - start
-        epoch_eval_BCE_loss = eval_BCE_loss / dataloader.dataset_sizes["val"]
-        epoch_eval_seed_loss = eval_seed_loss / dataloader.dataset_sizes["val"]
+        epoch_eval_BCE_loss = eval_BCE_loss / num_eval_batch
+        epoch_eval_seed_loss = eval_seed_loss / num_eval_batch
+        epoch_eval_constrain_loss = eval_constrain_loss / num_eval_batch
 
         recall_eval = TP_eval / T_eval if T_eval!=0 else 0
         acc_eval = TP_eval / P_eval if P_eval!=0 else 0
 
         if eval_iou.mean() > max_iou:
             print('save model ' + args.model + ' with val mean iou: {}'.format(eval_iou.mean()))
-            torch.save(net.state_dict(), './st_01/models/top_val_iou_'+ args.model + '.pth')
+            torch.save(net.state_dict(), './st_01/models/top_val_iou_wsc'+ args.model + '.pth')
             max_iou = eval_iou.mean()
 
-        print('Epoch: {} took {:.2f}, eval seed Loss: {:.4f}, BCE loss: {:.4f}, acc: {:.4f}, rec: {:.4f}'.format(epoch, time_took, epoch_eval_seed_loss, epoch_eval_BCE_loss, acc_eval, recall_eval))
+        print('Epoch: {} took {:.2f}, eval seed Loss: {:.4f}, constrain loss: {:.4f}, BCE loss: {:.4f}, acc: {:.4f}, rec: {:.4f}'.format(epoch, time_took, epoch_eval_seed_loss, epoch_eval_constrain_loss, epoch_eval_BCE_loss, acc_eval, recall_eval))
         print('cur eval iou is : ', eval_iou, ' mean: ', eval_iou.mean())
 
 print("done")

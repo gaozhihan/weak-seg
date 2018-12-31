@@ -67,6 +67,8 @@ main_scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=args.step_size)
 max_iou = 0
 iou_obj = common_function.iou_calculator()
 
+num_train_batch = len(dataloader.dataloaders["train"])
+
 for epoch in range(args.epochs):
     train_seed_loss = 0.0
     train_expand_loss = 0.0
@@ -80,7 +82,6 @@ for epoch in range(args.epochs):
 
     net.train(True)
 
-    num_train_batch = len(dataloader.dataloaders["train"])
     for data in dataloader.dataloaders["train"]:
         inputs, labels, mask_gt, img, cues = data
         if flag_use_cuda:
