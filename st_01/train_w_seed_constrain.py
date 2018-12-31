@@ -55,6 +55,7 @@ criterion_seed = st_01.sec_net.SeedingLoss()
 criterion_constrain = st_01.sec_net.ConstrainLossLayer()
 
 print(args)
+print(model_path)
 
 if flag_use_cuda:
     net.cuda()

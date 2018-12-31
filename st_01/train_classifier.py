@@ -48,6 +48,7 @@ elif args.loss == 'MultiLabelSoftMarginLoss':
     criterion = nn.MultiLabelSoftMarginLoss()
 
 print(args)
+print(model_path)
 
 if flag_use_cuda:
     net.cuda()

@@ -53,6 +53,7 @@ criterion_BCE = nn.BCELoss()
 criterion_seed = st_01.sec_net.SeedingLoss()
 
 print(args)
+print(model_path)
 
 if flag_use_cuda:
     net.cuda()
