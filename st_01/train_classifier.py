@@ -40,6 +40,7 @@ elif host_name == 'ram-lab-server01':
     args.batch_size = 24
 
 net = st_01.sec_net.SEC_NN()
+net.load_state_dict(torch.load(model_path), strict = False)
 
 if args.loss == 'BCELoss':
     criterion = nn.BCELoss()

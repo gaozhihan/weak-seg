@@ -110,7 +110,7 @@ class CRFLayer():
 
             return result
 
-# for parallel running ------------------------------
+    # for parallel running ------------------------------
     def run_parallel(self, mask, img, flag_train): # flag_train is for the strange dif between train & test in org SEC
         batch_size = mask.shape[0]
         unary = np.transpose(mask, [0, 2, 3, 1])
