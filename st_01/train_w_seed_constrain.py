@@ -33,9 +33,10 @@ if host_name == 'sunting':
 elif host_name == 'sunting-ThinkCentre-M90':
     args.batch_size = 2
     args.data_dir = '/home/sunting/Documents/data/VOC2012_SEG_AUG'
-    args.sec_id_img_name_list_dir = "/home/sunting/Documents/program/weak-seg/sec/input_list.txt"
-    args.cues_pickle_dir = "/home/sunting/Documents/program/weak-seg/models/sec_localization_cues/localization_cues.pickle"
-    model_path = '/home/sunting/Documents/program/weak-seg/models/vgg16-397923af.pth' # 'vgg16'
+    args.super_pixel_dir = '/home/sunting/Documents/data/VOC2012_SEG_AUG/super_pixel/'
+    args.saliency_dir = '/home/sunting/Documents/data/VOC2012_SEG_AUG/snapped_saliency/'
+    args.attention_dir = '/home/sunting/Documents/data/VOC2012_SEG_AUG/snapped_attention/'
+    model_path = '/home/sunting/Documents/program/weak-seg/models/sec_rename_CPU.pth' # 'vgg16'
 elif host_name == 'ram-lab-server01':
     args.data_dir = '/data_shared/Docker/tsun/data/VOC2012/VOC2012_SEG_AUG'
     args.sec_id_img_name_list_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/sec/input_list.txt"
@@ -94,7 +95,7 @@ for epoch in range(args.epochs):
     for data in dataloader.dataloaders["train"]:
         inputs, labels, mask_gt, img, super_pixel, saliency_mask, attention_mask = data
         if flag_use_cuda:
-            inputs = inputs.cuda(); labels = labels.cuda(); saliency_mask = saliency_mask.cuda(); attention_mask = attention_mask.cuda()
+            inputs = inputs.cuda(); labels = labels.cuda()  # saliency_mask = saliency_mask.cuda(); attention_mask = attention_mask.cuda()
 
         optimizer.zero_grad()
 
@@ -147,7 +148,7 @@ for epoch in range(args.epochs):
         for data in dataloader.dataloaders["val"]:
             inputs, labels, mask_gt, img, super_pixel, saliency_mask, attention_mask = data
             if flag_use_cuda:
-                inputs = inputs.cuda(); labels = labels.cuda(); saliency_mask = saliency_mask.cuda(); attention_mask = attention_mask.cuda()
+                inputs = inputs.cuda(); labels = labels.cuda()  # saliency_mask = saliency_mask.cuda(); attention_mask = attention_mask.cuda()
 
             with torch.no_grad():
                 sm_mask, preds = net(inputs)
@@ -180,17 +181,17 @@ for epoch in range(args.epochs):
         time_took = time.time() - start
         epoch_eval_BCE_loss = eval_BCE_loss / num_eval_batch
         epoch_eval_seed_loss = eval_seed_loss / num_eval_batch
-        epoch_eval_seed_loss = eval_constrain_loss / num_eval_batch
+        epoch_eval_constrain_loss = eval_constrain_loss / num_eval_batch
 
         recall_eval = TP_eval / T_eval if T_eval!=0 else 0
         acc_eval = TP_eval / P_eval if P_eval!=0 else 0
 
         if eval_iou.mean() > max_iou:
             print('save model ' + args.model + ' with val mean iou: {}'.format(eval_iou.mean()))
-            torch.save(net.state_dict(), './st_01/models/top_val_iou_'+ args.model + '.pth')
+            torch.save(net.state_dict(), './st_01/models/top_val_iou_wsc'+ args.model + '.pth')
             max_iou = eval_iou.mean()
 
-        print('Epoch: {} took {:.2f}, eval seed Loss: {:.4f}, constrain loss: {:.4f}, BCE loss: {:.4f}, acc: {:.4f}, rec: {:.4f}'.format(epoch, time_took, epoch_eval_seed_loss, epoch_eval_seed_loss, epoch_eval_BCE_loss, acc_eval, recall_eval))
+        print('Epoch: {} took {:.2f}, eval seed Loss: {:.4f}, constrain loss: {:.4f}, BCE loss: {:.4f}, acc: {:.4f}, rec: {:.4f}'.format(epoch, time_took, epoch_eval_seed_loss, epoch_eval_constrain_loss, epoch_eval_BCE_loss, acc_eval, recall_eval))
         print('cur eval iou is : ', eval_iou, ' mean: ', eval_iou.mean())
 
 print("done")

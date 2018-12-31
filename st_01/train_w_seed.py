@@ -88,7 +88,7 @@ for epoch in range(args.epochs):
     for data in dataloader.dataloaders["train"]:
         inputs, labels, mask_gt, img, super_pixel, saliency_mask, attention_mask = data
         if flag_use_cuda:
-            inputs = inputs.cuda(); labels = labels.cuda(); saliency_mask = saliency_mask.cuda(); attention_mask = attention_mask.cuda()
+            inputs = inputs.cuda(); labels = labels.cuda()  # saliency_mask = saliency_mask.cuda(); attention_mask = attention_mask.cuda()
 
         optimizer.zero_grad()
 
@@ -137,7 +137,7 @@ for epoch in range(args.epochs):
         for data in dataloader.dataloaders["val"]:
             inputs, labels, mask_gt, img, super_pixel, saliency_mask, attention_mask = data
             if flag_use_cuda:
-                inputs = inputs.cuda(); labels = labels.cuda(); saliency_mask = saliency_mask.cuda(); attention_mask = attention_mask.cuda()
+                inputs = inputs.cuda(); labels = labels.cuda()  # saliency_mask = saliency_mask.cuda(); attention_mask = attention_mask.cuda()
 
             with torch.no_grad():
                 sm_mask, preds = net(inputs)
@@ -174,7 +174,7 @@ for epoch in range(args.epochs):
 
         if eval_iou.mean() > max_iou:
             print('save model ' + args.model + ' with val mean iou: {}'.format(eval_iou.mean()))
-            torch.save(net.state_dict(), './st_01/models/top_val_iou_'+ args.model + '.pth')
+            torch.save(net.state_dict(), './st_01/models/top_val_iou_ws'+ args.model + '.pth')
             max_iou = eval_iou.mean()
 
         print('Epoch: {} took {:.2f}, eval seed Loss: {:.4f}, BCE loss: {:.4f}, acc: {:.4f}, rec: {:.4f}'.format(epoch, time_took, epoch_eval_seed_loss, epoch_eval_BCE_loss, acc_eval, recall_eval))
