@@ -57,7 +57,13 @@ if __name__ == '__main__':
         for phase in ['train', 'val']:
             if phase == 'train':
                 for data in dataloader.dataloaders["train"]:
-                    inputs, labels, mask_gt, img, super_pixel, saliency_mask, attention_mask = data
+                    inputs, labels, mask_gt, img, super_pixel, saliency_mask, attention_mask_expand = data
+                    temp_label = labels.squeeze()
+                    temp_label[0] = 0
+                    temp = temp_label.nonzero().tolist()
+                    temp_label = [item for sublist in temp for item in sublist]
+                    attention_mask = attention_mask_expand[:, temp_label, :,:]
+
                     # visualization
                     x = labels.detach().squeeze().numpy()
                     cur_class = np.nonzero(x[1:])[0]
@@ -79,7 +85,7 @@ if __name__ == '__main__':
 
             else:  # evaluation
                 for data in dataloader.dataloaders["val"]:
-                    inputs, labels, mask_gt, img, super_pixel, saliency_mask, attention_mask = data
+                    inputs, labels, mask_gt, img, super_pixel, saliency_mask, attention_mask_expand = data
 
 
 

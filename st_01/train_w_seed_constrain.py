@@ -48,6 +48,7 @@ elif host_name == 'ram-lab-server01':
 net = st_01.sec_net.SEC_NN()
 net.load_state_dict(torch.load(model_path), strict = False)
 
+crf_sec_layer = st_01.sec_net.CRFLayer()
 criterion_BCE = nn.BCELoss()
 criterion_seed = st_01.sec_net.SeedingLoss()
 
