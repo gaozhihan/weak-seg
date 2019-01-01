@@ -160,6 +160,7 @@ for epoch in range(args.epochs):
                 mask_pre = np.argmax(temp, axis=2)
                 iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pre)
 
+            crf_sm_mask = crf_layer.run_parallel(sm_mask.detach().cpu().numpy(), img.numpy())
             loss_BCE = criterion_BCE(preds.squeeze(), labels)
             loss_seed = criterion_seed(sm_mask, attention_mask, labels, super_pixel, flag_use_cuda)
             loss_constrain = criterion_constrain(crf_sm_mask, sm_mask, flag_use_cuda)
