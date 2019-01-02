@@ -57,7 +57,8 @@ class SEC_NN(nn.Module):
 
         self.softmax2d = nn.Softmax2d()
         self.min_prob = 0.0001
-        self.mask2pre = nn.AdaptiveAvgPool2d(1)
+        # self.mask2pre = nn.AdaptiveAvgPool2d(1)
+        self.mask2pre = nn.AdaptiveMaxPool2d(1)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -103,7 +104,7 @@ class SeedingLoss(nn.Module):
         if max_val > 0:
             cues = cues/max_val
 
-        loss = -100*(cues * sm_mask.log()).sum()/count
+        loss = -50*(cues * sm_mask.log()).sum()/count
         return loss
 
 #----------------------------------------------------------------------------------------------------------------
