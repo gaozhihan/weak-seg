@@ -58,7 +58,10 @@ class SEC_NN(nn.Module):
         self.softmax2d = nn.Softmax2d()
         self.min_prob = 0.0001
         # self.mask2pre = nn.AdaptiveAvgPool2d(1)
-        self.mask2pre = nn.AdaptiveMaxPool2d(1)
+        # self.mask2pre = nn.AdaptiveMaxPool2d(1)
+        self.mask2pre = nn.Sequential(
+            nn.MaxPool2d(5, stride=2),
+            nn.AdaptiveAvgPool2d(1))
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
