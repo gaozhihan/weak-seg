@@ -139,8 +139,6 @@ class CRFLayer():
             return result
 
 
-
-
 # SEC: seeding loss,  expansion loss,  constrain-to-boundary loss
 class SeedingLoss(nn.Module):
 
@@ -216,3 +214,5 @@ class ExpandLossLayer(nn.Module):
             loss += loss_temp/len((labels[i_batch]==0).nonzero())
 
         return loss/batch_size
+
+# --- my modified part -----------------------------------------------

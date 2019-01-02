@@ -75,11 +75,9 @@ with torch.no_grad():
         sm_mask, preds = net(inputs)
 
         if flag_crf:
-            sm_mask = crf_layer.run_parallel(sm_mask.detach().cpu().numpy(), img.numpy())
+            result_big, result_small = crf_layer.run_parallel(sm_mask.detach().cpu().numpy(), img.numpy())
             for i in range(labels.shape[0]):
-                temp = np.transpose(sm_mask[i,:,:,:], [1,2,0])
-                temp = resize(temp, args.input_size, mode='constant')
-                mask_pre = np.argmax(temp, axis=2)
+                mask_pre = np.argmax(result_big[i], axis=0)
                 iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pre)
         else:
             for i in range(labels.shape[0]):

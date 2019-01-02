@@ -102,17 +102,14 @@ for epoch in range(args.epochs):
 
         sm_mask, preds = net(inputs)
 
-        for i in range(labels.shape[0]):
-            temp = np.transpose(sm_mask[i,:,:,:].detach().cpu().numpy(), [1,2,0])
-            temp = resize(temp, args.input_size, mode='constant')
-            mask_pre = np.argmax(temp, axis=2)
-            iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pre)
-
-
-        crf_sm_mask = crf_layer.run_parallel(sm_mask.detach().cpu().numpy(), img.numpy())
+        result_big, result_small = crf_layer.run_parallel(sm_mask.detach().cpu().numpy(), img.numpy())
         loss_BCE = criterion_BCE(preds.squeeze(), labels)
         loss_seed = criterion_seed(sm_mask, attention_mask, labels, super_pixel, flag_use_cuda)
-        loss_constrain = criterion_constrain(crf_sm_mask, sm_mask, flag_use_cuda)
+        loss_constrain = criterion_constrain(result_small, sm_mask, flag_use_cuda)
+
+        for i in range(labels.shape[0]):
+            mask_pre = np.argmax(result_big[i], axis=0)
+            iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pre)
 
         (loss_BCE + loss_seed + loss_constrain).backward()
         optimizer.step()
@@ -154,16 +151,14 @@ for epoch in range(args.epochs):
             with torch.no_grad():
                 sm_mask, preds = net(inputs)
 
-            for i in range(labels.shape[0]):
-                temp = np.transpose(sm_mask[i,:,:,:].detach().cpu().numpy(), [1,2,0])
-                temp = resize(temp, args.input_size, mode='constant')
-                mask_pre = np.argmax(temp, axis=2)
-                iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pre)
-
-            crf_sm_mask = crf_layer.run_parallel(sm_mask.detach().cpu().numpy(), img.numpy())
+            result_big, result_small = crf_layer.run_parallel(sm_mask.detach().cpu().numpy(), img.numpy())
             loss_BCE = criterion_BCE(preds.squeeze(), labels)
             loss_seed = criterion_seed(sm_mask, attention_mask, labels, super_pixel, flag_use_cuda)
-            loss_constrain = criterion_constrain(crf_sm_mask, sm_mask, flag_use_cuda)
+            loss_constrain = criterion_constrain(result_small, sm_mask, flag_use_cuda)
+
+            for i in range(labels.shape[0]):
+                mask_pre = np.argmax(result_big[0], axis=0)
+                iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pre)
 
             eval_BCE_loss += loss_BCE.item() * inputs.size(0)
             eval_seed_loss += loss_seed.item()
