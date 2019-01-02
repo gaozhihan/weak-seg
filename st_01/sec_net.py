@@ -102,6 +102,8 @@ class SeedingLoss(nn.Module):
 
         thr_value = cues.max()*self.thr
         cues[cues < thr_value] = 0
+        cues[cues >= thr_value] = 1.0  # hard cues
+
         count = len(cues.nonzero())
         max_val = cues.max()
         if max_val > 0:
