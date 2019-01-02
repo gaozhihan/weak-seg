@@ -67,14 +67,6 @@ with torch.no_grad():
     train_iou = 0
     eval_iou = 0
 
-    train_seed_loss = 0.0
-    train_BCE_loss = 0.0
-    eval_seed_loss = 0.0
-    eval_BCE_loss = 0.0
-    TP_train = 0; TP_eval = 0
-    T_train = 0;  T_eval = 0
-    P_train = 0;  P_eval = 0
-
     for data in dataloader.dataloaders["train"]:
         inputs, labels, mask_gt, img, super_pixel, saliency_mask, attention_mask = data
         if flag_use_cuda:
