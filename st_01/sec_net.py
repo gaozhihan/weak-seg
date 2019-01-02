@@ -103,7 +103,7 @@ class SeedingLoss(nn.Module):
         if max_val > 0:
             cues = cues/max_val
 
-        loss = -(cues * sm_mask.log()).sum()/count
+        loss = -100*(cues * sm_mask.log()).sum()/count
         return loss
 
 #----------------------------------------------------------------------------------------------------------------
