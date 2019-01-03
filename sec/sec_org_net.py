@@ -102,7 +102,7 @@ class CRFLayer():
             result[result < self.min_prob] = self.min_prob
             result = result / np.sum(result, axis=1, keepdims=True)
 
-            return np.log(result)
+            return result
 
         else:
             result = np.zeros([batch_size, self.input_size[0], self.input_size[1]])
@@ -129,7 +129,7 @@ class CRFLayer():
             result[result < self.min_prob] = self.min_prob
             result = result / np.sum(result, axis=1, keepdims=True)
 
-            return np.log(result)
+            return result
 
         else:
             result = np.zeros([batch_size, self.input_size[0], self.input_size[1]])
@@ -159,8 +159,8 @@ class ConstrainLossLayer(nn.Module):
         super(ConstrainLossLayer, self).__init__()
         self.num_pixel = 41 * 41
 
-    def forward(self, fc_crf_log, sm_mask, flag_use_cuda):
-        temp = torch.from_numpy(fc_crf_log.astype('float32')).exp()
+    def forward(self, fc_crf, sm_mask, flag_use_cuda):
+        temp = torch.from_numpy(fc_crf.astype('float32'))
         if flag_use_cuda:
             temp = temp.cuda()
         return ((temp * (temp/sm_mask).log()).sum()/self.num_pixel)/sm_mask.shape[0]
@@ -212,7 +212,7 @@ class ExpandLossLayer(nn.Module):
             # for non-exist foreground
             loss_temp = 0.0
             for i_non_exi_class in (labels[i_batch]==0).nonzero():
-                loss_temp -= (sm_mask[i_batch, i_non_exi_class, :, :].reshape([self.total_pixel_num]).max()).log()
+                loss_temp -= (sm_mask[i_batch, i_non_exi_class, :, :].max()).log()
 
             loss += loss_temp/len((labels[i_batch]==0).nonzero())
 
@@ -228,7 +228,8 @@ def crf(sm_mask_one, img_one, num_class, input_size, mask_size, num_iter):
     d.setUnaryEnergy(U)
 
     d.addPairwiseGaussian(sxy=(3,3), compat=3, kernel=dcrf.DIAG_KERNEL, normalization=dcrf.NORMALIZE_SYMMETRIC)
-    d.addPairwiseBilateral(sxy=(30,30), srgb=(13,13,13), rgbim=img_one.astype(np.uint8), compat=20, kernel=dcrf.DIAG_KERNEL, normalization=dcrf.NORMALIZE_SYMMETRIC)
+    # d.addPairwiseBilateral(sxy=(30,30), srgb=(13,13,13), rgbim=img_one.astype(np.uint8), compat=20, kernel=dcrf.DIAG_KERNEL, normalization=dcrf.NORMALIZE_SYMMETRIC)
+    d.addPairwiseBilateral(sxy=(80,80), srgb=(13,13,13), rgbim=img_one.astype(np.uint8), compat=10, kernel=dcrf.DIAG_KERNEL, normalization=dcrf.NORMALIZE_SYMMETRIC)
 
     Q = d.inference(num_iter)
     return np.array(Q).reshape((num_class, input_size[0], input_size[1]))
@@ -261,7 +262,8 @@ class STCRFLayer():
             d.setUnaryEnergy(U)
 
             d.addPairwiseGaussian(sxy=(3,3), compat=3, kernel=dcrf.DIAG_KERNEL, normalization=dcrf.NORMALIZE_SYMMETRIC)
-            d.addPairwiseBilateral(sxy=(30,30), srgb=(13,13,13), rgbim=img[i].astype(np.uint8), compat=20, kernel=dcrf.DIAG_KERNEL, normalization=dcrf.NORMALIZE_SYMMETRIC)
+            # d.addPairwiseBilateral(sxy=(30,30), srgb=(13,13,13), rgbim=img[i].astype(np.uint8), compat=20, kernel=dcrf.DIAG_KERNEL, normalization=dcrf.NORMALIZE_SYMMETRIC)
+            d.addPairwiseBilateral(sxy=(80,80), srgb=(13,13,13), rgbim=img[i].astype(np.uint8), compat=10, kernel=dcrf.DIAG_KERNEL, normalization=dcrf.NORMALIZE_SYMMETRIC)
 
             Q = d.inference(self.num_iter)
             result_big[i] = np.array(Q).reshape((self.num_class, self.input_size[0], self.input_size[1]))

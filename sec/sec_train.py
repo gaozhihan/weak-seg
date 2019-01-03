@@ -97,10 +97,10 @@ for epoch in range(args.epochs):
             mask_pre = np.argmax(temp, axis=2)
             iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pre)
 
-        fc_crf_log = crf_sec_layer.run(fc_mask.detach().cpu().numpy(), img.numpy(), True)
+        fc_crf = crf_sec_layer.run(fc_mask.detach().cpu().numpy(), img.numpy(), True)
         # calculate the SEC loss
         seed_loss = seed_loss_layer(sm_mask, cues)
-        constrain_loss = constrain_loss_layer(fc_crf_log, sm_mask, flag_use_cuda)
+        constrain_loss = constrain_loss_layer(fc_crf, sm_mask, flag_use_cuda)
         expand_loss = expand_loss_layer(sm_mask, labels)
 
         # for i in range(labels.shape[0]):
