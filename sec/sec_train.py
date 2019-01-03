@@ -77,55 +77,55 @@ for epoch in range(args.epochs):
     train_iou = 0
     eval_iou = 0
 
-    # main_scheduler.step()
-    # start = time.time()
-    #
-    # net.train(True)
-    #
-    # for data in dataloader.dataloaders["train"]:
-    #     inputs, labels, mask_gt, img, cues = data
-    #     if flag_use_cuda:
-    #         inputs = inputs.cuda(); labels = labels.cuda(); cues = cues.cuda()
-    #
-    #     optimizer.zero_grad()
-    #
-    #     fc_mask, sm_mask = net(inputs)
-    #
-    #     for i in range(labels.shape[0]):
-    #         temp = np.transpose(sm_mask[i,:,:,:].detach().cpu().numpy(), [1,2,0])
-    #         temp = resize(temp, args.input_size, mode='constant')
-    #         mask_pre = np.argmax(temp, axis=2)
-    #         iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pre)
-    #
-    #     fc_crf = crf_sec_layer.run(fc_mask.detach().cpu().numpy(), img.numpy(), True)
-    #     # calculate the SEC loss
-    #     seed_loss = seed_loss_layer(sm_mask, cues)
-    #     constrain_loss = constrain_loss_layer(fc_crf, sm_mask, flag_use_cuda)
-    #     expand_loss = expand_loss_layer(sm_mask, labels)
-    #
-    #     # for i in range(labels.shape[0]):
-    #     #     temp = np.argmax(np.exp(fc_crf_log[i].astype('float32')), axis=0)
-    #     #     plt.subplot(1,3,1); plt.imshow(img[i]/255); plt.title('Input image')
-    #     #     plt.subplot(1,3,2); plt.imshow(np.argmax(sm_mask[i].detach().cpu().numpy(),axis=0)); plt.title('sm mask')
-    #     #     plt.subplot(1,3,3); plt.imshow(temp); plt.title('fc crf log')
-    #
-    #     (seed_loss + constrain_loss + expand_loss).backward()  # independent backward would cause Error: Trying to backward through the graph a second time ...
-    #     optimizer.step()
-    #
-    #     train_seed_loss += seed_loss.item()
-    #     train_constraint_loss += constrain_loss.item()
-    #     train_expand_loss += expand_loss.item()
-    #
-    # train_iou = iou_obj.cal_cur_iou()
-    # iou_obj.iou_clear()
-    #
-    # time_took = time.time() - start
-    # epoch_train_seed_loss = train_seed_loss / num_train_batch
-    # epoch_train_expand_loss = train_expand_loss / num_train_batch
-    # epoch_train_constraint_loss = train_constraint_loss / num_train_batch
-    #
-    # print('Epoch: {} took {:.2f}, Train seed Loss: {:.4f}, expand loss: {:.4f}, constraint loss: {:.4f}'.format(epoch, time_took, epoch_train_seed_loss, epoch_train_expand_loss, epoch_train_constraint_loss))
-    # print('cur train iou is : ', train_iou, ' mean: ', train_iou.mean())
+    main_scheduler.step()
+    start = time.time()
+
+    net.train(True)
+
+    for data in dataloader.dataloaders["train"]:
+        inputs, labels, mask_gt, img, cues = data
+        if flag_use_cuda:
+            inputs = inputs.cuda(); labels = labels.cuda(); cues = cues.cuda()
+
+        optimizer.zero_grad()
+
+        fc_mask, sm_mask = net(inputs)
+
+        for i in range(labels.shape[0]):
+            temp = np.transpose(sm_mask[i,:,:,:].detach().cpu().numpy(), [1,2,0])
+            temp = resize(temp, args.input_size, mode='constant')
+            mask_pre = np.argmax(temp, axis=2)
+            iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pre)
+
+        fc_crf = crf_sec_layer.run(fc_mask.detach().cpu().numpy(), img.numpy(), True)
+        # calculate the SEC loss
+        seed_loss = seed_loss_layer(sm_mask, cues)
+        constrain_loss = constrain_loss_layer(fc_crf, sm_mask, flag_use_cuda)
+        expand_loss = expand_loss_layer(sm_mask, labels)
+
+        # for i in range(labels.shape[0]):
+        #     temp = np.argmax(np.exp(fc_crf_log[i].astype('float32')), axis=0)
+        #     plt.subplot(1,3,1); plt.imshow(img[i]/255); plt.title('Input image')
+        #     plt.subplot(1,3,2); plt.imshow(np.argmax(sm_mask[i].detach().cpu().numpy(),axis=0)); plt.title('sm mask')
+        #     plt.subplot(1,3,3); plt.imshow(temp); plt.title('fc crf log')
+
+        (seed_loss + constrain_loss + expand_loss).backward()  # independent backward would cause Error: Trying to backward through the graph a second time ...
+        optimizer.step()
+
+        train_seed_loss += seed_loss.item()
+        train_constraint_loss += constrain_loss.item()
+        train_expand_loss += expand_loss.item()
+
+    train_iou = iou_obj.cal_cur_iou()
+    iou_obj.iou_clear()
+
+    time_took = time.time() - start
+    epoch_train_seed_loss = train_seed_loss / num_train_batch
+    epoch_train_expand_loss = train_expand_loss / num_train_batch
+    epoch_train_constraint_loss = train_constraint_loss / num_train_batch
+
+    print('Epoch: {} took {:.2f}, Train seed Loss: {:.4f}, expand loss: {:.4f}, constraint loss: {:.4f}'.format(epoch, time_took, epoch_train_seed_loss, epoch_train_expand_loss, epoch_train_constraint_loss))
+    print('cur train iou is : ', train_iou, ' mean: ', train_iou.mean())
 
     if (epoch % 50 == 0):  # evaluation
         net.train(False)
