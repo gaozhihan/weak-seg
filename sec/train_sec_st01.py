@@ -1,6 +1,6 @@
 import torch
 import torch.optim as optim
-from sec.sec_data_loader import VOCData
+from sec.sec_data_loader_no_rand import VOCData
 import sec.sec_org_net
 import time
 import socket
@@ -103,10 +103,11 @@ for epoch in range(args.epochs):
             iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pre)
 
         # for i in range(labels.shape[0]):
-        #     temp = np.argmax(np.exp(result_big[i].astype('float32')), axis=0)
-        #     plt.subplot(1,3,1); plt.imshow(img[i]/255); plt.title('Input image')
-        #     plt.subplot(1,3,2); plt.imshow(np.argmax(sm_mask[i].detach().cpu().numpy(),axis=0)); plt.title('sm mask')
-        #     plt.subplot(1,3,3); plt.imshow(temp); plt.title('sm mask crf')
+        #     temp = np.argmax(result_big[i], axis=0)
+        #     plt.subplot(1,4,1); plt.imshow(img[i]/255); plt.title('Input image')
+        #     plt.subplot(1,4,2); plt.imshow(mask_gt[i,:,:].numpy()); plt.title('gt')
+        #     plt.subplot(1,4,3); plt.imshow(np.argmax(sm_mask[i].detach().cpu().numpy(),axis=0)); plt.title('sm mask')
+        #     plt.subplot(1,4,4); plt.imshow(temp); plt.title('sm mask crf')
         #     plt.close("all")
 
         (seed_loss + constrain_loss + expand_loss).backward()  # independent backward would cause Error: Trying to backward through the graph a second time ...

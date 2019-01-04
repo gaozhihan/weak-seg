@@ -1,6 +1,6 @@
 import torch
 import torch.optim as optim
-from sec.sec_data_loader import VOCData
+from sec.sec_data_loader_no_rand import VOCData
 import sec.sec_org_net
 import time
 import socket
@@ -110,7 +110,7 @@ for epoch in range(args.epochs):
         #     plt.subplot(1,3,3); plt.imshow(temp); plt.title('fc crf log')
 
         (seed_loss + constrain_loss + expand_loss).backward()  # independent backward would cause Error: Trying to backward through the graph a second time ...
-        # optimizer.step()
+        optimizer.step()
 
         train_seed_loss += seed_loss.item()
         train_constraint_loss += constrain_loss.item()

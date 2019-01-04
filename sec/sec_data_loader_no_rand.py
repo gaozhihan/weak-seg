@@ -1,4 +1,3 @@
-# assume can not use rand (eg. randomflip, randomresize etc)
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -23,8 +22,6 @@ class VOCData():
                 ]),
                 'val': transforms.Compose([
                     transforms.Resize(args.input_size),
-                    # transforms.CenterCrop(224),
-                    #transforms.Normalize([0.485, 0.456, 0.406], [1, 1, 1])
                     transforms.ToTensor(),
                     transforms.Normalize([0.485, 0.456, 0.406], [1.0, 1.0, 1.0])
                 ]),
@@ -109,9 +106,18 @@ class VOCDataset(Dataset):
         self.need_mask = args.need_mask_flag
         self.file_list = self._get_file_list()
         self.label_dict = self._get_lable_dict()
-        self.saliency_path = args.saliency_dir
-        self.attention_path = args.attention_dir
-        self.super_pixel_path = args.super_pixel_dir
+        self.img_id_dic_SEC = self._get_img_id_list_SEC()
+        self.cues_data_SEC = pickle.load(open(self.args.cues_pickle_dir,'rb'))
+
+    def _get_img_id_list_SEC(self):
+        img_id_dic = {}
+        with open(self.args.sec_id_img_name_list_dir) as f:
+            for line in f:
+                (key, val) = line.split()
+                img_id_dic[key] = int(val)
+
+        return  img_id_dic
+
 
     def _get_file_list(self):
         with open(os.path.join(self.data_dir, "ImageSets", self.list_file),"r") as f:
@@ -139,16 +145,18 @@ class VOCDataset(Dataset):
     def __len__(self):
         return len(self.file_list)
 
+    def __get_cues_from_img_name(self, img_name):
+        img_id_sec = self.img_id_dic_SEC[img_name]
+        cues = self.cues_data_SEC['%i_cues' % img_id_sec]
+        cues_numpy = np.zeros([self.args.num_classes, self.args.output_size[0], self.args.output_size[1]])
+        cues_numpy[cues[0], cues[1], cues[2]] = 1.0
+        return  cues_numpy.astype('float32')
+
     def __getitem__(self, idx):
         img_name = os.path.join(self.data_dir, "images", self.file_list[idx]+".png")
         mask_name = os.path.join(self.data_dir, "segmentations", self.file_list[idx]+".png")
-        saliency_name = self.saliency_path + self.file_list[idx] + '.npy'
-        saliency_mask = np.load(saliency_name)
-        attention_name = self.attention_path + self.file_list[idx] + '.npy'
-        attention_mask = np.load(attention_name)
-        super_pixel_name = self.super_pixel_path + self.file_list[idx] + '.npy'
-        super_pixel = np.load(super_pixel_name)
         img = Image.open(img_name)
+
         if self.args.origin_size:
             img_array = np.array(img).astype(np.float32)
             mask = np.array(Image.open(mask_name))
@@ -168,18 +176,15 @@ class VOCDataset(Dataset):
         for item in self.label_dict[self.file_list[idx]]:
             label[item] = 1
         label_ts = torch.from_numpy(label)
+        if self.file_list[idx]+".png" in self.img_id_dic_SEC.keys():
+            cues_numpy = self.__get_cues_from_img_name(self.file_list[idx]+".png")
+            cues = torch.from_numpy(cues_numpy)
 
-        attention_mask_expand = np.zeros((self.num_classes, attention_mask.shape[1], attention_mask.shape[2]))
-        temp = label_ts[1:].nonzero()
-        for i, it in enumerate(temp):
-            attention_mask_expand[it+1, :,:] = attention_mask[i]
-
-        if self.train_flag:
-            if self.need_mask:
-                return img_ts, label_ts, mask, img_array, super_pixel.astype('int32'), saliency_mask.astype('float32'), attention_mask_expand.astype('float32') # img_name,
-            else:
-                return img_ts, label_ts
+        if self.train_flag and self.file_list[idx]+".png" in self.img_id_dic_SEC.keys():
+            cues_numpy = self.__get_cues_from_img_name(self.file_list[idx]+".png")
+            cues = torch.from_numpy(cues_numpy)
+            return img_ts, label_ts, mask, img_array, cues #self.file_list[idx]  # img_name,
         else:
             # return img_ts, label_ts, mask, img_name, img_array
-            return img_ts, label_ts, mask, img_array, super_pixel.astype('int32'), saliency_mask.astype('float32'), attention_mask_expand.astype('float32')
+            return img_ts, label_ts, mask, img_array #self.file_list[idx]
 

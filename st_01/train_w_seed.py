@@ -106,8 +106,8 @@ for epoch in range(args.epochs):
         loss_BCE = criterion_BCE(preds.squeeze(), labels)
         loss_seed = criterion_seed(sm_mask, attention_mask, labels, super_pixel, flag_use_cuda)
 
-        # (loss_BCE + loss_seed).backward()
-        loss_seed.backward()
+        (loss_BCE + loss_seed).backward()
+        # loss_seed.backward()
         optimizer.step()
 
         train_BCE_loss += loss_BCE.item() * inputs.size(0)
