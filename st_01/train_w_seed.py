@@ -10,6 +10,7 @@ import datetime
 import numpy as np
 import common_function
 from skimage.transform import resize
+import matplotlib.pyplot as plt
 
 args = get_args()
 args.origin_size = False
@@ -29,7 +30,8 @@ if host_name == 'sunting':
     args.super_pixel_dir = '/home/sunting/Documents/program/VOC2012_SEG_AUG/super_pixel/'
     args.saliency_dir = '/home/sunting/Documents/program/VOC2012_SEG_AUG/snapped_saliency/'
     args.attention_dir = '/home/sunting/Documents/program/VOC2012_SEG_AUG/snapped_attention/'
-    model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/models/vgg16-397923af.pth' # 'vgg16'
+    # model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/models/vgg16-397923af.pth' # 'vgg16'
+    model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/models/sec_rename_CPU.pth'
 elif host_name == 'sunting-ThinkCentre-M90':
     args.batch_size = 2
     args.data_dir = '/home/sunting/Documents/data/VOC2012_SEG_AUG'
@@ -102,6 +104,11 @@ for epoch in range(args.epochs):
             mask_pre = np.argmax(temp, axis=2)
             iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pre)
 
+        # batch_num = labels.shape[0]
+        # plt.figure()
+        # for i in range(batch_num):
+        #     plt.subplot(batch_num,2,2*i+1); plt.imshow(img[i]/255); plt.title('Input image')
+        #     plt.subplot(batch_num,2,2*i+2); plt.imshow(mask_gt[i,:,:].numpy()); plt.title('gt')
 
         loss_BCE = criterion_BCE(preds.squeeze(), labels)
         loss_seed = criterion_seed(sm_mask, attention_mask, labels, super_pixel, flag_use_cuda)

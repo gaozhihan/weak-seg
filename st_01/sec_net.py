@@ -8,6 +8,7 @@ from multiprocessing import Pool
 import os
 import pydensecrf.densecrf as dcrf
 from pydensecrf.utils import unary_from_softmax, create_pairwise_bilateral
+import matplotlib.pyplot as plt
 
 class SEC_NN(nn.Module):
     def __init__(self):
@@ -104,6 +105,16 @@ class SeedingLoss(nn.Module):
         cues[cues < thr_value] = 0
         cues[cues >= thr_value] = 1.0  # hard cues
 
+        # batch_num = sm_mask.shape[0]
+        # plt.figure()
+        # for i in range(batch_num):
+        #     temp = np.argmax(sm_mask[i].detach().numpy(), axis=0)
+        #     plt.subplot(batch_num,2,2*i+1); plt.imshow(temp); plt.title('sm mask')
+        #     temp = np.argmax(cues[i], axis=0)
+        #     plt.subplot(batch_num,2,2*i+2); plt.imshow(temp); plt.title('cues')
+        #
+        # plt.close("all")
+
         count = len(cues.nonzero())
         max_val = cues.max()
         if max_val > 0:
@@ -122,7 +133,8 @@ def crf(sm_mask_one, img_one, num_class, input_size, mask_size, num_iter):
     d.setUnaryEnergy(U)
 
     d.addPairwiseGaussian(sxy=(3,3), compat=3, kernel=dcrf.DIAG_KERNEL, normalization=dcrf.NORMALIZE_SYMMETRIC)
-    d.addPairwiseBilateral(sxy=(30,30), srgb=(13,13,13), rgbim=img_one.astype(np.uint8), compat=20, kernel=dcrf.DIAG_KERNEL, normalization=dcrf.NORMALIZE_SYMMETRIC)
+    # d.addPairwiseBilateral(sxy=(30,30), srgb=(13,13,13), rgbim=img_one.astype(np.uint8), compat=20, kernel=dcrf.DIAG_KERNEL, normalization=dcrf.NORMALIZE_SYMMETRIC)
+    d.addPairwiseBilateral(sxy=(80,80), srgb=(13,13,13), rgbim=img_one.astype(np.uint8), compat=10, kernel=dcrf.DIAG_KERNEL, normalization=dcrf.NORMALIZE_SYMMETRIC)
 
     Q = d.inference(num_iter)
     return np.array(Q).reshape((num_class, input_size[0], input_size[1]))
@@ -155,7 +167,8 @@ class CRFLayer():
             d.setUnaryEnergy(U)
 
             d.addPairwiseGaussian(sxy=(3,3), compat=3, kernel=dcrf.DIAG_KERNEL, normalization=dcrf.NORMALIZE_SYMMETRIC)
-            d.addPairwiseBilateral(sxy=(30,30), srgb=(13,13,13), rgbim=img[i].astype(np.uint8), compat=20, kernel=dcrf.DIAG_KERNEL, normalization=dcrf.NORMALIZE_SYMMETRIC)
+            # d.addPairwiseBilateral(sxy=(30,30), srgb=(13,13,13), rgbim=img[i].astype(np.uint8), compat=20, kernel=dcrf.DIAG_KERNEL, normalization=dcrf.NORMALIZE_SYMMETRIC)
+            d.addPairwiseBilateral(sxy=(80,80), srgb=(13,13,13), rgbim=img[i].astype(np.uint8), compat=10, kernel=dcrf.DIAG_KERNEL, normalization=dcrf.NORMALIZE_SYMMETRIC)
 
             Q = d.inference(self.num_iter)
             result_big[i] = np.array(Q).reshape((self.num_class, self.input_size[0], self.input_size[1]))

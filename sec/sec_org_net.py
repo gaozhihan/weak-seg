@@ -184,8 +184,6 @@ class ExpandLossLayer(nn.Module):
             self.w_fg_norm = self.w_fg_norm.cuda()
             self.w_bg_norm = self.w_bg_norm.cuda()
 
-
-
     def forward(self, sm_mask, labels): # output prediction acc as by product
         batch_size = labels.shape[0]
         loss = 0.0

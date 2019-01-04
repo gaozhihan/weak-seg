@@ -127,7 +127,7 @@ for epoch in range(args.epochs):
     print('Epoch: {} took {:.2f}, Train seed Loss: {:.4f}, expand loss: {:.4f}, constraint loss: {:.4f}'.format(epoch, time_took, epoch_train_seed_loss, epoch_train_expand_loss, epoch_train_constraint_loss))
     print('cur train iou is : ', train_iou, ' mean: ', train_iou.mean())
 
-    if (epoch % 50 == 0):  # evaluation
+    if (epoch % 5 == 0):  # evaluation
         net.train(False)
         for data in dataloader.dataloaders["val"]:
             inputs, labels, mask_gt, img = data
