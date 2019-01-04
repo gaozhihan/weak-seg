@@ -47,7 +47,7 @@ net = sec.sec_org_net.SEC_NN()
 #net.load_state_dict(model_zoo.load_url(model_url), strict = False)
 net.load_state_dict(torch.load(model_path), strict = False)
 
-crf_sec_layer = sec.sec_org_net.CRFLayer()
+crf_sec_layer = sec.sec_org_net.CRFLayer(True)
 seed_loss_layer = sec.sec_org_net.SeedingLoss()
 expand_loss_layer = sec.sec_org_net.ExpandLossLayer(flag_use_cuda)
 constrain_loss_layer = sec.sec_org_net.ConstrainLossLayer()

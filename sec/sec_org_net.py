@@ -84,12 +84,19 @@ class CRFLayer():
         self.min_prob = 0.0001
         self.mask_size = [41, 41]
         self.input_size = [321, 321]
+        self.flag_multi_process = flag_multi_process
         if flag_multi_process:
             num_cores = os.cpu_count()
             self.pool = Pool(processes=num_cores)
 
+    def run(self, mask, img, flag_train):
+        if self.flag_multi_process:
+            return self.run_parallel(mask, img, flag_train)
+        else:
+            return self.run_single(mask, img, flag_train)
 
-    def run(self, mask, img, flag_train): # flag_train is for the strange dif between train & test in org SEC
+
+    def run_single(self, mask, img, flag_train): # flag_train is for the strange dif between train & test in org SEC
         batch_size = mask.shape[0]
         unary = np.transpose(mask, [0, 2, 3, 1])
 
@@ -241,12 +248,18 @@ class STCRFLayer():
         self.mask_size = [41, 41]
         self.input_size = [321, 321]
         self.num_iter = 5
+        self.flag_multi_process = flag_multi_process
         if flag_multi_process:
             num_cores = os.cpu_count()
             self.pool = Pool(processes=num_cores)
 
+    def run(self, sm_mask, img):
+        if self.flag_multi_process:
+            return self.run_parallel(sm_mask, img)
+        else:
+            return self.run_single(sm_mask, img)
 
-    def run(self, sm_mask, img): # the input array are detached numpy already
+    def run_single(self, sm_mask, img): # the input array are detached numpy already
         batch_size = sm_mask.shape[0]
         result_big = np.zeros((sm_mask.shape[0], sm_mask.shape[1], self.input_size[0], self.input_size[1]))
         result_small = np.zeros(sm_mask.shape)

@@ -92,7 +92,7 @@ for epoch in range(args.epochs):
 
         fc_mask, sm_mask = net(inputs)
 
-        result_big, result_small = st_crf_layer.run_parallel(sm_mask.detach().cpu().numpy(), img.numpy())
+        result_big, result_small = st_crf_layer.run(sm_mask.detach().cpu().numpy(), img.numpy())
         # calculate the SEC loss
         seed_loss = seed_loss_layer(sm_mask, cues)
         constrain_loss = st_constrain_loss_layer(result_small, sm_mask, flag_use_cuda)
@@ -137,7 +137,7 @@ for epoch in range(args.epochs):
 
             with torch.no_grad():
                 fc_mask, sm_mask = net(inputs)
-                result_big, result_small = st_crf_layer.run_parallel(sm_mask.detach().cpu().numpy(), img.numpy())
+                result_big, result_small = st_crf_layer.run(sm_mask.detach().cpu().numpy(), img.numpy())
 
                 for i in range(labels.shape[0]):
                     mask_pre = np.argmax(result_big[i], axis=0)
