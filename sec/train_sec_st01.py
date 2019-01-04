@@ -128,30 +128,30 @@ for epoch in range(args.epochs):
     print('Epoch: {} took {:.2f}, Train seed Loss: {:.4f}, expand loss: {:.4f}, constraint loss: {:.4f}'.format(epoch, time_took, epoch_train_seed_loss, epoch_train_expand_loss, epoch_train_constraint_loss))
     print('cur train iou is : ', train_iou, ' mean: ', train_iou.mean())
 
-    if (epoch % 5 == 0):  # evaluation
-        net.train(False)
-        for data in dataloader.dataloaders["val"]:
-            inputs, labels, mask_gt, img = data
-            if flag_use_cuda:
-                inputs = inputs.cuda(); labels = labels.cuda()
+    # if (epoch % 5 == 0):  # evaluation
+    net.train(False)
+    for data in dataloader.dataloaders["val"]:
+        inputs, labels, mask_gt, img = data
+        if flag_use_cuda:
+            inputs = inputs.cuda(); labels = labels.cuda()
 
-            with torch.no_grad():
-                fc_mask, sm_mask = net(inputs)
-                result_big, result_small = st_crf_layer.run(sm_mask.detach().cpu().numpy(), img.numpy())
+        with torch.no_grad():
+            fc_mask, sm_mask = net(inputs)
+            result_big, result_small = st_crf_layer.run(sm_mask.detach().cpu().numpy(), img.numpy())
 
-                for i in range(labels.shape[0]):
-                    mask_pre = np.argmax(result_big[i], axis=0)
-                    iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pre)
+            for i in range(labels.shape[0]):
+                mask_pre = np.argmax(result_big[i], axis=0)
+                iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pre)
 
-        eval_iou = iou_obj.cal_cur_iou()
-        iou_obj.iou_clear()
+    eval_iou = iou_obj.cal_cur_iou()
+    iou_obj.iou_clear()
 
-        if eval_iou.mean() > max_iou:
-            print('save model ' + args.model + ' with val mean iou: {}'.format(eval_iou.mean()))
-            torch.save(net.state_dict(), './sec/models/SEC_st01_top_val_iou_'+ args.model + '.pth')
-            max_iou = eval_iou.mean()
+    if eval_iou.mean() > max_iou:
+        print('save model ' + args.model + ' with val mean iou: {}'.format(eval_iou.mean()))
+        torch.save(net.state_dict(), './sec/models/SEC_st01_top_val_iou_'+ args.model + '.pth')
+        max_iou = eval_iou.mean()
 
-        print('cur eval iou is : ', eval_iou, ' mean: ', eval_iou.mean())
+    print('cur eval iou is : ', eval_iou, ' mean: ', eval_iou.mean())
 
 print("done")
 
