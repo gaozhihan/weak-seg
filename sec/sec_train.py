@@ -39,7 +39,7 @@ elif host_name == 'ram-lab-server01':
     # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/models/vgg16-397923af.pth'
     model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/models/sec_rename_CPU.pth'
     args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/models/localization_cues.pickle"
-    args.batch_size = 20
+    args.batch_size = 24
 
 
 # model_url = 'https://download.pytorch.org/models/vgg16-397923af.pth' # 'vgg16'
