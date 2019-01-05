@@ -4,14 +4,14 @@ import torch.optim as optim
 from voc_data import VOCData
 import time
 import socket
-import st_01.sec_net
+import st_resnet.resnet_st
 from arguments import get_args
 import datetime
 import numpy as np
 
 args = get_args()
 args.need_mask_flag = False
-args.model = 'SEC'
+args.model = 'my_resnet'
 args.input_size = [321,321]
 args.output_size = [41, 41]
 
@@ -23,23 +23,16 @@ date_str = str(now.day) + '_' + str(now.day)
 if host_name == 'sunting':
     args.batch_size = 2
     args.data_dir = '/home/sunting/Documents/program/VOC2012_SEG_AUG'
-    args.sec_id_img_name_list_dir = "/home/sunting/Documents/program/SEC-master/training/input_list.txt"
-    args.cues_pickle_dir = "/home/sunting/Documents/program/SEC-master/training/localization_cues/localization_cues.pickle"
-    model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/models/vgg16-397923af.pth' # 'vgg16'
+    model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/models/resnet50_feat.pth'
 elif host_name == 'sunting-ThinkCentre-M90':
     args.batch_size = 2
     args.data_dir = '/home/sunting/Documents/data/VOC2012_SEG_AUG'
-    args.sec_id_img_name_list_dir = "/home/sunting/Documents/program/weak-seg/sec/input_list.txt"
-    args.cues_pickle_dir = "/home/sunting/Documents/program/weak-seg/models/sec_localization_cues/localization_cues.pickle"
-    model_path = '/home/sunting/Documents/program/weak-seg/models/vgg16-397923af.pth' # 'vgg16'
 elif host_name == 'ram-lab-server01':
     args.data_dir = '/data_shared/Docker/tsun/data/VOC2012/VOC2012_SEG_AUG'
-    args.sec_id_img_name_list_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/sec/input_list.txt"
-    model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/models/vgg16-397923af.pth'
-    args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/models/localization_cues.pickle"
+    model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/models/resnet50_feat.pth'
     args.batch_size = 24
 
-net = st_01.sec_net.SEC_NN()
+net = st_resnet.resnet_st.resnet50(pretrained=False, num_classes=args.num_classes)
 net.load_state_dict(torch.load(model_path), strict = False)
 
 if args.loss == 'BCELoss':
@@ -48,7 +41,6 @@ elif args.loss == 'MultiLabelSoftMarginLoss':
     criterion = nn.MultiLabelSoftMarginLoss()
 
 print(args)
-print(model_path)
 
 if flag_use_cuda:
     net.cuda()
@@ -80,7 +72,8 @@ for epoch in range(args.epochs):
 
                 optimizer.zero_grad()
 
-                sm_mask, preds = net(inputs)
+                layer4_feature, fc = net(inputs)
+                preds = torch.sigmoid(fc)
 
                 loss = criterion(preds.squeeze(), labels)
                 loss.backward()
@@ -104,7 +97,8 @@ for epoch in range(args.epochs):
                     inputs = inputs.cuda(); labels = labels.cuda()
 
                 with torch.no_grad():
-                    sm_mask, preds = net(inputs)
+                    layer4_feature, fc = net(inputs)
+                    preds = torch.sigmoid(fc)
 
                 loss = criterion(preds.squeeze(), labels)
 
@@ -137,12 +131,12 @@ for epoch in range(args.epochs):
 
     if acc_eval > max_acc:
         print('save model ' + args.model + ' with val acc: {}'.format(acc_eval))
-        torch.save(net.state_dict(), './st_01/models/st_01_top_val_acc_'+ args.model + '_' + date_str + '.pth')
+        torch.save(net.state_dict(), './st_resnet/models/st_top_val_acc_'+ args.model + '_' + date_str + '.pth')
         max_acc = acc_eval
 
     if recall_eval > max_recall:
         print('save model ' + args.model + ' with val recall: {}'.format(recall_eval))
-        torch.save(net.state_dict(), './st_01/models/st_01_top_val_rec_'+ args.model + '_' + date_str + '.pth')
+        torch.save(net.state_dict(), './st_resnet/models/st_top_val_rec_'+ args.model + '_' + date_str + '.pth')
         max_recall = recall_eval
 
     print('Epoch: {} took {:.2f}, Train Loss: {:.4f}, Acc: {:.4f}, Recall: {:.4f}; eval loss: {:.4f}, Acc: {:.4f}, Recall: {:.4f}'.format(epoch, time_took, epoch_train_loss, acc_train, recall_train, epoch_eval_loss, acc_eval, recall_eval))
