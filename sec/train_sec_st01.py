@@ -38,9 +38,11 @@ elif host_name == 'ram-lab-server01':
     args.data_dir = '/data_shared/Docker/tsun/data/VOC2012/VOC2012_SEG_AUG'
     args.sec_id_img_name_list_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/sec/input_list.txt"
     # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/models/vgg16-397923af.pth'
-    model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/models/sec_rename_CPU.pth'
+    # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/models/sec_rename_CPU.pth'
+    model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_01/models/st_01_top_val_rec_SEC_31_31.pth'
+    # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/sec/models/SEC_st01_top_val_iou_SEC.pth'
     args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/models/localization_cues.pickle"
-    args.batch_size = 20
+    args.batch_size = 24
 
 
 # model_url = 'https://download.pytorch.org/models/vgg16-397923af.pth' # 'vgg16'
@@ -111,6 +113,7 @@ for epoch in range(args.epochs):
         #     plt.close("all")
 
         (seed_loss + constrain_loss + expand_loss).backward()  # independent backward would cause Error: Trying to backward through the graph a second time ...
+        # seed_loss.backward()
         optimizer.step()
 
         train_seed_loss += seed_loss.item()
