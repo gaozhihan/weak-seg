@@ -30,7 +30,7 @@ elif host_name == 'sunting-ThinkCentre-M90':
 elif host_name == 'ram-lab-server01':
     args.data_dir = '/data_shared/Docker/tsun/data/VOC2012/VOC2012_SEG_AUG'
     model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/models/resnet50_feat.pth'
-    args.batch_size = 24
+    args.batch_size = 18
 
 net = st_resnet.resnet_st.resnet50(pretrained=False, num_classes=args.num_classes)
 net.load_state_dict(torch.load(model_path), strict = False)
@@ -41,6 +41,7 @@ elif args.loss == 'MultiLabelSoftMarginLoss':
     criterion = nn.MultiLabelSoftMarginLoss()
 
 print(args)
+print(model_path)
 
 if flag_use_cuda:
     net.cuda()
