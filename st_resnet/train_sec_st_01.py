@@ -17,6 +17,7 @@ args.need_mask_flag = True
 args.model = 'my_resnet'
 args.input_size = [321,321]
 args.output_size = [41, 41]
+args.lr = 5e-06
 
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
@@ -108,8 +109,8 @@ for epoch in range(args.epochs):
         #     plt.close("all")
 
         # (seed_loss + constrain_loss + expand_loss).backward()  # independent backward would cause Error: Trying to backward through the graph a second time ...
-        # seed_loss.backward()
-        (seed_loss + constrain_loss).backward()
+        seed_loss.backward()
+        # (seed_loss + constrain_loss).backward()
         optimizer.step()
 
         train_seed_loss += seed_loss.item()
@@ -147,7 +148,7 @@ for epoch in range(args.epochs):
 
     if eval_iou.mean() > max_iou:
         print('save model ' + args.model + ' with val mean iou: {}'.format(eval_iou.mean()))
-        torch.save(net.state_dict(), './st_resnet/models/res_sec01_wsc_top_val_iou_'+ args.model + '.pth')
+        torch.save(net.state_dict(), './st_resnet/models/res_sec01_ws_ft_top_val_iou_'+ args.model + '.pth')
         max_iou = eval_iou.mean()
 
     print('cur eval iou is : ', eval_iou, ' mean: ', eval_iou.mean())

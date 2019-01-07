@@ -108,7 +108,6 @@ with torch.no_grad():
     print('cur train iou is : ', train_iou, ' mean: ', train_iou.mean())
 
     # if (epoch % 5 == 0):  # evaluation
-    net.train(False)
     for data in dataloader.dataloaders["val"]:
         inputs, labels, mask_gt, img = data
         if flag_use_cuda:
