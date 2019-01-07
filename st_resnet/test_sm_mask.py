@@ -11,6 +11,8 @@ import numpy as np
 import datetime
 from skimage.transform import resize
 import matplotlib.pyplot as plt
+from skimage.transform import resize
+
 
 args = get_args()
 args.need_mask_flag = True
@@ -63,9 +65,6 @@ iou_obj = common_function.iou_calculator()
 num_train_batch = len(dataloader.dataloaders["train"])
 
 with torch.no_grad():
-    train_seed_loss = 0.0
-    train_expand_loss = 0.0
-    train_constraint_loss = 0.0
 
     train_iou = 0
     eval_iou = 0
@@ -81,29 +80,14 @@ with torch.no_grad():
 
         sm_mask = net(inputs)
 
-        result_big, result_small = st_crf_layer.run(sm_mask.detach().cpu().numpy(), img.numpy())
-        # calculate the SEC loss
-        seed_loss = seed_loss_layer(sm_mask, cues)
-        constrain_loss = st_constrain_loss_layer(result_small, sm_mask, flag_use_cuda)
-        expand_loss = expand_loss_layer(sm_mask, labels)
-
         for i in range(labels.shape[0]):
-            mask_pre = np.argmax(result_big[i], axis=0)
+            temp = resize(sm_mask[i].permute([1,2,0]).numpy(), args.input_size, mode='constant')
+            mask_pre = np.argmax(temp, axis=2)
             iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pre)
-
-        train_seed_loss += seed_loss.item()
-        train_constraint_loss += constrain_loss.item()
-        train_expand_loss += expand_loss.item()
 
     train_iou = iou_obj.cal_cur_iou()
     iou_obj.iou_clear()
 
-    time_took = time.time() - start
-    epoch_train_seed_loss = train_seed_loss / num_train_batch
-    epoch_train_expand_loss = train_expand_loss / num_train_batch
-    epoch_train_constraint_loss = train_constraint_loss / num_train_batch
-
-    print('Took {:.2f}, Train seed Loss: {:.4f}, expand loss: {:.4f}, constraint loss: {:.4f}'.format(time_took, epoch_train_seed_loss, epoch_train_expand_loss, epoch_train_constraint_loss))
     print('cur train iou is : ', train_iou, ' mean: ', train_iou.mean())
 
     # if (epoch % 5 == 0):  # evaluation
@@ -114,10 +98,10 @@ with torch.no_grad():
 
         with torch.no_grad():
             sm_mask = net(inputs)
-            result_big, result_small = st_crf_layer.run(sm_mask.detach().cpu().numpy(), img.numpy())
 
             for i in range(labels.shape[0]):
-                mask_pre = np.argmax(result_big[i], axis=0)
+                temp = resize(sm_mask[i].permute([1,2,0]).numpy(), args.input_size, mode='constant')
+                mask_pre = np.argmax(temp, axis=2)
                 iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pre)
 
     eval_iou = iou_obj.cal_cur_iou()
