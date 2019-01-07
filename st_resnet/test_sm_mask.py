@@ -39,7 +39,7 @@ elif host_name == 'sunting-ThinkCentre-M90':
 elif host_name == 'ram-lab-server01':
     args.data_dir = '/data_shared/Docker/tsun/data/VOC2012/VOC2012_SEG_AUG'
     args.sec_id_img_name_list_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/sec/input_list.txt"
-    model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/st_top_val_rec_my_resnet_5_5.pth'
+    model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/res_sec01_ws_top_val_iou_my_resnet.pth'
     args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/models/localization_cues.pickle"
     args.batch_size = 24
 
@@ -81,9 +81,9 @@ with torch.no_grad():
         sm_mask = net(inputs)
 
         for i in range(labels.shape[0]):
-            temp = resize(sm_mask[i].permute([1,2,0]).numpy(), args.input_size, mode='constant')
+            temp = resize(sm_mask[i].permute([1,2,0]).cpu().numpy(), args.input_size, mode='constant')
             mask_pre = np.argmax(temp, axis=2)
-            iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pre)
+            iou_obj.add_iou_mask_pair(mask_gt[i,:,:].cpu().numpy(), mask_pre)
 
     train_iou = iou_obj.cal_cur_iou()
     iou_obj.iou_clear()
@@ -100,9 +100,9 @@ with torch.no_grad():
             sm_mask = net(inputs)
 
             for i in range(labels.shape[0]):
-                temp = resize(sm_mask[i].permute([1,2,0]).numpy(), args.input_size, mode='constant')
+                temp = resize(sm_mask[i].permute([1,2,0]).cpu().numpy(), args.input_size, mode='constant')
                 mask_pre = np.argmax(temp, axis=2)
-                iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pre)
+                iou_obj.add_iou_mask_pair(mask_gt[i,:,:].cpu().numpy(), mask_pre)
 
     eval_iou = iou_obj.cal_cur_iou()
     iou_obj.iou_clear()
