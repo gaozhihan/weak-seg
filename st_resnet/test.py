@@ -58,7 +58,6 @@ if flag_use_cuda:
 
 dataloader = VOCData(args)
 
-max_iou = 0
 iou_obj = common_function.iou_calculator()
 
 num_train_batch = len(dataloader.dataloaders["train"])
@@ -124,11 +123,6 @@ with torch.no_grad():
 
     eval_iou = iou_obj.cal_cur_iou()
     iou_obj.iou_clear()
-
-    if eval_iou.mean() > max_iou:
-        print('save model ' + args.model + ' with val mean iou: {}'.format(eval_iou.mean()))
-        torch.save(net.state_dict(), './st_resnet/models/res_sec01_top_val_iou_'+ args.model + '.pth')
-        max_iou = eval_iou.mean()
 
     print('cur eval iou is : ', eval_iou, ' mean: ', eval_iou.mean())
 
