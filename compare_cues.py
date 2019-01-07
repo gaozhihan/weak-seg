@@ -1,8 +1,5 @@
 # assume can not use rand (eg. randomflip, randomresize etc)
 import torch
-import torch.nn as nn
-import torch.optim as optim
-from torch.optim import lr_scheduler
 from torchvision import datasets, models, transforms
 from torch.utils.data import Dataset
 import os
@@ -10,6 +7,12 @@ import numpy as np
 import glob
 import pickle
 from PIL import Image
+from arguments import get_args
+import datetime
+import numpy as np
+import common_function
+from skimage.transform import resize
+import matplotlib.pyplot as plt
 
 class VOCData():
     def __init__(self, args):
@@ -112,6 +115,17 @@ class VOCDataset(Dataset):
         self.saliency_path = args.saliency_dir
         self.attention_path = args.attention_dir
         self.super_pixel_path = args.super_pixel_dir
+        self.img_id_dic_SEC = self._get_img_id_list_SEC()
+        self.cues_data_SEC = pickle.load(open(self.args.cues_pickle_dir,'rb'))
+
+    def _get_img_id_list_SEC(self):
+        img_id_dic = {}
+        with open(self.args.sec_id_img_name_list_dir) as f:
+            for line in f:
+                (key, val) = line.split()
+                img_id_dic[key] = int(val)
+
+        return  img_id_dic
 
     def _get_file_list(self):
         with open(os.path.join(self.data_dir, "ImageSets", self.list_file),"r") as f:
@@ -138,6 +152,13 @@ class VOCDataset(Dataset):
 
     def __len__(self):
         return len(self.file_list)
+
+    def __get_cues_from_img_name(self, img_name):
+        img_id_sec = self.img_id_dic_SEC[img_name]
+        cues = self.cues_data_SEC['%i_cues' % img_id_sec]
+        cues_numpy = np.zeros([self.args.num_classes, self.args.output_size[0], self.args.output_size[1]])
+        cues_numpy[cues[0], cues[1], cues[2]] = 1.0
+        return  cues_numpy.astype('float32')
 
     def __getitem__(self, idx):
         img_name = os.path.join(self.data_dir, "images", self.file_list[idx]+".png")
@@ -174,13 +195,12 @@ class VOCDataset(Dataset):
         for i, it in enumerate(temp):
             attention_mask_expand[it+1, :,:] = attention_mask[i]
 
-        if self.train_flag:
-            if self.need_mask:
-                return img_ts, label_ts, mask, img_array, super_pixel.astype('int32'), saliency_mask.astype('float32'), attention_mask_expand.astype('float32') # img_name,
-            else:
-                return img_ts, label_ts
+
+        if self.file_list[idx]+".png" in self.img_id_dic_SEC.keys():
+            cues_numpy = self.__get_cues_from_img_name(self.file_list[idx]+".png")
+            cues = torch.from_numpy(cues_numpy)
+            return img_ts, label_ts, mask, img_array, super_pixel.astype('int32'), saliency_mask.astype('float32'), attention_mask_expand.astype('float32'), cues
         else:
-            # return img_ts, label_ts, mask, img_name, img_array
             return img_ts, label_ts, mask, img_array, super_pixel.astype('int32'), saliency_mask.astype('float32'), attention_mask_expand.astype('float32')
 
 
@@ -189,39 +209,21 @@ if __name__ == '__main__':
     args = get_args()
     args.need_mask_flag = True
     args.test_flag = True
-    args.model = 'my_resnet' # resnet; my_resnet; SEC; my_resnet3; decoupled
-    model_path = 'models/top_val_acc_my_resnet_25' # sec: sec_rename; resnet: top_val_acc_resnet; my_resnet: top_val_acc_my_resnet_25; my_resnet3: top_val_rec_my_resnet3_27; decoupled: top_val_acc_decoupled_28
-    args.input_size = [224,224] #[224,224] [321,321]
-    args.output_size = [41, 41] #[29,29]
+    args = get_args()
     args.origin_size = False
-    args.color_vote = True
-    args.fix_CRF_itr = False
-    args.preds_only = True
-    args.CRF_model = 'my_CRF' # SEC_CRF or my_CRF
+    args.model = 'SEC'
+    args.input_size = [321,321]
+    args.output_size = [41, 41]
+    args.need_mask_flag = True
 
-    flag_classify = False
-
-    host_name = socket.gethostname()
     flag_use_cuda = torch.cuda.is_available()
 
-    if host_name == 'sunting':
-        args.batch_size = 5
-        args.data_dir = '/home/sunting/Documents/program/VOC2012_SEG_AUG'
-        model_path = model_path + '_CPU'
-    elif host_name == 'sunting-ThinkCenter-M90':
-        args.batch_size = 18
-    elif host_name == 'ram-lab':
-        args.data_dir = '/data_shared/Docker/ltai/ws/decoupled_net/data/VOC2012/VOC2012_SEG_AUG'
-        if args.model == 'SEC':
-            args.batch_size = 50
-        elif args.model == 'resnet':
-            args.batch_size = 100
-        elif args.model == 'my_resnet':
-            args.batch_size = 30
-        elif args.model == 'decoupled':
-            args.batch_size = 38
-
-    model_path = model_path + '.pth'
+    args.data_dir = '/home/sunting/Documents/program/VOC2012_SEG_AUG'
+    args.super_pixel_dir = '/home/sunting/Documents/program/VOC2012_SEG_AUG/super_pixel/'
+    args.saliency_dir = '/home/sunting/Documents/program/VOC2012_SEG_AUG/snapped_saliency/'
+    args.attention_dir = '/home/sunting/Documents/program/VOC2012_SEG_AUG/snapped_attention/'
+    args.sec_id_img_name_list_dir = "/home/sunting/Documents/program/SEC-master/training/input_list.txt"
+    args.cues_pickle_dir = "/home/sunting/Documents/program/SEC-master/training/localization_cues/localization_cues.pickle"
     args.batch_size = 1
 
     print(args)
@@ -230,23 +232,33 @@ if __name__ == '__main__':
 
     with torch.no_grad():
 
-        start = time.time()
         for phase in ['train', 'val']:
             if phase == 'train':
 
                 for data in dataloader.dataloaders["train"]:
-                    inputs, labels, mask_gt, img = data
-                    # generate_visualize_super_pixel(img.detach().squeeze().numpy(), mask_gt.detach().squeeze().numpy())
-                    params_visualize_felzenszwalb(img.detach().squeeze().numpy(), mask_gt.detach().squeeze().numpy())
-                    # params_visualize_slic(img.detach().squeeze().numpy(), mask_gt.detach().squeeze().numpy())
-                    # params_visualize_quickshift(img.detach().squeeze().numpy(), mask_gt.detach().squeeze().numpy())
+                    inputs, labels, mask_gt, img, super_pixel, saliency_mask, attention_mask, cues = data
+
+                    mask_gt_np = mask_gt.squeeze().numpy()
+                    img_np = img.squeeze().numpy().astype('uint8')
+                    temp_np = attention_mask.squeeze().numpy()
+                    thr_value = temp_np.max()*0.3
+                    temp_np[temp_np < thr_value] = 0
+                    attention_mask_np = np.argmax(temp_np, axis=0)
+
+                    temp_np = cues.squeeze().numpy()
+                    cues_np = np.argmax(temp_np, axis=0)
+
+                    plt.subplot(1,4,1); plt.imshow(img_np); plt.title('Input image')
+                    plt.subplot(1,4,2); plt.imshow(mask_gt_np); plt.title('gt')
+                    plt.subplot(1,4,3); plt.imshow(attention_mask_np); plt.title('at mask')
+                    plt.subplot(1,4,4); plt.imshow(cues_np); plt.title('cues')
 
                     plt.close('all')
 
             else:  # evaluation
-                start = time.time()
                 for data in dataloader.dataloaders["val"]:
-                    inputs, labels, mask_gt, img = data
-                    generate_visualize_super_pixel(img.detach().numpy(), mask_gt.detach().numpy())
+                    inputs, labels, mask_gt, img, super_pixel, saliency_mask, attention_mask = data
+
+
 
                     plt.close('all')
