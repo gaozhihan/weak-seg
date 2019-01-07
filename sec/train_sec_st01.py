@@ -16,6 +16,7 @@ args.need_mask_flag = True
 args.model = 'SEC'
 args.input_size = [321,321]
 args.output_size = [41, 41]
+args.lr = 5e-6
 
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
@@ -41,7 +42,8 @@ elif host_name == 'ram-lab-server01':
     # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/models/sec_rename_CPU.pth'
     # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_01/models/st_01_top_val_rec_SEC_31_31.pth'
     # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/sec/models/SEC_st01_top_val_iou_SEC.pth'
-    model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/sec/models/SEC_st01_seed_only_top_val_iou_SEC.pth'
+    # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/sec/models/SEC_st01_seed_only_top_val_iou_SEC.pth'
+    model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/sec/models/st01_wsc_top_val_iou_SEC.pth'
     args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/models/localization_cues.pickle"
     args.batch_size = 24
 
@@ -115,8 +117,8 @@ for epoch in range(args.epochs):
 
         #(seed_loss + constrain_loss + expand_loss).backward()  # independent backward would cause Error: Trying to backward through the graph a second time ...
         # seed_loss.backward()
-        optimizer.step()
         (seed_loss + constrain_loss).backward()
+        optimizer.step()
 
         train_seed_loss += seed_loss.item()
         train_constraint_loss += constrain_loss.item()
@@ -153,7 +155,7 @@ for epoch in range(args.epochs):
 
     if eval_iou.mean() > max_iou:
         print('save model ' + args.model + ' with val mean iou: {}'.format(eval_iou.mean()))
-        torch.save(net.state_dict(), './sec/models/SEC_st01_top_val_iou_'+ args.model + '.pth')
+        torch.save(net.state_dict(), './sec/models/st01_wsc_ft_top_val_iou_'+ args.model + '.pth')
         max_iou = eval_iou.mean()
 
     print('cur eval iou is : ', eval_iou, ' mean: ', eval_iou.mean())
