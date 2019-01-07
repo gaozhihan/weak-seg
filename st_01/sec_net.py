@@ -86,7 +86,7 @@ class SeedingLoss(nn.Module):
 
     def __init__(self):
         super(SeedingLoss, self).__init__()
-        self.thr = 0.5
+        self.thr = 0.3
         self.mask_size = [41, 41]
 
     def forward(self, sm_mask, attention_mask, labels, super_pixel, flag_use_cuda):
