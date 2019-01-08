@@ -116,11 +116,12 @@ class SeedingLoss(nn.Module):
         # plt.close("all")
 
         count = len(cues.nonzero())
-        max_val = cues.max()
-        if max_val > 0:
-            cues = cues/max_val
+        # max_val = cues.max()
+        # if max_val > 0:
+        #     cues = cues/max_val
 
-        loss = -50*(cues * sm_mask.log()).sum()/count
+        # loss = -50*(cues * sm_mask.log()).sum()/count
+        loss = -(cues * sm_mask.log()).sum()/count
         return loss
 
 #----------------------------------------------------------------------------------------------------------------
