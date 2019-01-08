@@ -102,9 +102,16 @@ for epoch in range(args.epochs):
         sm_mask, preds = net(inputs)
 
         result_big, result_small = st_crf_layer.run(sm_mask.detach().cpu().numpy(), img.numpy())
+        batch_num = labels.shape[0]
         for i in range(labels.shape[0]):
             mask_pre = np.argmax(result_big[i], axis=0)
             iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pre)
+
+            # used in combination with those plt line in st_01/sec_net
+            # plt.subplot(batch_num,5,i*5+1); plt.imshow(img[i]/255); plt.title('Input image')
+            # plt.subplot(batch_num,5,i*5+2); plt.imshow(mask_gt[i,:,:].numpy()); plt.title('gt')
+            # plt.subplot(batch_num,5,i*5+3); plt.imshow(np.argmax(sm_mask.detach().cpu().numpy()[i], axis=0)); plt.title('sm mask')
+            # plt.subplot(batch_num,5,i*5+4); plt.imshow(mask_pre); plt.title('crf mask')
 
         # batch_num = labels.shape[0]
         # plt.figure()
