@@ -142,55 +142,55 @@ for epoch in range(args.epochs):
 
 
     # evaluation every 50 epoch ---------------------------------------------------------------
-    if (epoch % 50 == 0):  # evaluation
-        net.train(False)
-        start = time.time()
-        for data in dataloader.dataloaders["val"]:
-            inputs, labels, mask_gt, img, super_pixel, saliency_mask, attention_mask = data
-            if flag_use_cuda:
-                inputs = inputs.cuda(); labels = labels.cuda()  # saliency_mask = saliency_mask.cuda(); attention_mask = attention_mask.cuda()
+    # if (epoch % 50 == 0):  # evaluation
+    net.train(False)
+    start = time.time()
+    for data in dataloader.dataloaders["val"]:
+        inputs, labels, mask_gt, img, super_pixel, saliency_mask, attention_mask = data
+        if flag_use_cuda:
+            inputs = inputs.cuda(); labels = labels.cuda()  # saliency_mask = saliency_mask.cuda(); attention_mask = attention_mask.cuda()
 
-            with torch.no_grad():
-                sm_mask, preds = net(inputs)
+        with torch.no_grad():
+            sm_mask, preds = net(inputs)
 
-            result_big, result_small = crf_layer.run(sm_mask.detach().cpu().numpy(), img.numpy())
-            loss_BCE = criterion_BCE(preds.squeeze(), labels)
-            loss_seed = criterion_seed(sm_mask, attention_mask, labels, super_pixel, flag_use_cuda)
-            loss_constrain = criterion_constrain(result_small, sm_mask, flag_use_cuda)
+        result_big, result_small = crf_layer.run(sm_mask.detach().cpu().numpy(), img.numpy())
+        loss_BCE = criterion_BCE(preds.squeeze(), labels)
+        loss_seed = criterion_seed(sm_mask, attention_mask, labels, super_pixel, flag_use_cuda)
+        loss_constrain = criterion_constrain(result_small, sm_mask, flag_use_cuda)
 
-            for i in range(labels.shape[0]):
-                mask_pre = np.argmax(result_big[0], axis=0)
-                iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pre)
+        for i in range(labels.shape[0]):
+            mask_pre = np.argmax(result_big[0], axis=0)
+            iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pre)
 
-            eval_BCE_loss += loss_BCE.item() * inputs.size(0)
-            eval_seed_loss += loss_seed.item()
-            eval_constrain_loss += loss_constrain.item()
+        eval_BCE_loss += loss_BCE.item() * inputs.size(0)
+        eval_seed_loss += loss_seed.item()
+        eval_constrain_loss += loss_constrain.item()
 
 
-            preds_thr_numpy = (preds.data>args.threshold).detach().cpu().numpy()
-            labels_numpy = labels.detach().cpu().numpy()
+        preds_thr_numpy = (preds.data>args.threshold).detach().cpu().numpy()
+        labels_numpy = labels.detach().cpu().numpy()
 
-            TP_eval += np.logical_and(preds_thr_numpy.squeeze(),labels_numpy).sum()
-            T_eval += labels_numpy.sum()
-            P_eval += preds_thr_numpy.sum()
+        TP_eval += np.logical_and(preds_thr_numpy.squeeze(),labels_numpy).sum()
+        T_eval += labels_numpy.sum()
+        P_eval += preds_thr_numpy.sum()
 
-        eval_iou = iou_obj.cal_cur_iou()
-        iou_obj.iou_clear()
+    eval_iou = iou_obj.cal_cur_iou()
+    iou_obj.iou_clear()
 
-        time_took = time.time() - start
-        epoch_eval_BCE_loss = eval_BCE_loss / num_eval_batch
-        epoch_eval_seed_loss = eval_seed_loss / num_eval_batch
-        epoch_eval_constrain_loss = eval_constrain_loss / num_eval_batch
+    time_took = time.time() - start
+    epoch_eval_BCE_loss = eval_BCE_loss / num_eval_batch
+    epoch_eval_seed_loss = eval_seed_loss / num_eval_batch
+    epoch_eval_constrain_loss = eval_constrain_loss / num_eval_batch
 
-        recall_eval = TP_eval / T_eval if T_eval!=0 else 0
-        acc_eval = TP_eval / P_eval if P_eval!=0 else 0
+    recall_eval = TP_eval / T_eval if T_eval!=0 else 0
+    acc_eval = TP_eval / P_eval if P_eval!=0 else 0
 
-        if eval_iou.mean() > max_iou:
-            print('save model ' + args.model + ' with val mean iou: {}'.format(eval_iou.mean()))
-            torch.save(net.state_dict(), './st_01/models/top_val_iou_wsc'+ args.model + '.pth')
-            max_iou = eval_iou.mean()
+    if eval_iou.mean() > max_iou:
+        print('save model ' + args.model + ' with val mean iou: {}'.format(eval_iou.mean()))
+        torch.save(net.state_dict(), './st_01/models/top_val_iou_wsc'+ args.model + '.pth')
+        max_iou = eval_iou.mean()
 
-        print('Epoch: {} took {:.2f}, eval seed Loss: {:.4f}, constrain loss: {:.4f}, BCE loss: {:.4f}, acc: {:.4f}, rec: {:.4f}'.format(epoch, time_took, epoch_eval_seed_loss, epoch_eval_constrain_loss, epoch_eval_BCE_loss, acc_eval, recall_eval))
-        print('cur eval iou is : ', eval_iou, ' mean: ', eval_iou.mean())
+    print('Epoch: {} took {:.2f}, eval seed Loss: {:.4f}, constrain loss: {:.4f}, BCE loss: {:.4f}, acc: {:.4f}, rec: {:.4f}'.format(epoch, time_took, epoch_eval_seed_loss, epoch_eval_constrain_loss, epoch_eval_BCE_loss, acc_eval, recall_eval))
+    print('cur eval iou is : ', eval_iou, ' mean: ', eval_iou.mean())
 
 print("done")
