@@ -16,7 +16,6 @@ args.need_mask_flag = True
 args.model = 'SEC'
 args.input_size = [321,321]
 args.output_size = [41, 41]
-args.lr = 5e-6
 
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
