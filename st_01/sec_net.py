@@ -106,12 +106,11 @@ class SeedingLoss(nn.Module):
         cues[cues >= thr_value] = 1.0  # hard cues
 
         # batch_num = sm_mask.shape[0]
-        # plt.figure()
         # for i in range(batch_num):
-        #     temp = np.argmax(sm_mask[i].detach().numpy(), axis=0)
-        #     plt.subplot(batch_num,2,2*i+1); plt.imshow(temp); plt.title('sm mask')
+        #     # temp = np.argmax(sm_mask[i].detach().numpy(), axis=0)
+        #     # plt.subplot(batch_num,2,2*i+1); plt.imshow(temp); plt.title('sm mask')
         #     temp = np.argmax(cues[i], axis=0)
-        #     plt.subplot(batch_num,2,2*i+2); plt.imshow(temp); plt.title('cues')
+        #     plt.subplot(batch_num,5,i*5+5); plt.imshow(temp); plt.title('cues')
         #
         # plt.close("all")
 

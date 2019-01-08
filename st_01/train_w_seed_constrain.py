@@ -10,6 +10,7 @@ import datetime
 import numpy as np
 import common_function
 from skimage.transform import resize
+import sec.sec_org_net
 
 args = get_args()
 args.origin_size = False
@@ -49,7 +50,7 @@ elif host_name == 'ram-lab-server01':
 net = st_01.sec_net.SEC_NN()
 net.load_state_dict(torch.load(model_path), strict = False)
 
-crf_layer = st_01.sec_net.CRFLayer(True)
+crf_layer = sec.sec_org_net.STCRFLayer(True)
 criterion_BCE = nn.BCELoss()
 criterion_seed = st_01.sec_net.SeedingLoss()
 criterion_constrain = st_01.sec_net.ConstrainLossLayer()
@@ -102,7 +103,7 @@ for epoch in range(args.epochs):
 
         sm_mask, preds = net(inputs)
 
-        result_big, result_small = crf_layer.run_parallel(sm_mask.detach().cpu().numpy(), img.numpy())
+        result_big, result_small = crf_layer.run(sm_mask.detach().cpu().numpy(), img.numpy())
         loss_BCE = criterion_BCE(preds.squeeze(), labels)
         loss_seed = criterion_seed(sm_mask, attention_mask, labels, super_pixel, flag_use_cuda)
         loss_constrain = criterion_constrain(result_small, sm_mask, flag_use_cuda)
@@ -111,7 +112,8 @@ for epoch in range(args.epochs):
             mask_pre = np.argmax(result_big[i], axis=0)
             iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pre)
 
-        (loss_BCE + loss_seed + loss_constrain).backward()
+        # (loss_BCE + loss_seed + loss_constrain).backward()
+        ( loss_seed *2 + loss_constrain/2).backward()
         optimizer.step()
 
         train_BCE_loss += loss_BCE.item() * inputs.size(0)
@@ -151,7 +153,7 @@ for epoch in range(args.epochs):
             with torch.no_grad():
                 sm_mask, preds = net(inputs)
 
-            result_big, result_small = crf_layer.run_parallel(sm_mask.detach().cpu().numpy(), img.numpy())
+            result_big, result_small = crf_layer.run(sm_mask.detach().cpu().numpy(), img.numpy())
             loss_BCE = criterion_BCE(preds.squeeze(), labels)
             loss_seed = criterion_seed(sm_mask, attention_mask, labels, super_pixel, flag_use_cuda)
             loss_constrain = criterion_constrain(result_small, sm_mask, flag_use_cuda)
