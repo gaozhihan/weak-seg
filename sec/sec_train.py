@@ -97,6 +97,12 @@ for epoch in range(args.epochs):
             mask_pre = np.argmax(temp, axis=2)
             iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pre)
 
+            plt.subplot(1,4,1); plt.imshow(img[i]/255); plt.title('Input image')
+            plt.subplot(1,4,2); plt.imshow(mask_gt[i]); plt.title('gt')
+            plt.subplot(1,4,3); plt.imshow(np.argmax(cues[i].detach().numpy(),axis=0))
+            plt.subplot(1,4,4); plt.imshow(cues[i,0,:,:]); plt.title('bg')
+            plt.close('all')
+
         fc_crf = crf_sec_layer.run(fc_mask.detach().cpu().numpy(), img.numpy(), True)
         # calculate the SEC loss
         seed_loss = seed_loss_layer(sm_mask, cues)
