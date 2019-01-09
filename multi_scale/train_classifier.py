@@ -34,8 +34,9 @@ elif host_name == 'sunting-ThinkCentre-M90':
     args.data_dir = '/home/sunting/Documents/data/VOC2012_SEG_AUG'
 elif host_name == 'ram-lab-server01':
     args.data_dir = '/data_shared/Docker/tsun/data/VOC2012/VOC2012_SEG_AUG'
-    model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/models/resnet50_feat.pth'
-    args.batch_size = 12
+    # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/models/resnet50_feat.pth'
+    model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/multi_scale/models/st_top_val_rec_my_resnet_9_9.pth'
+    args.batch_size = 10
 
 net = st_resnet.resnet_st.resnet50(pretrained=False, num_classes=args.num_classes)
 net.load_state_dict(torch.load(model_path), strict = False)
