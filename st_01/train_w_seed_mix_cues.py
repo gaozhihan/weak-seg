@@ -198,7 +198,7 @@ for epoch in range(args.epochs):
 
     if eval_iou.mean() > max_iou:
         print('save model ' + args.model + ' with val mean iou: {}'.format(eval_iou.mean()))
-        torch.save(net.state_dict(), './st_01/models/top_val_iou_ws'+ args.model + '.pth')
+        torch.save(net.state_dict(), './st_01/models/top_val_iou_ws_mix_cues_'+ args.model + '.pth')
         max_iou = eval_iou.mean()
 
     print('Epoch: {} took {:.2f}, eval seed Loss: {:.4f}, BCE loss: {:.4f}, acc: {:.4f}, rec: {:.4f}'.format(epoch, time_took, epoch_eval_seed_loss, epoch_eval_BCE_loss, acc_eval, recall_eval))
