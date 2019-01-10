@@ -39,7 +39,8 @@ elif host_name == 'ram-lab-server01':
     args.data_dir = '/data_shared/Docker/tsun/data/VOC2012/VOC2012_SEG_AUG'
     args.sec_id_img_name_list_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/sec/input_list.txt"
     # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/st_top_val_acc_my_resnet_5_cpu_rename_fc2conv.pth'
-    model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/res_sec01_ws_top_val_iou_my_resnet.pth'
+    # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/res_sec01_ws_top_val_iou_my_resnet.pth'
+    model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/multi_scale/models/st_top_val_acc_my_resnet_multi_scale_09_01_cpu_rename_fc2conv.pth'
     args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/models/localization_cues.pickle"
     args.batch_size = 18
 
@@ -148,7 +149,7 @@ for epoch in range(args.epochs):
 
     if eval_iou.mean() > max_iou:
         print('save model ' + args.model + ' with val mean iou: {}'.format(eval_iou.mean()))
-        torch.save(net.state_dict(), './st_resnet/models/res_sec01_ws01c_top_val_iou_'+ args.model + '.pth')
+        torch.save(net.state_dict(), './st_resnet/models/res_from_mix_sec01_ws01c_top_val_iou_'+ args.model + '.pth')
         max_iou = eval_iou.mean()
 
     print('cur eval iou is : ', eval_iou, ' mean: ', eval_iou.mean())
