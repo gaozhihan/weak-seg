@@ -24,7 +24,7 @@ args.batch_size = 1
 random.uniform(0.67, 1.0)
 # rand_scale = [0.67, 0.8337, 1.0]
 rand_scale = [0.6, 0.8, 1.0]
-flag_crf = True
+flag_crf = False
 
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
@@ -119,7 +119,7 @@ with torch.no_grad():
                         iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pre)
                 else:
                     for i in range(labels.shape[0]):
-                        temp = np.transpose(sm_mask_comb[i,:,:,:].detach().cpu().numpy(), [1,2,0])
+                        temp = np.transpose(sm_mask_comb[i,:,:,:], [1,2,0])
                         temp = resize(temp, args.input_size, mode='constant')
                         mask_pre = np.argmax(temp, axis=2)
                         iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pre)
@@ -175,7 +175,7 @@ with torch.no_grad():
                         iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pre)
                 else:
                     for i in range(labels.shape[0]):
-                        temp = np.transpose(sm_mask_comb[i,:,:,:].detach().cpu().numpy(), [1,2,0])
+                        temp = np.transpose(sm_mask_comb[i,:,:,:], [1,2,0])
                         temp = resize(temp, args.input_size, mode='constant')
                         mask_pre = np.argmax(temp, axis=2)
                         iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pre)
