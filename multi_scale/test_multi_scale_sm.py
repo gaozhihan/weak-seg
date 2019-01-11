@@ -24,7 +24,8 @@ args.batch_size = 1
 random.uniform(0.67, 1.0)
 # rand_scale = [0.67, 0.8337, 1.0]
 rand_scale = [0.6, 0.8, 1.0]
-flag_crf = False
+flag_crf = True
+flag_avg = True
 
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
@@ -65,7 +66,6 @@ if flag_use_cuda:
 
 dataloader = VOCData(args)
 num_scale = len(rand_scale)
-flag_avg = True
 
 crf_layer = st_01.sec_net.CRFLayer(False)
 iou_obj = common_function.iou_calculator()
