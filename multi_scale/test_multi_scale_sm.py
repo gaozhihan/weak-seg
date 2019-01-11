@@ -65,7 +65,7 @@ if flag_use_cuda:
 
 dataloader = VOCData(args)
 num_scale = len(rand_scale)
-flag_avg = False
+flag_avg = True
 
 crf_layer = st_01.sec_net.CRFLayer(False)
 iou_obj = common_function.iou_calculator()

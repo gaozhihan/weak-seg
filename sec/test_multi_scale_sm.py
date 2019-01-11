@@ -70,7 +70,7 @@ if flag_use_cuda:
 
 dataloader = VOCData(args)
 num_scale = len(rand_scale)
-flag_avg = False
+flag_avg = True
 
 crf_layer = st_01.sec_net.CRFLayer(False)
 iou_obj = common_function.iou_calculator()
@@ -124,7 +124,7 @@ with torch.no_grad():
                         iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pre)
                 else:
                     for i in range(labels.shape[0]):
-                        temp = np.transpose(sm_mask_comb[i,:,:,:].detach().cpu().numpy(), [1,2,0])
+                        temp = np.transpose(sm_mask_comb[i,:,:,:], [1,2,0])
                         temp = resize(temp, args.input_size, mode='constant')
                         mask_pre = np.argmax(temp, axis=2)
                         iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pre)
@@ -180,7 +180,7 @@ with torch.no_grad():
                         iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pre)
                 else:
                     for i in range(labels.shape[0]):
-                        temp = np.transpose(sm_mask_comb[i,:,:,:].detach().cpu().numpy(), [1,2,0])
+                        temp = np.transpose(sm_mask_comb[i,:,:,:], [1,2,0])
                         temp = resize(temp, args.input_size, mode='constant')
                         mask_pre = np.argmax(temp, axis=2)
                         iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pre)
