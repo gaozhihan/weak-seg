@@ -104,7 +104,7 @@ with torch.no_grad():
                     mask_gt_np = mask_gt.squeeze().numpy()
                     # mask_gt_np[mask_gt_np==255] = 0
 
-                    sm_mask_uni_size[idx_scale, :, :, :] = np.transpose(resize(np.transpose(sm_mask.squeeze().numpy(), [1,2,0]), uni_sm_mask_size, mode='constant'), [2,0,1])
+                    sm_mask_uni_size[idx_scale, :, :, :] = np.transpose(resize(np.transpose(sm_mask.cpu().squeeze().numpy(), [1,2,0]), uni_sm_mask_size, mode='constant'), [2,0,1])
 
                 if flag_avg:
                     sm_mask_comb = np.mean(sm_mask_uni_size, axis=0, keepdims=True)
@@ -160,7 +160,7 @@ with torch.no_grad():
                     mask_gt_np = mask_gt.squeeze().numpy()
                     # mask_gt_np[mask_gt_np==255] = 0
 
-                    sm_mask_uni_size[idx_scale, :, :, :] = np.transpose(resize(np.transpose(sm_mask.squeeze().numpy(), [1,2,0]), uni_sm_mask_size, mode='constant'), [2,0,1])
+                    sm_mask_uni_size[idx_scale, :, :, :] = np.transpose(resize(np.transpose(sm_mask.cpu().squeeze().numpy(), [1,2,0]), uni_sm_mask_size, mode='constant'), [2,0,1])
 
                 if flag_avg:
                     sm_mask_comb = np.mean(sm_mask_uni_size, axis=0, keepdims=True)
