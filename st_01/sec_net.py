@@ -96,14 +96,15 @@ class SeedingLoss(nn.Module):
 
         for i_batch in range(sm_mask.shape[0]):
             if len(super_pixel[i_batch].unique()) > 10:
-                cues[i_batch] = torch.from_numpy(resize(attention_mask[i_batch].permute([1,2,0]).numpy(), self.mask_size, mode='constant')).permute([2,0,1])
+                cues[i_batch] = torch.from_numpy(resize(attention_mask[i_batch].permute([1,2,0]).numpy(), self.mask_size, order=0, mode='constant')).permute([2,0,1])
 
         if flag_use_cuda:
             cues = cues.cuda()
 
-        thr_value = cues.max()*self.thr
-        cues[cues < thr_value] = 0
-        cues[cues >= thr_value] = 1.0  # hard cues
+        # hard cues are handled in __getitem__(self, idx) in voc_data_w_superpixel_snapped_at_sal, notice that each (class) mask should have its own thr
+        # thr_value = cues.max()*self.thr
+        # cues[cues < thr_value] = 0
+        # cues[cues >= thr_value] = 1.0  # hard cues
 
         # batch_num = sm_mask.shape[0]
         # for i in range(batch_num):

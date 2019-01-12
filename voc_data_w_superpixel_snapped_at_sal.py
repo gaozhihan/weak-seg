@@ -172,7 +172,12 @@ class VOCDataset(Dataset):
         attention_mask_expand = np.zeros((self.num_classes, attention_mask.shape[1], attention_mask.shape[2]))
         temp = label_ts[1:].nonzero()
         for i, it in enumerate(temp):
-            attention_mask_expand[it+1, :,:] = attention_mask[i]
+            # attention_mask_expand[it+1, :,:] = attention_mask[i]  # soft attention
+            temp = attention_mask[i]
+            thr = temp.max()*0.3
+            temp[temp>=thr] = 1.0
+            temp[temp<thr] = 0
+            attention_mask_expand[it+1, :,:] = temp
 
         if self.train_flag:
             if self.need_mask:
