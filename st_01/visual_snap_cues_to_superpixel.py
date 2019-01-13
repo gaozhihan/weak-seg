@@ -32,41 +32,22 @@ def snap_to_superpixel(saliency_mask, img, seg):
     return saliency_mask_snapped
 
 
+def snap_cues_to_superpixel(img_np, labels_np, super_pixel_np, cues_np):
 
-# assume batch size = 1
-def snap_anntention_to_superpixel(outputs, img, mask_gt, flag_classify, labels, super_pixel_path):
-    with torch.no_grad():
-        mask_gt[mask_gt==255] = 0
-        mask_gt = mask_gt.squeeze()
-        if img.max() > 1:
-            img = img.squeeze() / 255.0
+    if img_np.max() > 1:
+            img_np = img_np / 255.0
 
-        if flag_classify:
-            features = outputs[:-1]
-            predictions = outputs[-1]
+    cur_class = np.nonzero(labels_np)[0]
+    num_cur_class = len(cur_class)
 
-        else:
-            features = outputs
+    snapped_cues = np.zeros((num_cur_class, img_np.shape[0], img_np.shape[1]))
 
-        cur_class = np.nonzero(labels[1:])[0]
-        # print(cur_class)
-        num_cur_class = len(cur_class)
-        attention = features[-1].squeeze()
-        super_pixel = np.load(super_pixel_path)
-        snapped_attention = np.zeros((num_cur_class, img.shape[0], img.shape[1]))
-
-        # plt.subplot(2,(2 + num_cur_class),1); plt.imshow(img); plt.title('Input image'); plt.axis('off')
-        # plt.subplot(2,(2 + num_cur_class),3 + num_cur_class); plt.imshow(mask_gt); plt.title('true mask'); plt.axis('off')
-        # plt.subplot(2,(2 + num_cur_class),2); plt.imshow(super_pixel); plt.title('super pixel'); plt.axis('off')
-        # plt.subplot(2,(2 + num_cur_class),4 + num_cur_class); plt.imshow(mark_boundaries(img,super_pixel)); plt.title('boundary'); plt.axis('off')
-
-        for i in range(num_cur_class):
+    for i in range(num_cur_class):
             # plt.subplot(2,(2 + num_cur_class),3+i); plt.imshow(attention[cur_class[i],:,:]); plt.title('raw attention {}'.format(cur_class[i])); plt.axis('off')
-            snapped_attention[i,:,:] = snap_to_superpixel(attention[cur_class[i],:,:], img, super_pixel)
-            # plt.subplot(2,(2 + num_cur_class),num_cur_class+5+i); plt.imshow(snapped_attention[i,:,:]); plt.title('snapped attention {}'.format(cur_class[i])); plt.axis('off')
+            snapped_cues[i,:,:] = snap_to_superpixel(cues_np[cur_class[i],:,:], img_np.squeeze(), super_pixel_np)
 
-        # plt.close('all')
-        return  snapped_attention
+    return snapped_cues
+
 
 
 if __name__ == '__main__':
@@ -79,6 +60,8 @@ if __name__ == '__main__':
     args.input_size = [321,321]
     args.output_size = [41, 41]
     args.need_mask_flag = True
+    flag_view_thresholded_at = True
+    thr_ratio = 0.3
 
     flag_use_cuda = torch.cuda.is_available()
 
@@ -104,25 +87,34 @@ if __name__ == '__main__':
 
                     mask_gt_np = mask_gt.squeeze().numpy()
                     img_np = img.squeeze().numpy().astype('uint8')
-                    temp_np = attention_mask.squeeze().numpy()
-                    thr_value = temp_np.max()*0.3
-                    temp_np[temp_np < thr_value] = 0
-                    attention_mask_np = np.argmax(temp_np, axis=0)
+                    cues_np = cues.squeeze().numpy()
+                    labels_np = labels.squeeze().numpy()
+                    super_pixel_np = super_pixel.squeeze().numpy()
 
-                    temp_np = cues.squeeze().numpy()
-                    cues_np = np.argmax(temp_np, axis=0)
+                    snapped_cues = snap_cues_to_superpixel(img_np.squeeze(), labels_np, super_pixel_np, cues_np)
 
-                    plt.subplot(1,4,1); plt.imshow(img_np); plt.title('Input image')
-                    plt.subplot(1,4,2); plt.imshow(mask_gt_np); plt.title('gt')
-                    plt.subplot(1,4,3); plt.imshow(attention_mask_np); plt.title('at mask')
-                    plt.subplot(1,4,4); plt.imshow(cues_np); plt.title('cues')
+                    cur_class = np.nonzero(labels_np)[0]
+                    num_cur_class = len(cur_class)
+
+                    plt.subplot(2, num_cur_class+1, 1); plt.imshow(img_np); plt.title('img')
+                    temp = mask_gt.squeeze().numpy()
+                    temp[temp == 255] = 0
+                    plt.subplot(2, num_cur_class+1, num_cur_class+2); plt.imshow(temp); plt.title('img')
+                    for idx, i_class in enumerate(cur_class):
+                        plt.subplot(2, num_cur_class+1, 2+idx); plt.imshow(cues_np[i_class])
+                        if flag_view_thresholded_at:
+                            temp = snapped_cues[idx]
+                            thr = temp.max() * thr_ratio
+                            temp[temp<thr] = 0
+                            temp[temp>=thr] = 1
+                            plt.subplot(2, num_cur_class+1, num_cur_class+3+idx); plt.imshow(temp)
+                        else:
+                            plt.subplot(2, num_cur_class+1, num_cur_class+3+idx); plt.imshow(snapped_cues[idx]) # view
 
                     plt.close('all')
 
             else:  # evaluation
                 # for data in dataloader.dataloaders["val"]:
                 #     inputs, labels, mask_gt, img, super_pixel, saliency_mask, attention_mask = data
-
-
 
                     plt.close('all')
