@@ -227,7 +227,8 @@ class SeedingLoss(nn.Module):
             if len(super_pixel[i_batch].unique()) > 10:
                 cues[i_batch] = torch.from_numpy(resize(attention_mask[i_batch].permute([1,2,0]).numpy(), self.mask_size, order=0, mode='constant')).permute([2,0,1])
 
-        cues[:,0, :, :] = cues_sec[:,0,:,:]
+            if labels[i_batch, 0] > 0: # not every image contain background
+                cues[i_batch,0, :, :] = cues_sec[i_batch,0,:,:]
 
         if flag_use_cuda:
             cues = cues.cuda()
