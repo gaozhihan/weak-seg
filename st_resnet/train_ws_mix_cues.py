@@ -91,7 +91,7 @@ for epoch in range(args.epochs):
     for data in dataloader.dataloaders["train"]:
         inputs, labels, mask_gt, img, super_pixel, saliency_mask, attention_mask, cues_sec = data
         if flag_use_cuda:
-            inputs = inputs.cuda(); labels = labels.cuda(); cues = cues.cuda()
+            inputs = inputs.cuda(); labels = labels.cuda()
 
         optimizer.zero_grad()
 
