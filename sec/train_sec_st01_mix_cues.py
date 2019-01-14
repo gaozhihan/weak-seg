@@ -45,6 +45,9 @@ elif host_name == 'ram-lab-server01':
     # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/sec/models/SEC_st01_seed_only_top_val_iou_SEC.pth'
     # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/sec/models/st01_wsc_top_val_iou_SEC.pth'
     args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/models/localization_cues.pickle"
+    args.super_pixel_dir = '/data_shared/Docker/tsun/data/VOC2012/VOC2012_SEG_AUG/super_pixel/'
+    args.saliency_dir = '/data_shared/Docker/tsun/data/VOC2012/VOC2012_SEG_AUG/snapped_saliency/'
+    args.attention_dir = '/data_shared/Docker/tsun/data/VOC2012/VOC2012_SEG_AUG/snapped_attention/'
     args.batch_size = 24
 
 
