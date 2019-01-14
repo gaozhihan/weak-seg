@@ -96,20 +96,20 @@ if __name__ == '__main__':
                     cur_class = np.nonzero(labels_np)[0]
                     num_cur_class = len(cur_class)
 
-                    plt.subplot(2, num_cur_class+1, 1); plt.imshow(img_np); plt.title('img')
+                    plt.subplot(2, num_cur_class+1, 1); plt.imshow(img_np); plt.title('img'); plt.axis('off')
                     temp = mask_gt.squeeze().numpy()
                     temp[temp == 255] = 0
-                    plt.subplot(2, num_cur_class+1, num_cur_class+2); plt.imshow(temp); plt.title('img')
+                    plt.subplot(2, num_cur_class+1, num_cur_class+2); plt.imshow(temp); plt.title('gt'); plt.axis('off')
                     for idx, i_class in enumerate(cur_class):
-                        plt.subplot(2, num_cur_class+1, 2+idx); plt.imshow(cues_np[i_class])
+                        plt.subplot(2, num_cur_class+1, 2+idx); plt.imshow(cues_np[i_class]); plt.title('org cues'); plt.axis('off')
                         if flag_view_thresholded_at:
                             temp = snapped_cues[idx]
                             thr = temp.max() * thr_ratio
                             temp[temp<thr] = 0
                             temp[temp>=thr] = 1
-                            plt.subplot(2, num_cur_class+1, num_cur_class+3+idx); plt.imshow(temp)
+                            plt.subplot(2, num_cur_class+1, num_cur_class+3+idx); plt.imshow(temp); plt.title('snapped cues'); plt.axis('off')
                         else:
-                            plt.subplot(2, num_cur_class+1, num_cur_class+3+idx); plt.imshow(snapped_cues[idx]) # view
+                            plt.subplot(2, num_cur_class+1, num_cur_class+3+idx); plt.imshow(snapped_cues[idx]); plt.title('snapped cues'); plt.axis('off') # view
 
                     plt.close('all')
 
