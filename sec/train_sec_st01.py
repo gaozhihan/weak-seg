@@ -38,12 +38,13 @@ elif host_name == 'ram-lab-server01':
     args.data_dir = '/data_shared/Docker/tsun/data/VOC2012/VOC2012_SEG_AUG'
     args.sec_id_img_name_list_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/sec/input_list.txt"
     # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/models/vgg16-397923af.pth'
-    # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/models/sec_rename_CPU.pth'
+    model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/models/sec_rename_CPU.pth'
     # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_01/models/st_01_top_val_rec_SEC_31_31.pth'
     # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/sec/models/SEC_st01_top_val_iou_SEC.pth'
     # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/sec/models/SEC_st01_seed_only_top_val_iou_SEC.pth'
-    model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/sec/models/st01_wsc_top_val_iou_SEC.pth'
-    args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/models/localization_cues.pickle"
+    # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/sec/models/st01_wsc_top_val_iou_SEC.pth'
+    # args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/models/localization_cues.pickle"
+    args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/st_01/models/my_cues.pickle"
     args.batch_size = 24
 
 
@@ -132,7 +133,8 @@ for epoch in range(args.epochs):
     epoch_train_constraint_loss = train_constraint_loss / num_train_batch
 
     print('Epoch: {} took {:.2f}, Train seed Loss: {:.4f}, expand loss: {:.4f}, constraint loss: {:.4f}'.format(epoch, time_took, epoch_train_seed_loss, epoch_train_expand_loss, epoch_train_constraint_loss))
-    print('cur train iou is : ', train_iou, ' mean: ', train_iou.mean())
+    # print('cur train iou is : ', train_iou, ' mean: ', train_iou.mean())
+    print('cur train iou mean: ', train_iou.mean())
 
     # if (epoch % 5 == 0):  # evaluation
     net.train(False)
@@ -157,7 +159,8 @@ for epoch in range(args.epochs):
         torch.save(net.state_dict(), './sec/models/st01_wsc_ft_top_val_iou_'+ args.model + '.pth')
         max_iou = eval_iou.mean()
 
-    print('cur eval iou is : ', eval_iou, ' mean: ', eval_iou.mean())
+    # print('cur eval iou is : ', eval_iou, ' mean: ', eval_iou.mean())
+    print('cur eval iou mean: ', eval_iou.mean())
 
 print("done")
 

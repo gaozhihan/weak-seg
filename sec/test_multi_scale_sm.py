@@ -21,9 +21,9 @@ uni_sm_mask_size = [41, 41]
 args.output_size = [41, 41]
 crf_size = [321, 321]
 args.batch_size = 1
-random.uniform(0.67, 1.0)
 # rand_scale = [0.67, 0.8337, 1.0]
 rand_scale = [0.6, 0.8, 1.0]
+# rand_scale = [0.8, 0.9, 1.0]
 flag_crf = True
 flag_avg = True
 
