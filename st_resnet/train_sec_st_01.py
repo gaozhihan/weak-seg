@@ -128,7 +128,8 @@ for epoch in range(args.epochs):
     epoch_train_constraint_loss = train_constraint_loss / num_train_batch
 
     print('Epoch: {} took {:.2f}, Train seed Loss: {:.4f}, expand loss: {:.4f}, constraint loss: {:.4f}'.format(epoch, time_took, epoch_train_seed_loss, epoch_train_expand_loss, epoch_train_constraint_loss))
-    print('cur train iou is : ', train_iou, ' mean: ', train_iou.mean())
+    # print('cur train iou is : ', train_iou, ' mean: ', train_iou.mean())
+    print('cur train iou mean: ', train_iou.mean())
 
     # if (epoch % 5 == 0):  # evaluation
     net.train(False)
@@ -153,7 +154,8 @@ for epoch in range(args.epochs):
         torch.save(net.state_dict(), './st_resnet/models/res_from_mix_sec01_ws01c_top_val_iou_'+ args.model + '.pth')
         max_iou = eval_iou.mean()
 
-    print('cur eval iou is : ', eval_iou, ' mean: ', eval_iou.mean())
+    # print('cur eval iou is : ', eval_iou, ' mean: ', eval_iou.mean())
+    print('cur eval iou mean: ', eval_iou.mean())
 
 print("done")
 
