@@ -1,18 +1,21 @@
-# assume can not use rand (eg. randomflip, randomresize etc)
+# only test iou of the sm_mask
 import torch
-from torchvision import datasets, models, transforms
-from torch.utils.data import Dataset
-import os
-import numpy as np
-import glob
-import pickle
-from PIL import Image
+import torch.nn as nn
+import time
+import socket
+import st_01.sec_net
 from arguments import get_args
 import datetime
 import numpy as np
 import common_function
 from skimage.transform import resize
 import matplotlib.pyplot as plt
+from torchvision import datasets, models, transforms
+from PIL import Image
+import pickle
+from torch.utils.data import Dataset
+import os
+
 
 class VOCData():
     def __init__(self, args):
@@ -149,24 +152,20 @@ class VOCDataset(Dataset):
                 return pickle.load(f)
 
 
-
     def __len__(self):
         return len(self.file_list)
 
     def __get_cues_from_img_name(self, img_name):
         img_id_sec = self.img_id_dic_SEC[img_name]
-        cues = self.cues_data_SEC['%i_cues' % img_id_sec]
+        cue_name = '%i_cues' % img_id_sec
+        cues = self.cues_data_SEC[cue_name]
         cues_numpy = np.zeros([self.args.num_classes, self.args.output_size[0], self.args.output_size[1]])
         cues_numpy[cues[0], cues[1], cues[2]] = 1.0
-        return  cues_numpy.astype('float32')
+        return  cues_numpy.astype('float32'), cue_name
 
     def __getitem__(self, idx):
         img_name = os.path.join(self.data_dir, "images", self.file_list[idx]+".png")
         mask_name = os.path.join(self.data_dir, "segmentations", self.file_list[idx]+".png")
-        saliency_name = self.saliency_path + self.file_list[idx] + '.npy'
-        saliency_mask = np.load(saliency_name)
-        attention_name = self.attention_path + self.file_list[idx] + '.npy'
-        attention_mask = np.load(attention_name)
         super_pixel_name = self.super_pixel_path + self.file_list[idx] + '.npy'
         super_pixel = np.load(super_pixel_name)
         img = Image.open(img_name)
@@ -177,11 +176,6 @@ class VOCDataset(Dataset):
             img_array = np.array(img.resize(self.size)).astype(np.float32)
             mask = np.array(Image.open(mask_name).resize(self.size))
 
-        img_ts = self.transform(img)
-        if self.args.model=="SEC":
-            img_ts = img_ts.float()*255.0
-            img_ts= torch.index_select(img_ts, 0, torch.LongTensor([2,1,0]))
-
         if self.train_flag == False:
             label = np.zeros(21, dtype=np.float32)
         else:
@@ -190,21 +184,65 @@ class VOCDataset(Dataset):
             label[item] = 1
         label_ts = torch.from_numpy(label)
 
-        attention_mask_expand = np.zeros((self.num_classes, attention_mask.shape[1], attention_mask.shape[2]))
-        temp = label_ts[1:].nonzero()
-        for i, it in enumerate(temp):
-            attention_mask_expand[it+1, :,:] = attention_mask[i]
-
 
         if self.file_list[idx]+".png" in self.img_id_dic_SEC.keys():
-            cues_numpy = self.__get_cues_from_img_name(self.file_list[idx]+".png")
+            cues_numpy, cue_name = self.__get_cues_from_img_name(self.file_list[idx]+".png")
             cues = torch.from_numpy(cues_numpy)
-            return img_ts, label_ts, mask, img_array, super_pixel.astype('int32'), saliency_mask.astype('float32'), attention_mask_expand.astype('float32'), cues
+            return label_ts, mask, img_array, super_pixel.astype('int32'), cues, cue_name
         else:
-            return img_ts, label_ts, mask, img_array, super_pixel.astype('int32'), saliency_mask.astype('float32'), attention_mask_expand.astype('float32')
+            return label_ts, mask, img_array, super_pixel.astype('int32')
 
 
-# ----------------------------------------------
+def snap_to_superpixel(saliency_mask, img, seg):
+
+    if img.max() > 1:
+        img = img / 255.0
+
+    img_shape = img.shape[:2]
+    saliency_mask_rez = resize(saliency_mask, img_shape, mode='constant')
+    saliency_mask_snapped = np.zeros(img_shape)
+
+    num_seg = int(seg.max()) + 1
+
+    for i_seg in range(num_seg):
+        cur_seg = (seg == i_seg)
+        cur_saliency_region = saliency_mask_rez[cur_seg]
+        saliency_mask_snapped[cur_seg] = cur_saliency_region.mean()
+
+    return saliency_mask_snapped
+
+
+def snap_cues_to_superpixel(img_np, labels_np, super_pixel_np, cues_np):
+
+    if img_np.max() > 1:
+            img_np = img_np / 255.0
+
+    cur_class = np.nonzero(labels_np)[0]
+    num_cur_class = len(cur_class)
+
+    snapped_cues = np.zeros((num_cur_class, img_np.shape[0], img_np.shape[1]))
+
+    for i in range(num_cur_class):
+            # plt.subplot(2,(2 + num_cur_class),3+i); plt.imshow(attention[cur_class[i],:,:]); plt.title('raw attention {}'.format(cur_class[i])); plt.axis('off')
+            snapped_cues[i,:,:] = snap_to_superpixel(cues_np[cur_class[i],:,:], img_np.squeeze(), super_pixel_np)
+
+    return snapped_cues
+
+def resize_resolve_conflict(mask, target_size):
+    if mask.shape[0] > 21: # only one class present, do nothing
+        return resize(mask, target_size, mode='constant')
+
+    else:
+        mask = np.transpose(resize(np.transpose(mask, [1,2,0]), target_size, mode='constant'),[2,0,1])
+        thr = np.max(mask, axis=0)
+        for i in range(mask.shape[0]):
+            temp = mask[i, :, :]
+            temp[temp<thr] = 0
+            mask[i, :, :] = temp
+
+        return mask
+
+
 if __name__ == '__main__':
     args = get_args()
     args.need_mask_flag = True
@@ -215,6 +253,9 @@ if __name__ == '__main__':
     args.input_size = [321,321]
     args.output_size = [41, 41]
     args.need_mask_flag = True
+    flag_view_thresholded_at = True
+    flag_resolve_conflict = True
+    thr_ratio = 0.3
 
     flag_use_cuda = torch.cuda.is_available()
 
@@ -223,45 +264,69 @@ if __name__ == '__main__':
     args.saliency_dir = '/home/sunting/Documents/program/VOC2012_SEG_AUG/snapped_saliency/'
     args.attention_dir = '/home/sunting/Documents/program/VOC2012_SEG_AUG/snapped_attention/'
     args.sec_id_img_name_list_dir = "/home/sunting/Documents/program/SEC-master/training/input_list.txt"
-    # args.cues_pickle_dir = "/home/sunting/Documents/program/SEC-master/training/localization_cues/localization_cues.pickle"
-    args.cues_pickle_dir = "/home/sunting/Documents/program/pyTorch/weak_seg/st_01/models/my_cues.pickle"
+    args.cues_pickle_dir = "/home/sunting/Documents/program/SEC-master/training/localization_cues/localization_cues.pickle"
     args.batch_size = 1
+
+    save_cue_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_01/models/my_cues.pickle'
 
     print(args)
 
     dataloader = VOCData(args)
 
     with torch.no_grad():
-
+        new_cues_dict = {}
         for phase in ['train', 'val']:
             if phase == 'train':
 
                 for data in dataloader.dataloaders["train"]:
-                    inputs, labels, mask_gt, img, super_pixel, saliency_mask, attention_mask, cues = data
+
+                    labels, mask_gt, img, super_pixel, cues, cue_name = data
 
                     mask_gt_np = mask_gt.squeeze().numpy()
                     img_np = img.squeeze().numpy().astype('uint8')
-                    temp_np = attention_mask.squeeze().numpy()
-                    thr_value = temp_np.max()*0.3
-                    temp_np[temp_np < thr_value] = 0
-                    attention_mask_np = np.argmax(temp_np, axis=0)
+                    cues_np = cues.squeeze().numpy()
+                    cues_snapped_temp = np.zeros(cues_np.shape)
+                    labels_np = labels.squeeze().numpy()
+                    super_pixel_np = super_pixel.squeeze().numpy()
 
-                    temp_np = cues.squeeze().numpy()
-                    cues_np = np.argmax(temp_np, axis=0)
-                    temp_mask_gt = mask_gt_np
-                    temp_mask_gt[temp_mask_gt==255] = 0
+                    snapped_cues = snap_cues_to_superpixel(img_np.squeeze(), labels_np, super_pixel_np, cues_np)
+                    if flag_resolve_conflict:
+                        snapped_cues = resize_resolve_conflict(snapped_cues, args.output_size)
 
-                    plt.subplot(1,4,1); plt.imshow(img_np); plt.title('Input image')
-                    plt.subplot(1,4,2); plt.imshow(temp_mask_gt); plt.title('gt')
-                    plt.subplot(1,4,3); plt.imshow(attention_mask_np); plt.title('at mask')
-                    plt.subplot(1,4,4); plt.imshow(cues_np); plt.title('cues')
+                    cur_class = np.nonzero(labels_np)[0]
+                    num_cur_class = len(cur_class)
 
-                    plt.close('all')
+                    if flag_view_thresholded_at:
+                        snapped_cues_hard = np.zeros(cues.squeeze().shape, dtype='int16')
+
+                    # plt.subplot(2, num_cur_class+1, 1); plt.imshow(img_np); plt.title('img'); plt.axis('off')
+                    temp = mask_gt.squeeze().numpy()
+                    temp[temp == 255] = 0
+                    # plt.subplot(2, num_cur_class+1, num_cur_class+2); plt.imshow(temp); plt.title('gt'); plt.axis('off')
+                    for idx, i_class in enumerate(cur_class):
+                        # plt.subplot(2, num_cur_class+1, 2+idx); plt.imshow(cues_np[i_class]); plt.title('org cues'); plt.axis('off')
+                        if flag_view_thresholded_at:
+                            temp = snapped_cues[idx]
+                            thr = temp.max() * thr_ratio
+                            temp[temp<thr] = 0
+                            temp[temp>=thr] = 1
+                            snapped_cues_hard[i_class] = temp.astype('int16')
+
+                            # plt.subplot(2, num_cur_class+1, num_cur_class+3+idx); plt.imshow(snapped_cues_hard[i_class]); plt.title('snapped cues'); plt.axis('off')
+                        else:
+                            # plt.subplot(2, num_cur_class+1, num_cur_class+3+idx); plt.imshow(snapped_cues[idx]); plt.title('snapped cues'); plt.axis('off') # view
+                            print('hi')
+                    # plt.close('all')
+
+                    new_cues_dict[cue_name[0]] = np.asarray(snapped_cues_hard.nonzero(), dtype='int16')
+
+                pickling_on = open(save_cue_path,"wb")
+                pickle.dump(new_cues_dict, pickling_on)
+                pickling_on.close()
+
 
             else:  # evaluation
-                for data in dataloader.dataloaders["val"]:
-                    inputs, labels, mask_gt, img, super_pixel, saliency_mask, attention_mask = data
-
-
+                # for data in dataloader.dataloaders["val"]:
+                #     inputs, labels, mask_gt, img, super_pixel, saliency_mask, attention_mask = data
 
                     plt.close('all')
