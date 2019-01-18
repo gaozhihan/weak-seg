@@ -4,7 +4,8 @@ import torch.optim as optim
 from multi_scale.voc_data_mul_scale import VOCData
 import time
 import socket
-import st_resnet.resnet_st
+# import st_resnet.resnet_st
+import st_resnet.resnet_st_more_drp
 from arguments import get_args
 import datetime
 import numpy as np
@@ -38,7 +39,8 @@ elif host_name == 'ram-lab-server01':
     model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/multi_scale/models/st_top_val_rec_my_resnet_9_9.pth'
     args.batch_size = 10
 
-net = st_resnet.resnet_st.resnet50(pretrained=False, num_classes=args.num_classes)
+# net = st_resnet.resnet_st.resnet50(pretrained=False, num_classes=args.num_classes)
+net = st_resnet.resnet_st_more_drp.resnet50(pretrained=False, num_classes=args.num_classes)
 net.load_state_dict(torch.load(model_path), strict = False)
 
 if args.loss == 'BCELoss':
@@ -156,7 +158,7 @@ for epoch in range(args.epochs):
 
     if recall_eval > max_recall:
         print('save model ' + args.model + ' with val recall: {}'.format(recall_eval))
-        torch.save(net.state_dict(), './multi_scale/models/st_top_val_rec_'+ args.model + '_' + date_str + '.pth')
+        torch.save(net.state_dict(), './multi_scale/models/st_top_val_rec_'+ args.model + '_more_drp_' + date_str + '.pth')
         max_recall = recall_eval
 
     print('Epoch: {} took {:.2f}, Train Loss: {:.4f}, Acc: {:.4f}, Recall: {:.4f}; eval loss: {:.4f}, Acc: {:.4f}, Recall: {:.4f}'.format(epoch, time_took, epoch_train_loss, acc_train, recall_train, epoch_eval_loss, acc_eval, recall_eval))
