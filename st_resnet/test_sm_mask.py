@@ -9,7 +9,6 @@ from arguments import get_args
 import common_function
 import numpy as np
 import datetime
-from skimage.transform import resize
 import matplotlib.pyplot as plt
 from skimage.transform import resize
 
