@@ -16,7 +16,7 @@ args.need_mask_flag = True
 args.model = 'SEC'
 args.input_size = [321,321]
 args.output_size = [41, 41]
-args.lr = 1e-4
+# args.lr = 5e-6
 
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
@@ -45,7 +45,8 @@ elif host_name == 'ram-lab-server01':
     # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/sec/models/SEC_st01_seed_only_top_val_iou_SEC.pth'
     # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/sec/models/st01_wsc_top_val_iou_SEC.pth'
     # args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/models/localization_cues.pickle"
-    args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/st_01/models/my_cues.pickle"
+    # args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/st_01/models/my_cues.pickle"
+    args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/st_01/models/st_cue_01.pickle"
     args.batch_size = 24
 
 
@@ -70,6 +71,9 @@ dataloader = VOCData(args)
 
 optimizer = optim.Adam(net.parameters(), lr=args.lr)  # L2 penalty: norm weight_decay=0.0001
 main_scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=args.step_size)
+
+#optimizer = torch.optim.SGD(net.parameters(), lr=0.0001, momentum=0.9)
+#main_scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=2000)
 
 max_iou = 0
 iou_obj = common_function.iou_calculator()
