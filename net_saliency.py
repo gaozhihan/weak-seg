@@ -99,7 +99,7 @@ class decouple_net_saliency(nn.Module):
             results = []
 
             x = self.decoupled_net.features(x)
-            x_np = self.relu(x).detach().numpy()
+            x_np = self.relu(x).cpu().detach().numpy()
             if x_np.max() > 0:
                 x_np = x_np/x_np.max()
             results.append(x_np)
@@ -109,7 +109,7 @@ class decouple_net_saliency(nn.Module):
             ea_x = self.decoupled_net.ea_conv(ea_x)
             ea_x = self.decoupled_net.drop2(ea_x)
             temp = ea_x[:,1:,:,:]
-            ea_x_np = self.relu(temp).detach().numpy()
+            ea_x_np = self.relu(temp).cpu().detach().numpy()
             if ea_x_np.max() > 0:
                 ea_x_np = ea_x_np/ea_x_np.max()
 
@@ -117,7 +117,7 @@ class decouple_net_saliency(nn.Module):
 
             if self.classify:
                 outputs = self.decoupled_net.avg_pool(ea_x)
-                results.append(outputs.detach().numpy())
+                results.append(outputs.cpu().detach().numpy())
 
         return results
 
