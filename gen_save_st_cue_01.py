@@ -140,8 +140,6 @@ if __name__ == '__main__':
                 inputs = inputs.cuda()
 
             outputs = net_decouple(inputs)
-            if flag_use_cuda:
-                outputs = outputs.cpu()
 
             cues_float = generate_cues(outputs, img, mask_gt, flag_classify, labels.detach().squeeze().numpy(), output_size, num_class)
             cues_hard = np.zeros(cues_float.shape, dtype='int16')
