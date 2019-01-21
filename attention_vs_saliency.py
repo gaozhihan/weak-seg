@@ -69,6 +69,72 @@ def visual_saliency_attention(outputs, img, mask_gt, flag_classify, labels):
             print("done")
 
 
+# ---------------- similar as above but added subtract attention maps ------------------------
+def visual_saliency_sub_attention(outputs, img, mask_gt, flag_classify, labels):
+    with torch.no_grad():
+        if flag_classify:
+            features = outputs[:-1]
+            predictions = outputs[-1]
+
+        else:
+            features = outputs
+
+        num_maps = len(features)
+        num_img = features[0].shape[0]
+
+        cur_class = np.nonzero(labels[1:])[0]
+        print(cur_class)
+        num_cur_class = len(cur_class)
+        attention = features[-1].squeeze()
+        plt.figure()
+
+        if num_cur_class > 1:
+            sum_att_temp = attention[cur_class,:,:].sum(axis=0)
+            for i in range(num_cur_class):
+                plt.subplot(2, num_cur_class, i+1); plt.imshow(attention[cur_class[i],:,:]); plt.axis('off')
+                plt.subplot(2, num_cur_class, num_cur_class+i+1); plt.imshow(np.maximum(attention[cur_class[i],:,:]*2-sum_att_temp,0.0)); plt.axis('off')
+
+        else:
+            for i in range(num_cur_class):
+                plt.subplot(1, num_cur_class, i+1); plt.imshow(attention[cur_class[i],:,:]); plt.axis('off')
+
+        shape_mask = features[0][0][0].shape
+
+        plt.figure()
+        for i_img in range(num_img):
+            temp_img = img[i_img]
+            temp_gt_mask = mask_gt[i_img]
+            temp_gt_mask[temp_gt_mask==255] = 0
+            plt.subplot(1,(4 + num_maps),1); plt.imshow(temp_img/255); plt.title('Input image'); plt.axis('off')
+            plt.subplot(1,(4 + num_maps),2); plt.imshow(temp_gt_mask); plt.title('true mask'); plt.axis('off')
+            sum_layer_mask_per_img = np.zeros(shape_mask)
+            max_layer_mask_per_img = np.zeros(shape_mask)
+            # if flag_classify:
+            #     print(idx2label[pred_hard[i_img]])
+
+            for i_map in range(num_maps):
+                temp_feature = features[i_map][i_img].sum(axis=0)  #[1:] means no background
+                # normalization
+                if temp_feature.max() != 0:
+                    temp_feature = (temp_feature - temp_feature.min())/temp_feature.max()
+
+                temp = resize(temp_feature, shape_mask, mode='constant')
+                sum_layer_mask_per_img = sum_layer_mask_per_img + temp
+                max_layer_mask_per_img = np.maximum(max_layer_mask_per_img, temp)
+                plt.subplot(1,(4 + num_maps),5+i_map); plt.imshow(temp); plt.axis('off')
+
+            if sum_layer_mask_per_img.max() > 0:
+                sum_layer_mask_per_img = (sum_layer_mask_per_img - sum_layer_mask_per_img.min())/sum_layer_mask_per_img.max()
+
+            if max_layer_mask_per_img.max() > 0:
+                max_layer_mask_per_img = (max_layer_mask_per_img - max_layer_mask_per_img.min())/max_layer_mask_per_img.max()
+
+            plt.subplot(1,(4 + num_maps),3); plt.imshow(sum_layer_mask_per_img); plt.title('sum'); plt.axis('off')
+            plt.subplot(1,(4 + num_maps),4); plt.imshow(max_layer_mask_per_img); plt.title('max'); plt.axis('off')
+            print("done")
+
+
+#------------------ the main function -------------------------
 if __name__ == '__main__':
     args = get_args()
     args.need_mask_flag = True
@@ -128,7 +194,8 @@ if __name__ == '__main__':
                         inputs = inputs.cuda(); labels = labels.cuda()
 
                     outputs = net_decouple(inputs)
-                    visual_saliency_attention(outputs, img, mask_gt, flag_classify, labels.detach().squeeze().numpy())
+                    # visual_saliency_attention(outputs, img, mask_gt, flag_classify, labels.detach().squeeze().numpy())
+                    visual_saliency_sub_attention(outputs, img, mask_gt, flag_classify, labels.detach().squeeze().numpy())
 
                     plt.close('all')
 
