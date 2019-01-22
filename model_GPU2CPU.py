@@ -1,9 +1,9 @@
 import torch
 
-model_dict = torch.load("multi_scale/models/st_top_val_acc_my_resnet_9_9.pth")
+model_dict = torch.load("st_01/models/st_01_top_val_rec_SEC_31_31.pth")
 
 
 for item in model_dict.keys():
     model_dict[item] = model_dict[item].cpu()
 
-torch.save(model_dict, "multi_scale/models/st_top_val_acc_my_resnet_09_01_cpu.pth")
+torch.save(model_dict, "st_01/models/st_01_top_val_rec_SEC_31_31_cpu.pth")
