@@ -204,10 +204,13 @@ def snap_to_superpixel(saliency_mask, img, seg):
 
     num_seg = int(seg.max()) + 1
 
-    for i_seg in range(num_seg):
-        cur_seg = (seg == i_seg)
-        cur_saliency_region = saliency_mask_rez[cur_seg]
-        saliency_mask_snapped[cur_seg] = cur_saliency_region.mean()
+    if num_seg > 50:
+        for i_seg in range(num_seg):
+            cur_seg = (seg == i_seg)
+            cur_saliency_region = saliency_mask_rez[cur_seg]
+            saliency_mask_snapped[cur_seg] = cur_saliency_region.mean()
+    else:
+        saliency_mask_snapped = saliency_mask_rez
 
     return saliency_mask_snapped
 
@@ -256,7 +259,7 @@ if __name__ == '__main__':
     flag_view_thresholded_at = True
     flag_resolve_conflict = True
     thr_ratio = 0.3
-    flag_visualization = True
+    flag_visualization = False
 
     flag_use_cuda = torch.cuda.is_available()
 
@@ -265,10 +268,10 @@ if __name__ == '__main__':
     args.saliency_dir = '/home/sunting/Documents/program/VOC2012_SEG_AUG/snapped_saliency/'
     args.attention_dir = '/home/sunting/Documents/program/VOC2012_SEG_AUG/snapped_attention/'
     args.sec_id_img_name_list_dir = "/home/sunting/Documents/program/SEC-master/training/input_list.txt"
-    args.cues_pickle_dir = "/home/sunting/Documents/program/SEC-master/training/localization_cues/localization_cues.pickle"
+    args.cues_pickle_dir = "/home/sunting/Documents/program/pyTorch/weak_seg/st_01/models/st_cue_01.pickle"
     args.batch_size = 1
 
-    save_cue_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_01/models/my_cues.pickle'
+    save_cue_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_01/models/st_cue_01_hard_snapped.pickle'
 
     print(args)
 
@@ -276,67 +279,58 @@ if __name__ == '__main__':
 
     with torch.no_grad():
         new_cues_dict = {}
-        for phase in ['train', 'val']:
-            if phase == 'train':
 
-                for data in dataloader.dataloaders["train"]:
+        for data in dataloader.dataloaders["train"]:
 
-                    labels, mask_gt, img, super_pixel, cues, cue_name = data
+            labels, mask_gt, img, super_pixel, cues, cue_name = data
 
-                    mask_gt_np = mask_gt.squeeze().numpy()
-                    img_np = img.squeeze().numpy().astype('uint8')
-                    cues_np = cues.squeeze().numpy()
-                    cues_snapped_temp = np.zeros(cues_np.shape)
-                    labels_np = labels.squeeze().numpy()
-                    super_pixel_np = super_pixel.squeeze().numpy()
+            mask_gt_np = mask_gt.squeeze().numpy()
+            img_np = img.squeeze().numpy().astype('uint8')
+            cues_np = cues.squeeze().numpy()
+            cues_snapped_temp = np.zeros(cues_np.shape)
+            labels_np = labels.squeeze().numpy()
+            super_pixel_np = super_pixel.squeeze().numpy()
 
-                    snapped_cues = snap_cues_to_superpixel(img_np.squeeze(), labels_np, super_pixel_np, cues_np)
-                    if flag_resolve_conflict:
-                        snapped_cues = resize_resolve_conflict(snapped_cues, args.output_size)
+            snapped_cues = snap_cues_to_superpixel(img_np.squeeze(), labels_np, super_pixel_np, cues_np)
+            if flag_resolve_conflict:
+                snapped_cues = resize_resolve_conflict(snapped_cues, args.output_size)
 
-                    cur_class = np.nonzero(labels_np)[0]
-                    num_cur_class = len(cur_class)
+            cur_class = np.nonzero(labels_np)[0]
+            num_cur_class = len(cur_class)
 
-                    if flag_view_thresholded_at:
-                        snapped_cues_hard = np.zeros(cues.squeeze().shape, dtype='int16')
+            if flag_view_thresholded_at:
+                snapped_cues_hard = np.zeros(cues.squeeze().shape, dtype='int16')
 
-                    temp = mask_gt.squeeze().numpy()
-                    temp[temp == 255] = 0
+            temp = mask_gt.squeeze().numpy()
+            temp[temp == 255] = 0
 
-                    if flag_visualization:
-                        plt.subplot(2, num_cur_class+1, 1); plt.imshow(img_np); plt.title('img'); plt.axis('off')
-                        plt.subplot(2, num_cur_class+1, num_cur_class+2); plt.imshow(temp); plt.title('gt'); plt.axis('off')
+            if flag_visualization:
+                plt.subplot(2, num_cur_class+1, 1); plt.imshow(img_np); plt.title('img'); plt.axis('off')
+                plt.subplot(2, num_cur_class+1, num_cur_class+2); plt.imshow(temp); plt.title('gt'); plt.axis('off')
 
-                    for idx, i_class in enumerate(cur_class):
-                        if flag_visualization:
-                            plt.subplot(2, num_cur_class+1, 2+idx); plt.imshow(cues_np[i_class]); plt.title('org cues'); plt.axis('off')
+            for idx, i_class in enumerate(cur_class):
+                if flag_visualization:
+                    plt.subplot(2, num_cur_class+1, 2+idx); plt.imshow(cues_np[i_class]); plt.title('org cues'); plt.axis('off')
 
-                        if flag_view_thresholded_at:
-                            temp = snapped_cues[idx]
-                            thr = temp.max() * thr_ratio
-                            temp[temp<thr] = 0
-                            temp[temp>=thr] = 1
-                            snapped_cues_hard[i_class] = temp.astype('int16')
-
-                            if flag_visualization:
-                                plt.subplot(2, num_cur_class+1, num_cur_class+3+idx); plt.imshow(snapped_cues_hard[i_class]); plt.title('snapped cues'); plt.axis('off')
-                        else:
-                            if flag_visualization:
-                                plt.subplot(2, num_cur_class+1, num_cur_class+3+idx); plt.imshow(snapped_cues[idx]); plt.title('snapped cues'); plt.axis('off') # view
-                            print('hi')
+                if flag_view_thresholded_at:
+                    temp = snapped_cues[idx]
+                    thr = temp.max() * thr_ratio
+                    temp[temp<thr] = 0
+                    temp[temp>=thr] = 1
+                    snapped_cues_hard[i_class] = temp.astype('int16')
 
                     if flag_visualization:
-                        plt.close('all')
+                        plt.subplot(2, num_cur_class+1, num_cur_class+3+idx); plt.imshow(snapped_cues_hard[i_class]); plt.title('snapped cues'); plt.axis('off')
+                else:
+                    if flag_visualization:
+                        plt.subplot(2, num_cur_class+1, num_cur_class+3+idx); plt.imshow(snapped_cues[idx]); plt.title('snapped cues'); plt.axis('off') # view
 
-                    new_cues_dict[cue_name[0]] = np.asarray(snapped_cues_hard.nonzero(), dtype='int16')
+            if flag_visualization:
+                plt.close('all')
 
-                pickling_on = open(save_cue_path,"wb")
-                pickle.dump(new_cues_dict, pickling_on)
-                pickling_on.close()
+            new_cues_dict[cue_name[0]] = np.asarray(snapped_cues_hard.nonzero(), dtype='int16')
 
+        pickling_on = open(save_cue_path,"wb")
+        pickle.dump(new_cues_dict, pickling_on)
+        pickling_on.close()
 
-            else:  # evaluation
-                # for data in dataloader.dataloaders["val"]:
-                #     inputs, labels, mask_gt, img, super_pixel, saliency_mask, attention_mask = data
-
-                    plt.close('all')

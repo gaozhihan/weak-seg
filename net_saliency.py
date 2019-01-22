@@ -122,6 +122,47 @@ class decouple_net_saliency(nn.Module):
         return results
 
 
+class decouple_net_saliency_with_pred(nn.Module):
+    # for this model, max combine is better
+    def __init__(self, flag_classify):
+        super(decouple_net_saliency_with_pred, self).__init__()
+        self.decoupled_net = decoupled_net.DecoupleNet(21)
+        self.decoupled_net.load_state_dict(torch.load("models/top_val_acc_decoupled_28_CPU.pth"), strict = False)
+        self.decoupled_net.train(False)
+        self.relu = nn.ReLU()
+        self.classify = flag_classify
+        self.softmax = nn.Softmax(dim=1)
+
+    def forward(self, x):
+        with torch.no_grad():
+            results = []
+
+            x = self.decoupled_net.features(x)
+            x_np = self.relu(x).cpu().detach().numpy()
+            if x_np.max() > 0:
+                x_np = x_np/x_np.max()
+            results.append(x_np)
+
+            #E-A
+            ea_x = self.decoupled_net.drop1(x)
+            ea_x = self.decoupled_net.ea_conv(ea_x)
+            ea_x = self.decoupled_net.drop2(ea_x)
+            temp = ea_x[:,1:,:,:]
+            ea_x_np = self.relu(temp).cpu().detach().numpy()
+            if ea_x_np.max() > 0:
+                ea_x_np = ea_x_np/ea_x_np.max()
+
+            results.append(ea_x_np)
+
+            outputs = self.decoupled_net.avg_pool(ea_x)
+            outputs = self.softmax(outputs)
+
+            if self.classify:
+                results.append(outputs.cpu().detach().numpy())
+
+        return results, outputs.cpu().detach().squeeze().numpy()
+
+
 class resnet_saliency(nn.Module):
     def __init__(self, flag_classify):
         super(resnet_saliency, self).__init__()
