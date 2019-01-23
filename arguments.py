@@ -42,7 +42,7 @@ def get_args():
                         help='size of training images [224,224]|[321,321]')
     parser.add_argument('--output_size', nargs='+', type=int, default=[32,32], # 32 for 256 input; 28 for 224 input
                         help='size of output mask')
-    parser.add_argument('--step_size', type=int, default=4,
+    parser.add_argument('--step_size', type=int, default=7,
                         help='optimizer scheduler step size')
     parser.add_argument('--epochs', type=int, default=1000,
                         help='training epoches (default: 100)')
