@@ -47,7 +47,7 @@ elif host_name == 'ram-lab-server01':
     # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/sec/models/st01_wsc_top_val_iou_SEC.pth'
     # args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/models/localization_cues.pickle"
     # args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/st_01/models/my_cues.pickle"
-    args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/st_01/models/st_cue_01.pickle"
+    args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/st_01/models/st_cue_02_w_conf.pickle"
     args.batch_size = 24
 
 
