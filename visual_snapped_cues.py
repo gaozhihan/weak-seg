@@ -65,7 +65,8 @@ if __name__ == '__main__':
     data_dir = '/home/sunting/Documents/program/VOC2012_SEG_AUG'
     super_pixel_dir = '/home/sunting/Documents/program/VOC2012_SEG_AUG/super_pixel/'
     sec_id_img_name_list_dir = "/home/sunting/Documents/program/SEC-master/training/input_list.txt"
-    cues_pickle_dir = "/home/sunting/Documents/program/SEC-master/training/localization_cues/localization_cues.pickle"
+    # cues_pickle_dir = "/home/sunting/Documents/program/SEC-master/training/localization_cues/localization_cues.pickle"
+    cues_pickle_dir = "/home/sunting/Documents/program/pyTorch/weak_seg/st_01/models/st_cue_02_w_conf.pickle"
 
     with open(os.path.join(data_dir, "ImageSets", 'train.txt'),"r") as f:
         all_files = f.readlines()
