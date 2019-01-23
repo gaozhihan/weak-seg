@@ -176,11 +176,11 @@ if __name__ == '__main__':
     if host_name == 'sunting':
         args.data_dir = '/home/sunting/Documents/program/VOC2012_SEG_AUG'
         sec_id_img_name_list_dir = "/home/sunting/Documents/program/SEC-master/training/input_list.txt"
-        save_cue_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_01/models/st_cue_02.pickle'
+        save_cue_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_01/models/st_cue_02_w_conf.pickle'
     elif host_name == 'ram-lab-server01':
         args.data_dir = '/data_shared/Docker/tsun/data/VOC2012/VOC2012_SEG_AUG'
         sec_id_img_name_list_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/sec/input_list.txt"
-        save_cue_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_01/models/st_cue_02.pickle'
+        save_cue_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_01/models/st_cue_02_w_conf.pickle'
 
 
     output_size = [41,41]
