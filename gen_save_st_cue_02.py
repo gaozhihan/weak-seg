@@ -1,7 +1,8 @@
-# foreground cues:
-# 1. if one class, use max(avg saliency, attention) as attention;
-# 2. if multiple foreground class, sub attention maps;
-# 3. background cues: 1-max(layer1_sum, layer2_sum)
+# modification compared with 'gen_save_st_cue_01':
+# aware that sometimes one class can be a small obj, using saliency will include a lot of noise, so check first:
+# for one class case, replace max(avg saliency, attention) as attention if one of the following condition satisfies:
+# 1. in hard mask, iou > thr; 2. find the rectangles contain the activation in the two masks, if their iou > thr
+# another change is the general threshold to generate foreground cues_hard from 0.3 to 0.25 times max val
 
 import torch
 import torch.nn as nn
@@ -14,6 +15,77 @@ import common_function
 import numpy as np
 import net_saliency
 import pickle
+
+def smart_comb(att, sal):
+    att_hard = np.zeros(att.shape)
+    sal_hard = np.zeros(sal.shape)
+
+    thr_temp = att.max() * 0.25
+    att_hard[att>thr_temp] = 1
+
+    thr_temp = sal.max() * 0.25
+    sal_hard[sal>thr_temp] = 1
+
+    # iou
+    temp = att_hard + sal_hard
+    intercection = (temp > 1).sum()
+    union = (temp > 0).sum()
+
+    if intercection/union > 0.4:
+        return sal
+    else:
+        # bbx
+        temp_idx = np.where(att_hard > 0)
+        att_bbox_mask = np.zeros(att_hard.shape)
+        att_bbox_mask[temp_idx[0].min():temp_idx[0].max(), temp_idx[1].min():temp_idx[1].max()] = 1
+
+        temp_idx = np.where(sal_hard > 0)
+        sal_bbox_mask = np.zeros(sal_hard.shape)
+        sal_bbox_mask[temp_idx[0].min():temp_idx[0].max(), temp_idx[1].min():temp_idx[1].max()] = 1
+
+        temp = att_hard + sal_hard
+        intercection = (temp > 1).sum()
+        union = (temp > 0).sum()
+
+        if intercection/union > 0.65:
+            return sal
+        else:
+            return att
+
+
+def smart_comb_test(att, sal):
+    att_hard = np.zeros(att.shape)
+    sal_hard = np.zeros(sal.shape)
+
+    thr_temp = att.max() * 0.25
+    att_hard[att>thr_temp] = 1
+
+    thr_temp = sal.max() * 0.25
+    sal_hard[sal>thr_temp] = 1
+
+    # iou
+    temp = att_hard + sal_hard
+    intercection = (temp > 1).sum()
+    union = (temp > 0).sum()
+    print('iou is: {:.4f}'.format(intercection/union))
+
+    # bbx
+    temp_idx = np.where(att_hard > 0)
+    att_bbox_mask = np.zeros(att_hard.shape)
+    att_bbox_mask[temp_idx[0].min():temp_idx[0].max(), temp_idx[1].min():temp_idx[1].max()] = 1
+
+    temp_idx = np.where(sal_hard > 0)
+    sal_bbox_mask = np.zeros(sal_hard.shape)
+    sal_bbox_mask[temp_idx[0].min():temp_idx[0].max(), temp_idx[1].min():temp_idx[1].max()] = 1
+
+    temp = att_bbox_mask + sal_bbox_mask
+    intercection = (temp > 1).sum()
+    union = (temp > 0).sum()
+
+    print('bbx iou is: {:.4f}'.format(intercection/union))
+
+    return sal
+
 
 def generate_cues(outputs, img, mask_gt, flag_classify, labels, output_size, num_class):
     with torch.no_grad():
@@ -72,7 +144,9 @@ def generate_cues(outputs, img, mask_gt, flag_classify, labels, output_size, num
             else:
                 temp1 = resize(attention[cur_class[0],:,:], output_size, mode='constant')
                 temp2 = resize(sum_layer_mask_per_img, output_size, mode='constant')
-                cues_float[cur_class[0]+1] = np.maximum(temp1, temp2)
+                temp3 = np.maximum(temp1, temp2)
+                cues_float[cur_class[0]+1] = smart_comb(temp1, temp3)
+                # cues_float[cur_class[0]+1] = smart_comb_test(temp1, temp3)
 
             # for background
             if labels[0]>0: # background not always exist
@@ -97,16 +171,16 @@ if __name__ == '__main__':
     flag_classify = False
     host_name = socket.gethostname()
 
-    flag_visualization = True
+    flag_visualization = False
 
     if host_name == 'sunting':
         args.data_dir = '/home/sunting/Documents/program/VOC2012_SEG_AUG'
         sec_id_img_name_list_dir = "/home/sunting/Documents/program/SEC-master/training/input_list.txt"
-        save_cue_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_01/models/st_cue_01.pickle'
+        save_cue_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_01/models/st_cue_02.pickle'
     elif host_name == 'ram-lab-server01':
         args.data_dir = '/data_shared/Docker/tsun/data/VOC2012/VOC2012_SEG_AUG'
         sec_id_img_name_list_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/sec/input_list.txt"
-        save_cue_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_01/models/st_cue_01.pickle'
+        save_cue_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_01/models/st_cue_02.pickle'
 
 
     output_size = [41,41]
@@ -144,7 +218,7 @@ if __name__ == '__main__':
 
             # calculate confidence
             conf = preds[labels.cpu().detach().squeeze().numpy()>0]
-            print(conf)
+            # print(conf)
 
             cues_float = generate_cues(outputs, img, mask_gt, flag_classify, labels.detach().squeeze().numpy(), output_size, num_class)
             cues_hard = np.zeros(cues_float.shape, dtype='int16')
@@ -153,12 +227,12 @@ if __name__ == '__main__':
             for idx, i_class in enumerate(cur_class):
                 temp = np.copy(cues_float[i_class])
                 if i_class > 0:
-                    thr_temp = temp.max() * 0.3
+                    thr_temp = temp.max() * 0.25
                 else:
                     thr_temp = temp.max() * 0.92
 
-                temp[temp>=thr_temp] = 1
-                temp[temp<thr_temp] = 0
+                temp[temp>thr_temp] = 1
+                temp[temp<=thr_temp] = 0
                 cues_hard[i_class] = temp.astype('int16')
 
             if flag_visualization:
@@ -180,9 +254,9 @@ if __name__ == '__main__':
                     else:
                         temp_mask = outputs[-1].squeeze()[cur_class[fg_idx[0]]-1]
 
-                    thr_temp = temp_mask.max() * 0.3
+                    thr_temp = temp_mask.max() * 0.25
                     temp_mask_hard = np.zeros(temp_mask.shape, dtype='int16')
-                    temp_mask_hard[temp_mask>=thr_temp] = 1
+                    temp_mask_hard[temp_mask>thr_temp] = 1
 
                     plt.subplot(2,(2 + num_cur_class),num_cur_class+3); plt.imshow(temp_mask, cmap='gray'); plt.axis('off')
                     plt.subplot(2,(2 + num_cur_class),num_cur_class+4); plt.imshow(temp_mask_hard, cmap='gray'); plt.axis('off')
@@ -191,8 +265,10 @@ if __name__ == '__main__':
 
             img_id_sec = img_id_dic_SEC[img_name[0] + '.png']
             cue_name = '%i_cues' % img_id_sec
+            conf_name = '%i_conf' % img_id_sec
 
             new_cues_dict[cue_name] = np.asarray(cues_hard.nonzero(), dtype='int16')
+            new_cues_dict[conf_name] = conf
 
         pickling_on = open(save_cue_path,"wb")
         pickle.dump(new_cues_dict, pickling_on)
