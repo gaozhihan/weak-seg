@@ -171,7 +171,7 @@ if __name__ == '__main__':
     flag_classify = False
     host_name = socket.gethostname()
 
-    flag_visualization = False
+    flag_visualization = True
 
     if host_name == 'sunting':
         args.data_dir = '/home/sunting/Documents/program/VOC2012_SEG_AUG'
