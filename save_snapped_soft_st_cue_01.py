@@ -169,6 +169,7 @@ if __name__ == '__main__':
         args.data_dir = '/data_shared/Docker/tsun/data/VOC2012/VOC2012_SEG_AUG'
         sec_id_img_name_list_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/sec/input_list.txt"
         save_cue_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_01/models/st_cue_01_soft_snapped_w_conf.pickle'
+        super_pixel_path = '/data_shared/Docker/tsun/data/VOC2012/VOC2012_SEG_AUG/super_pixel/'
 
     output_size = [41,41]
     num_class = 21
@@ -203,7 +204,7 @@ if __name__ == '__main__':
 
             # calculate confidence
             conf = preds[labels.cpu().detach().squeeze().numpy()>0]
-            print(conf)
+            # print(conf)
 
             cues_float = generate_cues(outputs, img, mask_gt, flag_classify, labels.detach().squeeze().numpy(), output_size, num_class)
 
