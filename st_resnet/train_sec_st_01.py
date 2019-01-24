@@ -44,7 +44,7 @@ elif host_name == 'ram-lab-server01':
     # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/multi_scale/models/st_top_val_acc_my_resnet_multi_scale_09_01_cpu_rename_fc2conv.pth'
     # args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/models/localization_cues.pickle"
     # args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/st_01/models/my_cues.pickle"
-    args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/st_01/models/st_cue_02_w_conf.pickle"
+    args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/st_01/models/st_cue_02_hard_snapped.pickle"
     args.batch_size = 18
 
 
@@ -114,8 +114,8 @@ for epoch in range(args.epochs):
         #     plt.close("all")
 
         # (seed_loss + constrain_loss + expand_loss).backward()  # independent backward would cause Error: Trying to backward through the graph a second time ...
-        seed_loss.backward()
-        # (seed_loss + constrain_loss/8).backward()
+        # seed_loss.backward()
+        (seed_loss + constrain_loss/8).backward()
         optimizer.step()
 
         train_seed_loss += seed_loss.item()
