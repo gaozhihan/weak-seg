@@ -319,6 +319,7 @@ if __name__ == '__main__':
             super_pixel_np = super_pixel.squeeze().numpy()
 
             snapped_cues = snap_cues_to_superpixel(img_np.squeeze(), labels_np, super_pixel_np, cues_np)
+            snapped_cues = np.transpose(resize(np.transpose(snapped_cues, [1,2,0]), args.output_size, mode='constant'),[2,0,1])
             snapped_cues_hard = thr_mask_conflict_resolve(snapped_cues, labels.cpu().detach().squeeze().numpy())
 
             cur_class = np.nonzero(labels_np)[0]
