@@ -1,4 +1,4 @@
-# only test iou of the sm_mask
+# compare with 'save_snapped_cues.py', use thr_mask_conflict_resolve(snapped_cues_float, labels)
 import torch
 import torch.nn as nn
 import time
@@ -204,10 +204,13 @@ def snap_to_superpixel(saliency_mask, img, seg):
 
     num_seg = int(seg.max()) + 1
 
-    for i_seg in range(num_seg):
-        cur_seg = (seg == i_seg)
-        cur_saliency_region = saliency_mask_rez[cur_seg]
-        saliency_mask_snapped[cur_seg] = cur_saliency_region.mean()
+    if num_seg > 50:
+        for i_seg in range(num_seg):
+            cur_seg = (seg == i_seg)
+            cur_saliency_region = saliency_mask_rez[cur_seg]
+            saliency_mask_snapped[cur_seg] = cur_saliency_region.mean()
+    else:
+        saliency_mask_snapped = saliency_mask_rez
 
     return saliency_mask_snapped
 
@@ -217,16 +220,17 @@ def snap_cues_to_superpixel(img_np, labels_np, super_pixel_np, cues_np):
     if img_np.max() > 1:
             img_np = img_np / 255.0
 
+    num_class = len(labels_np)
     cur_class = np.nonzero(labels_np)[0]
     num_cur_class = len(cur_class)
 
-    snapped_cues = np.zeros((num_cur_class, img_np.shape[0], img_np.shape[1]))
+    snapped_cues = np.zeros((num_class, img_np.shape[0], img_np.shape[1]))
 
-    for i in range(num_cur_class):
-            # plt.subplot(2,(2 + num_cur_class),3+i); plt.imshow(attention[cur_class[i],:,:]); plt.title('raw attention {}'.format(cur_class[i])); plt.axis('off')
-            snapped_cues[i,:,:] = snap_to_superpixel(cues_np[cur_class[i],:,:], img_np.squeeze(), super_pixel_np)
+    for i_class in cur_class:
+        snapped_cues[i_class,:,:] = snap_to_superpixel(cues_np[i_class,:,:], img_np.squeeze(), super_pixel_np)
 
     return snapped_cues
+
 
 def resize_resolve_conflict(mask, target_size):
     if mask.shape[0] > 21: # only one class present, do nothing
@@ -242,6 +246,32 @@ def resize_resolve_conflict(mask, target_size):
 
         return mask
 
+def thr_mask_conflict_resolve(snapped_cues_float, labels):
+
+    thr_fg_ratio = 0.3
+    thr_bg_ratio = 0.3
+    snapped_cues_hard = np.zeros(snapped_cues_float.shape, dtype='int16')
+    cur_class = np.nonzero(labels)[0]
+    for i_class in cur_class:
+        if i_class > 0:
+            thr_val = snapped_cues_float[i_class].max() * thr_fg_ratio
+        else:
+            thr_val = snapped_cues_float[i_class].max() * thr_bg_ratio
+
+        temp = snapped_cues_float[i_class]
+        temp[temp < thr_val] = 0
+        temp[temp >= thr_val] = 1
+        snapped_cues_hard[i_class] = temp.astype('int16')
+
+    # resolve conflict, just background give way for foreground
+    temp = snapped_cues_hard[1:,:,:].sum(axis=0)
+    temp_idx = temp > 0
+    temp = snapped_cues_hard[0]
+    temp[temp_idx] = 0
+    snapped_cues_hard[0] = temp
+
+    return snapped_cues_hard
+
 
 if __name__ == '__main__':
     args = get_args()
@@ -253,10 +283,8 @@ if __name__ == '__main__':
     args.input_size = [321,321]
     args.output_size = [41, 41]
     args.need_mask_flag = True
-    flag_view_thresholded_at = True
-    flag_resolve_conflict = True
     thr_ratio = 0.3
-    flag_visualization = True
+    flag_visualization = False
 
     flag_use_cuda = torch.cuda.is_available()
 
@@ -291,14 +319,11 @@ if __name__ == '__main__':
             super_pixel_np = super_pixel.squeeze().numpy()
 
             snapped_cues = snap_cues_to_superpixel(img_np.squeeze(), labels_np, super_pixel_np, cues_np)
-            if flag_resolve_conflict:
-                snapped_cues = resize_resolve_conflict(snapped_cues, args.output_size)
+            snapped_cues = np.transpose(resize(np.transpose(snapped_cues, [1,2,0]), args.output_size, mode='constant'),[2,0,1])
+            snapped_cues_hard = thr_mask_conflict_resolve(snapped_cues, labels.cpu().detach().squeeze().numpy())
 
             cur_class = np.nonzero(labels_np)[0]
             num_cur_class = len(cur_class)
-
-            if flag_view_thresholded_at:
-                snapped_cues_hard = np.zeros(cues.squeeze().shape, dtype='int16')
 
             temp = mask_gt.squeeze().numpy()
             temp[temp == 255] = 0
@@ -310,13 +335,6 @@ if __name__ == '__main__':
             for idx, i_class in enumerate(cur_class):
                 if flag_visualization:
                     plt.subplot(2, num_cur_class+1, 2+idx); plt.imshow(cues_np[i_class]); plt.title('org cues'); plt.axis('off')
-
-                if flag_view_thresholded_at:
-                    temp = snapped_cues[idx]
-                    thr = temp.max() * thr_ratio
-                    temp[temp<thr] = 0
-                    temp[temp>=thr] = 1
-                    snapped_cues_hard[i_class] = temp.astype('int16')
 
                     if flag_visualization:
                         plt.subplot(2, num_cur_class+1, num_cur_class+3+idx); plt.imshow(snapped_cues_hard[i_class]); plt.title('snapped cues'); plt.axis('off')
