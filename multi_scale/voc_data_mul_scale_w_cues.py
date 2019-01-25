@@ -204,11 +204,8 @@ class VOCDataset(Dataset):
             label[item] = 1
         label_ts = torch.from_numpy(label)
 
-        if self.train_flag:
-            if self.need_mask:
-                return img_ts, label_ts, mask, img_array, cues # img_name,
-            else:
-                return img_ts, label_ts
+        if self.train_flag and self.file_list[idx]+".png" in self.img_id_dic_SEC.keys():
+            return img_ts, label_ts, mask, img_array, cues # img_name,
         else:
             # return img_ts, label_ts, mask, img_name, img_array
             return img_ts, label_ts, mask, img_array
