@@ -90,17 +90,17 @@ with torch.no_grad():
 
                     sm_mask = net(inputs_tensor)
 
-                    plt.subplot(num_scale+2, num_class+2, idx_scale*(num_class+2)+1); plt.imshow(img.squeeze().numpy().astype('uint8')); plt.title('input')
+                    plt.subplot(num_scale+2, num_class+2, idx_scale*(num_class+2)+1); plt.imshow(img.squeeze().numpy().astype('uint8')); plt.title('input'); plt.axis('off')
                     mask_gt_np = mask_gt.squeeze().numpy()
                     mask_gt_np[mask_gt_np==255] = 0
-                    plt.subplot(num_scale+2, num_class+2, idx_scale*(num_class+2)+2); plt.imshow(mask_gt_np); plt.title('gt')
+                    plt.subplot(num_scale+2, num_class+2, idx_scale*(num_class+2)+2); plt.imshow(mask_gt_np); plt.title('gt'); plt.axis('off')
                     for idx_class, i_class in enumerate(cur_class):
-                        plt.subplot(num_scale+2, num_class+2, idx_scale*(num_class+2)+3+idx_class); plt.imshow(sm_mask.squeeze()[i_class].numpy(), cmap='gray')
-                        sm_mask_uni_size[idx_scale, idx_class, :, :] = resize(sm_mask.squeeze()[i_class].numpy(), uni_sm_mask_size, mode='constant')
+                        plt.subplot(num_scale+2, num_class+2, idx_scale*(num_class+2)+3+idx_class); plt.imshow(sm_mask.squeeze()[i_class].numpy(), cmap='gray'); plt.axis('off')
+                        sm_mask_uni_size[idx_scale, idx_class, :, :] = resize(sm_mask.squeeze()[i_class].numpy(), uni_sm_mask_size, mode='constant'); plt.axis('off')
 
                 for i in range(num_class):
-                    plt.subplot(num_scale+2, num_class+2, (num_class+2)*num_scale + 3+i); plt.imshow(np.mean(sm_mask_uni_size[:,i,:,:], axis=0), cmap='gray')
-                    plt.subplot(num_scale+2, num_class+2, (num_class+2)*(num_scale+1) + 3+i); plt.imshow(np.max(sm_mask_uni_size[:,i,:,:], axis=0), cmap='gray')
+                    plt.subplot(num_scale+2, num_class+2, (num_class+2)*num_scale + 3+i); plt.imshow(np.mean(sm_mask_uni_size[:,i,:,:], axis=0), cmap='gray'); plt.axis('off')
+                    plt.subplot(num_scale+2, num_class+2, (num_class+2)*(num_scale+1) + 3+i); plt.imshow(np.max(sm_mask_uni_size[:,i,:,:], axis=0), cmap='gray'); plt.axis('off')
 
                 plt.close('all')
 
