@@ -97,7 +97,7 @@ for epoch in range(args.epochs):
         inputs_resize = np.zeros((inputs.shape[0], inputs.shape[1], cur_size[0], cur_size[1]),dtype='float32')
         mask_gt_resize = np.zeros((mask_gt.shape[0], cur_size[0], cur_size[1]),dtype='float32')
 
-        max_val = max(max(inputs.max(), -inputs.min()), 1.0)
+        max_val = max(max(inputs.max(), -inputs.min()), 1.0).numpy()
         mask_gt_f_temp = mask_gt.detach().numpy().astype('float32')
         max_val_mask = max(mask_gt_f_temp.max(), 1.0)
         mask_gt_f_temp = mask_gt_f_temp/max_val_mask
@@ -114,7 +114,9 @@ for epoch in range(args.epochs):
         img_np = np.round(img_np*255.0)
 
         if flag_use_cuda:
-            inputs = inputs.cuda(); labels = labels.cuda() #; cues = cues.cuda()
+            inputs = torch.from_numpy(inputs_resize).cuda(); labels = labels.cuda() #; cues = cues.cuda()
+        else:
+            inputs = torch.from_numpy(inputs_resize)
 
         optimizer.zero_grad()
 
