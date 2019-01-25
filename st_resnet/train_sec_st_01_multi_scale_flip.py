@@ -47,13 +47,13 @@ elif host_name == 'ram-lab-server01':
     # args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/models/localization_cues.pickle"
     # args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/st_01/models/my_cues.pickle"
     args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/st_01/models/st_cue_02_hard_snapped.pickle"
-    args.batch_size = 10
+    args.batch_size = 12
 
 
 net = st_resnet.resnet_st_seg01.resnet50(pretrained=False, num_classes=args.num_classes)
 net.load_state_dict(torch.load(model_path), strict = True)
 
-st_crf_layer = multi_scale.voc_data_mul_scale_w_cues.STCRFLayer(False)
+st_crf_layer = multi_scale.voc_data_mul_scale_w_cues.STCRFLayer(True)
 seed_loss_layer = multi_scale.voc_data_mul_scale_w_cues.SeedingLoss()
 # expand_loss_layer = sec.sec_org_net.ExpandLossLayer(flag_use_cuda)
 st_constrain_loss_layer = multi_scale.voc_data_mul_scale_w_cues.STConstrainLossLayer()
