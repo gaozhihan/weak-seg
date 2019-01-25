@@ -141,9 +141,9 @@ class VOCDataset(Dataset):
                 return pickle.load(f)
 
 
-
     def __len__(self):
         return len(self.file_list)
+
 
     def __get_cues_from_img_name(self, img_name):
         img_id_sec = self.img_id_dic_SEC[img_name]
@@ -151,6 +151,7 @@ class VOCDataset(Dataset):
         cues_numpy = np.zeros([self.args.num_classes, self.args.output_size[0], self.args.output_size[1]])
         cues_numpy[cues[0], cues[1], cues[2]] = 1.0
         return  cues_numpy.astype('float32')
+
 
     def __getitem__(self, idx):
         img_name = os.path.join(self.data_dir, "images", self.file_list[idx]+".png")
