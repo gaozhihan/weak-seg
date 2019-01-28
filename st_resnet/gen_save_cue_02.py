@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 from skimage.transform import resize
 import common_function
 import numpy as np
-import net_saliency
+import st_resnet.resnet_st_seg01_for_cue
 import pickle
 
 def smart_comb(att, sal):
@@ -122,7 +122,7 @@ def generate_cues(outputs, img, mask_gt, flag_classify, labels, output_size, num
                 temp_feature = features[i_map][i_img].sum(axis=0)  #[1:] means no background
                 # normalization
                 if temp_feature.max() != 0:
-                    temp_feature = (temp_feature - temp_feature.min())/temp_feature.max()
+                    temp_feature = (temp_feature - temp_feature.min())/(temp_feature.max() - temp_feature.min())
 
                 temp = resize(temp_feature, shape_mask, mode='constant')
                 sum_layer_mask_per_img = sum_layer_mask_per_img + temp
@@ -154,6 +154,18 @@ def generate_cues(outputs, img, mask_gt, flag_classify, labels, output_size, num
 
     return cues_float
 
+# only used here
+def net_outputs_to_list(layer4_feature_np, x_np, sm_mask_np):
+    # sm_mask_np need no process, already range in [0,1]
+    # layer4_feature_np range from [0, 17.xxxx], need normalization
+    # x_np range from about [-32.7xxx, 55.7xxx], need normalization
+
+    x = layer4_feature_np.max(axis = 1, keepdims = True)
+    ly4 = layer4_feature_np/x
+
+    return [sm_mask_np[:,1:,:,:]] #[ly4, sm_mask_np[:,1:,:,:]]
+
+
 
 #------------------ the main function -------------------------
 if __name__ == '__main__':
@@ -171,16 +183,20 @@ if __name__ == '__main__':
     flag_classify = False
     host_name = socket.gethostname()
 
-    flag_visualization = False
+    flag_visualization = True
 
     if host_name == 'sunting':
         args.data_dir = '/home/sunting/Documents/program/VOC2012_SEG_AUG'
         sec_id_img_name_list_dir = "/home/sunting/Documents/program/SEC-master/training/input_list.txt"
-        save_cue_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_01/models/st_cue_02_w_conf_thr03.pickle'
+        save_cue_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_resnet_cue_02.pickle'
+        # model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_top_val_acc_my_resnet_5_cpu_rename_fc2conv.pth'
+        model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_top_val_acc_my_resnet_multi_scale_09_01_cpu_rename_fc2conv.pth'
     elif host_name == 'ram-lab-server01':
         args.data_dir = '/data_shared/Docker/tsun/data/VOC2012/VOC2012_SEG_AUG'
         sec_id_img_name_list_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/sec/input_list.txt"
-        save_cue_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_01/models/st_cue_02_w_conf.pickle'
+        save_cue_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/st_resnet_cue_02.pickle'
+        # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/st_top_val_acc_my_resnet_5_cpu_rename_fc2conv.pth'
+        model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/st_top_val_acc_my_resnet_multi_scale_09_01_cpu_rename_fc2conv.pth'
 
 
     output_size = [41,41]
@@ -189,12 +205,14 @@ if __name__ == '__main__':
     flag_use_cuda = torch.cuda.is_available()
 
     args.batch_size = 1
-    net_decouple = net_saliency.decouple_net_saliency_with_pred(flag_classify)
+    net = st_resnet.resnet_st_seg01_for_cue.resnet50(pretrained=False, num_classes=args.num_classes)
+    net.load_state_dict(torch.load(model_path), strict = True)
+
 
     print(args)
 
     if flag_use_cuda:
-        net_decouple.cuda()
+        net.cuda()
 
     dataloader = VOCData(args)
     img_id_dic_SEC = {}
@@ -204,7 +222,7 @@ if __name__ == '__main__':
             img_id_dic_SEC[key] = int(val)
 
 
-    net_decouple.train(False)
+    net.train(False)
     with torch.no_grad():
         new_cues_dict = {}
         for data in dataloader.dataloaders["train"]:
@@ -214,12 +232,9 @@ if __name__ == '__main__':
 
             cur_class = np.nonzero(labels.squeeze().numpy())[0]
             num_cur_class = len(cur_class)
-            outputs, preds = net_decouple(inputs)
+            layer4_feature, x, sm_mask = net(inputs)
 
-            # calculate confidence
-            conf = preds[labels.cpu().detach().squeeze().numpy()>0]
-            # print(conf)
-
+            outputs = net_outputs_to_list(layer4_feature.detach().cpu().numpy(), x.detach().cpu().numpy(), sm_mask.detach().cpu().numpy())
             cues_float = generate_cues(outputs, img, mask_gt, flag_classify, labels.detach().squeeze().numpy(), output_size, num_class)
             cues_hard = np.zeros(cues_float.shape, dtype='int16')
 
@@ -229,7 +244,7 @@ if __name__ == '__main__':
                 if i_class > 0:
                     thr_temp = temp.max() * 0.3 #0.25
                 else:
-                    thr_temp = temp.max() * 0.92
+                    thr_temp = temp.max() * 0.8
 
                 temp[temp>thr_temp] = 1
                 temp[temp<=thr_temp] = 0
@@ -254,7 +269,7 @@ if __name__ == '__main__':
                     else:
                         temp_mask = outputs[-1].squeeze()[cur_class[fg_idx[0]]-1]
 
-                    thr_temp = temp_mask.max() * 0.25
+                    thr_temp = temp_mask.max() * 0.3
                     temp_mask_hard = np.zeros(temp_mask.shape, dtype='int16')
                     temp_mask_hard[temp_mask>thr_temp] = 1
 
@@ -268,7 +283,6 @@ if __name__ == '__main__':
             conf_name = '%i_conf' % img_id_sec
 
             new_cues_dict[cue_name] = np.asarray(cues_hard.nonzero(), dtype='int16')
-            new_cues_dict[conf_name] = conf
 
         pickling_on = open(save_cue_path,"wb")
         pickle.dump(new_cues_dict, pickling_on)
