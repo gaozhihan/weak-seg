@@ -167,7 +167,7 @@ class CRF():
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     def multi_iter_CRF(self, mask_res, img):
         kl = np.zeros(self.num_maps)
-        h = np.zeros([self.num_maps, self.H, self.W])
+        map = np.zeros([self.num_maps, self.H, self.W])
 
         U = unary_from_softmax(mask_res)
 

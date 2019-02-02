@@ -248,7 +248,7 @@ def resize_resolve_conflict(mask, target_size):
 
 def thr_mask_conflict_resolve(snapped_cues_float, labels):
 
-    thr_fg_ratio = 0.3
+    thr_fg_ratio = 0.25
     thr_bg_ratio = 0.3
     snapped_cues_hard = np.zeros(snapped_cues_float.shape, dtype='int16')
     cur_class = np.nonzero(labels)[0]
@@ -294,12 +294,16 @@ if __name__ == '__main__':
     args.attention_dir = '/home/sunting/Documents/program/VOC2012_SEG_AUG/snapped_attention/'
     args.sec_id_img_name_list_dir = "/home/sunting/Documents/program/SEC-master/training/input_list.txt"
     # args.cues_pickle_dir = "/home/sunting/Documents/program/SEC-master/training/localization_cues/localization_cues.pickle"
-    args.cues_pickle_dir = "/home/sunting/Documents/program/pyTorch/weak_seg/st_01/models/st_cue_02_w_conf_thr03.pickle"
+    # args.cues_pickle_dir = "/home/sunting/Documents/program/pyTorch/weak_seg/st_01/models/st_cue_02_w_conf_thr03.pickle"
+    # args.cues_pickle_dir = "/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_resnet_cue_01_mul_scal.pickle"
+    args.cues_pickle_dir = "/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_resnet_cue_01.pickle"
     args.batch_size = 1
 
     # save_cue_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_01/models/my_cues.pickle'
     # save_cue_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_01/models/st_cue_02_hard_snapped.pickle'
-    save_cue_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_01/models/st_cue_02_thr03_hard_snapped.pickle'
+    # save_cue_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_01/models/st_cue_02_thr03_hard_snapped.pickle'
+    # save_cue_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_resnet_cue_01_mul_scal_hard_snapped.pickle'
+    save_cue_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_resnet_cue_01_hard_snapped.pickle'
 
     print(args)
 

@@ -24,10 +24,10 @@ def get_args():
     parser.add_argument('--cues_pickle_dir', type=str,
                         default="/home/sunting/Documents/program/SEC-master/training/localization_cues/localization_cues.pickle",
                         help='cues pickle file dir for SEC')
-    parser.add_argument('--model', type=str, default="my_resnet3",  # resnet SEC
+    parser.add_argument('--model', type=str, default="my_resnet",  # resnet SEC
                         help='model type resnet|SEC')
     parser.add_argument('--CRF_model', type=str, default="my_CRF",  # resnet SEC
-                        help='CRF model my_CRF|SEC_CRF')
+                        help='CRF model my_CRF|SEC_CRF|adaptive_CRF')
     parser.add_argument('--loss', type=str, default="BCELoss",  # resnet SEC
                         help='model type MultiLabelSoftMarginLoss|BCELoss')
     parser.add_argument('--batch_size', type=int, default=15,

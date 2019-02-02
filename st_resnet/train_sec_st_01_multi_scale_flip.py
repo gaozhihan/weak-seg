@@ -12,6 +12,7 @@ import datetime
 from skimage.transform import resize
 import random
 import matplotlib.pyplot as plt
+import multi_scale.STCRF_adaptive01
 
 args = get_args()
 args.need_mask_flag = True
@@ -20,13 +21,14 @@ args.input_size = [321,321]
 args.output_size = [41, 41]
 max_size = [385, 385]
 # args.lr = 5e-06
+args.CRF_model = 'adaptive_CRF'
 
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
 date_str = str(datetime.datetime.now().day)
 
 if host_name == 'sunting':
-    args.batch_size = 2
+    args.batch_size = 1
     args.data_dir = '/home/sunting/Documents/program/VOC2012_SEG_AUG'
     args.sec_id_img_name_list_dir = "/home/sunting/Documents/program/SEC-master/training/input_list.txt"
     args.cues_pickle_dir = "/home/sunting/Documents/program/SEC-master/training/localization_cues/localization_cues.pickle"
@@ -55,7 +57,11 @@ elif host_name == 'ram-lab-server01':
 net = st_resnet.resnet_st_seg01.resnet50(pretrained=False, num_classes=args.num_classes)
 net.load_state_dict(torch.load(model_path), strict = True)
 
-st_crf_layer = multi_scale.voc_data_mul_scale_w_cues.STCRFLayer(True)
+if args.CRF_model == 'adaptive_CRF':
+    st_crf_layer = multi_scale.STCRF_adaptive01.STCRFLayer(True)
+else:
+    st_crf_layer = multi_scale.voc_data_mul_scale_w_cues.STCRFLayer(True)
+
 seed_loss_layer = multi_scale.voc_data_mul_scale_w_cues.SeedingLoss()
 # expand_loss_layer = sec.sec_org_net.ExpandLossLayer(flag_use_cuda)
 st_constrain_loss_layer = multi_scale.voc_data_mul_scale_w_cues.STConstrainLossLayer()
@@ -124,7 +130,11 @@ for epoch in range(args.epochs):
 
         sm_mask = net(inputs)
 
-        result_big, result_small = st_crf_layer.run(sm_mask.detach().cpu().numpy(), img_np)
+        if args.CRF_model == 'adaptive_CRF':
+            result_big, result_small = st_crf_layer.run(sm_mask.detach().cpu().numpy(), img_np, labels.detach().cpu().numpy())
+        else:
+            result_big, result_small = st_crf_layer.run(sm_mask.detach().cpu().numpy(), img_np)
+
         # calculate the SEC loss
         seed_loss = seed_loss_layer(sm_mask, cues, flag_use_cuda)
         constrain_loss = st_constrain_loss_layer(result_small, sm_mask, flag_use_cuda)
@@ -134,6 +144,12 @@ for epoch in range(args.epochs):
             mask_pre = np.argmax(result_big[i], axis=0)
             iou_obj.add_iou_mask_pair(mask_gt_resize[i,:,:], mask_pre)
 
+            plt.figure()
+            plt.subplot(1,3,1); plt.imshow(img[i]/255); plt.title('Input image'); plt.axis('off')
+            plt.subplot(1,3,2); plt.imshow(mask_gt[i,:,:].numpy()); plt.title('gt'); plt.axis('off')
+            plt.subplot(1,3,3); plt.imshow(mask_pre); plt.title('prediction'); plt.axis('off')
+            plt.close('all')
+
         # for i in range(labels.shape[0]):
         #     temp = np.argmax(result_big[i], axis=0)
         #     plt.subplot(1,4,1); plt.imshow(img[i]/255); plt.title('Input image')
@@ -141,6 +157,8 @@ for epoch in range(args.epochs):
         #     plt.subplot(1,4,3); plt.imshow(np.argmax(sm_mask[i].detach().cpu().numpy(),axis=0)); plt.title('sm mask')
         #     plt.subplot(1,4,4); plt.imshow(temp); plt.title('sm mask crf')
         #     plt.close("all")
+
+
 
         # (seed_loss + constrain_loss + expand_loss).backward()  # independent backward would cause Error: Trying to backward through the graph a second time ...
         # seed_loss.backward()
