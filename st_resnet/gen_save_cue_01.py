@@ -65,6 +65,7 @@ def generate_cues(outputs, img, mask_gt, flag_classify, labels, output_size, num
             sum_att_temp = attention[cur_class,:,:].sum(axis=0)
             for i in range(num_cur_class):
                 temp = np.maximum(attention[cur_class[i],:,:]*2-sum_att_temp,0.0)
+                # temp = attention[cur_class[i],:,:]
                 temp = resize(temp, output_size, mode='constant')
                 cues_float[cur_class[i]+1] = temp
 
@@ -125,14 +126,14 @@ if __name__ == '__main__':
     flag_classify = False
     host_name = socket.gethostname()
 
-    flag_visualization = False
+    flag_visualization = True
 
     if host_name == 'sunting':
         args.data_dir = '/home/sunting/Documents/program/VOC2012_SEG_AUG'
         sec_id_img_name_list_dir = "/home/sunting/Documents/program/SEC-master/training/input_list.txt"
-        save_cue_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_resnet_cue_01_mul_scal.pickle'
-        # model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_top_val_acc_my_resnet_5_cpu_rename_fc2conv.pth'
-        model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_top_val_acc_my_resnet_multi_scale_09_01_cpu_rename_fc2conv.pth'
+        save_cue_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_resnet_cue_01.pickle'
+        model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_top_val_acc_my_resnet_5_cpu_rename_fc2conv.pth'
+        # model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_top_val_acc_my_resnet_multi_scale_09_01_cpu_rename_fc2conv.pth'
     elif host_name == 'ram-lab-server01':
         args.data_dir = '/data_shared/Docker/tsun/data/VOC2012/VOC2012_SEG_AUG'
         sec_id_img_name_list_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/sec/input_list.txt"
