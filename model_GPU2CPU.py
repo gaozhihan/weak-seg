@@ -1,9 +1,9 @@
 import torch
 
-model_dict = torch.load("st_01/models/st_01_top_val_rec_SEC_31_31.pth")
+model_dict = torch.load("st_resnet/models/res_from_mul_scale_resnet_cue_01_hard_snapped_my_resnet.pth")
 
 
 for item in model_dict.keys():
     model_dict[item] = model_dict[item].cpu()
 
-torch.save(model_dict, "st_01/models/st_01_top_val_rec_SEC_31_31_cpu.pth")
+torch.save(model_dict, "st_resnet/models/res_from_mul_scale_resnet_cue_01_hard_snapped_my_resnet_cpu.pth")
