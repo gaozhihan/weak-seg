@@ -224,6 +224,40 @@ class STConstrainLossLayer(nn.Module):
         return ((temp * (temp/sm_mask).log()).sum()/num_pixel)/sm_mask.shape[0]
 
 
+
+class STBCE_loss(nn.Module):
+    def __init__(self):
+        super(STBCE_loss, self).__init__()
+        self.loss = nn.BCELoss()
+
+    def forward(self, crf_sm_mask, sm_mask, labels, flag_use_cuda):
+        # generate pseudo mask from crf_sm_mask: kill non present classsm
+        pse_mask_numpy = np.zeros(sm_mask.shape, dtype='float32')
+
+        for i_batch in range(sm_mask.shape[0]):
+            cur_class = np.nonzero(labels[i_batch])[0]
+            pre_mask = np.argmax(crf_sm_mask[i_batch], axis=0)
+            pre_class = np.unique(pre_mask)
+
+            for i_class in pre_class:
+                if np.isin(cur_class, i_class).any():
+                    idx_tmp = (pre_mask == i_class)
+                    temp = pse_mask_numpy[i_batch, i_class, :, :]
+                    temp[idx_tmp] = 1.0
+                else:
+                    idx_tmp = (pre_mask == i_class)
+                    temp = pse_mask_numpy[i_batch, pre_class[0], :, :]
+                    temp[idx_tmp] = 1.0
+
+            if flag_use_cuda:
+                pse_mask = torch.from_numpy(pse_mask_numpy).cuda()
+            else:
+                pse_mask = torch.from_numpy(pse_mask_numpy)
+
+        return self.loss(sm_mask, pse_mask)
+
+
+
 class SeedingLoss(nn.Module):
 
     def __init__(self):

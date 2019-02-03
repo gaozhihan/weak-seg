@@ -21,7 +21,7 @@ args.input_size = [321,321]
 args.output_size = [41, 41]
 max_size = [385, 385]
 # args.lr = 5e-06
-args.CRF_model = 'adaptive_CRF'
+# args.CRF_model = 'adaptive_CRF'
 
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
@@ -32,8 +32,9 @@ if host_name == 'sunting':
     args.data_dir = '/home/sunting/Documents/program/VOC2012_SEG_AUG'
     args.sec_id_img_name_list_dir = "/home/sunting/Documents/program/SEC-master/training/input_list.txt"
     args.cues_pickle_dir = "/home/sunting/Documents/program/SEC-master/training/localization_cues/localization_cues.pickle"
-    model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_top_val_acc_my_resnet_5_cpu_rename_fc2conv.pth'
+    # model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_top_val_acc_my_resnet_5_cpu_rename_fc2conv.pth'
     # model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_top_val_acc_my_resnet_multi_scale_09_01_cpu_rename_fc2conv.pth'
+    model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/res_from_mul_scale_resnet_cue_01_hard_snapped_my_resnet_cpu.pth'
 elif host_name == 'sunting-ThinkCentre-M90':
     args.batch_size = 2
     args.data_dir = '/home/sunting/Documents/data/VOC2012_SEG_AUG'
@@ -49,22 +50,23 @@ elif host_name == 'ram-lab-server01':
     # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/res_from_mul_scale_ws_top_val_iou_my_resnet.pth'
     # args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/models/localization_cues.pickle"
     # args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/st_01/models/my_cues.pickle"
-    # args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/st_01/models/st_cue_01_hard_snapped.pickle"
-    args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/st_resnet_cue_01.pickle"
+    args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/st_01/models/st_cue_01_hard_snapped.pickle"
+    # args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/st_resnet_cue_01.pickle"
     args.batch_size = 12
 
 
 net = st_resnet.resnet_st_seg01.resnet50(pretrained=False, num_classes=args.num_classes)
-net.load_state_dict(torch.load(model_path), strict = True)
+net.load_state_dict(torch.load(model_path), strict = False)
 
 if args.CRF_model == 'adaptive_CRF':
-    st_crf_layer = multi_scale.STCRF_adaptive01.STCRFLayer(True)
+    st_crf_layer = multi_scale.STCRF_adaptive01.STCRFLayer(False)
 else:
     st_crf_layer = multi_scale.voc_data_mul_scale_w_cues.STCRFLayer(True)
 
 seed_loss_layer = multi_scale.voc_data_mul_scale_w_cues.SeedingLoss()
 # expand_loss_layer = sec.sec_org_net.ExpandLossLayer(flag_use_cuda)
 st_constrain_loss_layer = multi_scale.voc_data_mul_scale_w_cues.STConstrainLossLayer()
+st_BCE_loss_layer = multi_scale.voc_data_mul_scale_w_cues.STBCE_loss()
 
 print(args)
 print(model_path)
@@ -138,17 +140,20 @@ for epoch in range(args.epochs):
         # calculate the SEC loss
         seed_loss = seed_loss_layer(sm_mask, cues, flag_use_cuda)
         constrain_loss = st_constrain_loss_layer(result_small, sm_mask, flag_use_cuda)
+        st_BCE_loss = st_BCE_loss_layer(result_small, sm_mask, labels.detach().cpu().numpy(), flag_use_cuda)
         # expand_loss = expand_loss_layer(sm_mask, labels)
 
-        for i in range(labels.shape[0]):
-            mask_pre = np.argmax(result_big[i], axis=0)
-            iou_obj.add_iou_mask_pair(mask_gt_resize[i,:,:], mask_pre)
-
-            plt.figure()
-            plt.subplot(1,3,1); plt.imshow(img[i]/255); plt.title('Input image'); plt.axis('off')
-            plt.subplot(1,3,2); plt.imshow(mask_gt[i,:,:].numpy()); plt.title('gt'); plt.axis('off')
-            plt.subplot(1,3,3); plt.imshow(mask_pre); plt.title('prediction'); plt.axis('off')
-            plt.close('all')
+        # for i in range(labels.shape[0]):
+        #     mask_pre = np.argmax(result_big[i], axis=0)
+        #     iou_obj.add_iou_mask_pair(mask_gt_resize[i,:,:], mask_pre)
+        #
+        #     plt.figure()
+        #     plt.subplot(1,3,1); plt.imshow(img[i]/255); plt.title('Input image'); plt.axis('off')
+        #     temp = mask_gt[i,:,:].numpy()
+        #     temp[temp==255] = 0
+        #     plt.subplot(1,3,2); plt.imshow(mask_gt[i,:,:].numpy()); plt.title('gt'); plt.axis('off')
+        #     plt.subplot(1,3,3); plt.imshow(mask_pre); plt.title('prediction'); plt.axis('off')
+        #     plt.close('all')
 
         # for i in range(labels.shape[0]):
         #     temp = np.argmax(result_big[i], axis=0)
@@ -162,7 +167,8 @@ for epoch in range(args.epochs):
 
         # (seed_loss + constrain_loss + expand_loss).backward()  # independent backward would cause Error: Trying to backward through the graph a second time ...
         # seed_loss.backward()
-        (seed_loss + constrain_loss/8).backward()
+        # (seed_loss + constrain_loss/8).backward()
+        (seed_loss + st_BCE_loss).backward()
         optimizer.step()
 
         train_seed_loss += seed_loss.item()
@@ -201,7 +207,7 @@ for epoch in range(args.epochs):
 
     if eval_iou.mean() > max_iou:
         print('save model ' + args.model + ' with val mean iou: {}'.format(eval_iou.mean()))
-        torch.save(net.state_dict(), './st_resnet/models/res_from_mul_scale_resnet_cue_01_'+ args.model + '.pth')
+        torch.save(net.state_dict(), './st_resnet/models/res_from_mul_scale_resnet_cue_01_w_STBCE_'+ args.model + '.pth')
         max_iou = eval_iou.mean()
 
     # print('cur eval iou is : ', eval_iou, ' mean: ', eval_iou.mean())
