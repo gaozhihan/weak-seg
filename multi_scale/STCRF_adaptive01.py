@@ -97,7 +97,9 @@ def crf(sm_mask_one, img_one, labels, num_class, input_size, mask_size, adaptive
 
     Q, tmp1, tmp2 = d.startInference()
     if adaptive_crf_setting['iters'][0] == 0:
-        map_buffer[0,:,:,:] = np.argmax(Q, axis=0).reshape((input_size[0], input_size[1]))
+        map_buffer[0,:,:,:] = np.asarray(Q).reshape((num_class, input_size[0], input_size[1]))
+        # map_pred_buffer[0,:,:] = np.argmax(Q, axis=0).reshape((input_size[0], input_size[1]))
+        map_pred_buffer[0,:,:] = np.argmax(map_buffer[0,:,:,:], axis=0)
 
     for i in range(adaptive_crf_setting['iters'][-1]):
         d.stepInference(Q, tmp1, tmp2)
