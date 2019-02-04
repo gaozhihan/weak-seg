@@ -246,8 +246,18 @@ class STBCE_loss(nn.Module):
                     temp[idx_tmp] = 1.0
                 else:
                     idx_tmp = (pre_mask == i_class)
-                    temp = pse_mask_numpy[i_batch, pre_class[0], :, :]
+                    if len(cur_class) == 2:
+                        temp = pse_mask_numpy[i_batch, cur_class[1], :, :]
+                    else:
+                        temp = pse_mask_numpy[i_batch, cur_class[0], :, :]
+
                     temp[idx_tmp] = 1.0
+
+
+            temp = np.argmax(pse_mask_numpy[i_batch],axis=0)
+            # plt.figure()
+            # plt.subplot(1,2,1); plt.imshow(pre_mask); plt.title('pre mask'); plt.axis('off')
+            # plt.subplot(1,2,2); plt.imshow(temp); plt.title('pse mask'); plt.axis('off')
 
             if flag_use_cuda:
                 pse_mask = torch.from_numpy(pse_mask_numpy).cuda()
