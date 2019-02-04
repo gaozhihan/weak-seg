@@ -21,7 +21,7 @@ args.input_size = [321,321]
 args.output_size = [41, 41]
 max_size = [385, 385]
 # args.lr = 5e-06
-# args.CRF_model = 'adaptive_CRF'
+args.CRF_model = 'adaptive_CRF'
 
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
@@ -34,8 +34,8 @@ if host_name == 'sunting':
     args.cues_pickle_dir = "/home/sunting/Documents/program/SEC-master/training/localization_cues/localization_cues.pickle"
     # model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_top_val_acc_my_resnet_5_cpu_rename_fc2conv.pth'
     # model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_top_val_acc_my_resnet_multi_scale_09_01_cpu_rename_fc2conv.pth'
-    # model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/res_from_mul_scale_resnet_cue_01_hard_snapped_my_resnet_cpu.pth'
-    model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/res_from_mul_scale_resnet_cue_01_w_STBCE_my_resnet_cpu.pth'
+    model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/res_from_mul_scale_resnet_cue_01_hard_snapped_my_resnet_cpu.pth'
+    # model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/res_from_mul_scale_resnet_cue_01_w_STBCE_my_resnet_cpu.pth'
 
 elif host_name == 'sunting-ThinkCentre-M90':
     args.batch_size = 2
@@ -62,7 +62,7 @@ net = st_resnet.resnet_st_seg01.resnet50(pretrained=False, num_classes=args.num_
 net.load_state_dict(torch.load(model_path), strict = False)
 
 if args.CRF_model == 'adaptive_CRF':
-    st_crf_layer = multi_scale.STCRF_adaptive01.STCRFLayer(False)
+    st_crf_layer = multi_scale.STCRF_adaptive01.STCRFLayer(True)
 else:
     st_crf_layer = multi_scale.voc_data_mul_scale_w_cues.STCRFLayer(True)
 
@@ -213,7 +213,7 @@ for epoch in range(args.epochs):
 
     if eval_iou.mean() > max_iou:
         print('save model ' + args.model + ' with val mean iou: {}'.format(eval_iou.mean()))
-        torch.save(net.state_dict(), './st_resnet/models/res_from_mul_scale_resnet_cue_01_w_STBCE_'+ args.model + '.pth')
+        torch.save(net.state_dict(), './st_resnet/models/res_from_mul_scale_resnet_cue_01_w_STBCE_adp_CRF'+ args.model + '.pth')
         max_iou = eval_iou.mean()
 
     # print('cur eval iou is : ', eval_iou, ' mean: ', eval_iou.mean())

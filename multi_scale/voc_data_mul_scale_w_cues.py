@@ -254,7 +254,7 @@ class STBCE_loss(nn.Module):
                     temp[idx_tmp] = 1.0
 
 
-            temp = np.argmax(pse_mask_numpy[i_batch],axis=0)
+            # temp = np.argmax(pse_mask_numpy[i_batch],axis=0)
             # plt.figure()
             # plt.subplot(1,2,1); plt.imshow(pre_mask); plt.title('pre mask'); plt.axis('off')
             # plt.subplot(1,2,2); plt.imshow(temp); plt.title('pse mask'); plt.axis('off')
