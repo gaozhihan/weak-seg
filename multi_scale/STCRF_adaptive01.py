@@ -72,10 +72,10 @@ def pick_mask(image, mask, class_cur, map, adaptive_crf_setting):
     iou_penalty = np.maximum(0.5 - score_map_iou, 0) * 100000
     score_overall = score_over_map - score_color - iou_penalty
     best_map_idx = np.argmax(score_overall)
-    print(score_color)
-    print(score_map_iou)
-    print(score_overall - score_overall.min())
-    print(iou_penalty)
+    # print(score_color)
+    # print(score_map_iou)
+    # print(score_overall - score_overall.min())
+    # print(iou_penalty)
 
     return best_map_idx, score_map_iou[best_map_idx], score_color[best_map_idx]
 
@@ -117,9 +117,9 @@ def crf(sm_mask_one, img_one, labels, num_class, input_size, mask_size, adaptive
 
     best_map_idx, map_iou_score, color_score = pick_mask(img_one, sm_u, class_cur, map_pred_buffer, adaptive_crf_setting)
 
-    plt.figure()
-    for i in range(adaptive_crf_setting['num_maps']):
-        plt.subplot(1,adaptive_crf_setting['num_maps'], i+1); plt.imshow(map_pred_buffer[i,:,:]); plt.axis('off')
+    # plt.figure()
+    # for i in range(adaptive_crf_setting['num_maps']):
+    #     plt.subplot(1,adaptive_crf_setting['num_maps'], i+1); plt.imshow(map_pred_buffer[i,:,:]); plt.axis('off')
 
     return map_buffer[best_map_idx]
 
