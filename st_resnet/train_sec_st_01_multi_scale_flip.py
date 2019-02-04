@@ -34,7 +34,9 @@ if host_name == 'sunting':
     args.cues_pickle_dir = "/home/sunting/Documents/program/SEC-master/training/localization_cues/localization_cues.pickle"
     # model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_top_val_acc_my_resnet_5_cpu_rename_fc2conv.pth'
     # model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_top_val_acc_my_resnet_multi_scale_09_01_cpu_rename_fc2conv.pth'
-    model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/res_from_mul_scale_resnet_cue_01_hard_snapped_my_resnet_cpu.pth'
+    # model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/res_from_mul_scale_resnet_cue_01_hard_snapped_my_resnet_cpu.pth'
+    model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/res_from_mul_scale_resnet_cue_01_w_STBCE_my_resnet_cpu.pth'
+
 elif host_name == 'sunting-ThinkCentre-M90':
     args.batch_size = 2
     args.data_dir = '/home/sunting/Documents/data/VOC2012_SEG_AUG'
@@ -90,6 +92,7 @@ for epoch in range(args.epochs):
     train_seed_loss = 0.0
     train_expand_loss = 0.0
     train_constraint_loss = 0.0
+    train_st_BEC_loss = 0.0
 
     train_iou = 0
     eval_iou = 0
@@ -144,17 +147,17 @@ for epoch in range(args.epochs):
         st_BCE_loss = st_BCE_loss_layer(result_small, sm_mask, labels.detach().cpu().numpy(), flag_use_cuda)
         # expand_loss = expand_loss_layer(sm_mask, labels)
 
-        # for i in range(labels.shape[0]):
-        #     mask_pre = np.argmax(result_big[i], axis=0)
-        #     iou_obj.add_iou_mask_pair(mask_gt_resize[i,:,:], mask_pre)
-        #
-        #     plt.figure()
-        #     plt.subplot(1,3,1); plt.imshow(img[i]/255); plt.title('Input image'); plt.axis('off')
-        #     temp = mask_gt[i,:,:].numpy()
-        #     temp[temp==255] = 0
-        #     plt.subplot(1,3,2); plt.imshow(mask_gt[i,:,:].numpy()); plt.title('gt'); plt.axis('off')
-        #     plt.subplot(1,3,3); plt.imshow(mask_pre); plt.title('prediction'); plt.axis('off')
-        #     plt.close('all')
+        for i in range(labels.shape[0]):
+            mask_pre = np.argmax(result_big[i], axis=0)
+            iou_obj.add_iou_mask_pair(mask_gt_resize[i,:,:], mask_pre)
+
+            # plt.figure()
+            # plt.subplot(1,3,1); plt.imshow(img[i]/255); plt.title('Input image'); plt.axis('off')
+            # temp = mask_gt[i,:,:].numpy()
+            # temp[temp==255] = 0
+            # plt.subplot(1,3,2); plt.imshow(mask_gt[i,:,:].numpy()); plt.title('gt'); plt.axis('off')
+            # plt.subplot(1,3,3); plt.imshow(mask_pre); plt.title('prediction'); plt.axis('off')
+            # plt.close('all')
 
         # for i in range(labels.shape[0]):
         #     temp = np.argmax(result_big[i], axis=0)
@@ -175,6 +178,7 @@ for epoch in range(args.epochs):
         train_seed_loss += seed_loss.item()
         train_constraint_loss += constrain_loss.item()
         # train_expand_loss += expand_loss.item()
+        train_st_BEC_loss += st_BCE_loss.item()
 
     train_iou = iou_obj.cal_cur_iou()
     iou_obj.iou_clear()
@@ -183,10 +187,11 @@ for epoch in range(args.epochs):
     epoch_train_seed_loss = train_seed_loss / num_train_batch
     # epoch_train_expand_loss = train_expand_loss / num_train_batch
     epoch_train_constraint_loss = train_constraint_loss / num_train_batch
+    epoch_train_st_BEC_loss = train_st_BEC_loss / num_train_batch
 
-    print('Epoch: {} took {:.2f}, Train seed Loss: {:.4f},  constraint loss: {:.4f}'.format(epoch, time_took, epoch_train_seed_loss, epoch_train_constraint_loss))
-    # print('cur train iou is : ', train_iou, ' mean: ', train_iou.mean())
-    print('cur train iou mean: ', train_iou.mean())
+    print('Epoch: {} took {:.2f}, Train seed Loss: {:.4f},  constraint loss: {:.4f}, st BCE loss: {:.4f}.'.format(epoch, time_took, epoch_train_seed_loss, epoch_train_constraint_loss, epoch_train_st_BEC_loss))
+    print('cur train iou is : ', train_iou, ' mean: ', train_iou.mean())
+    # print('cur train iou mean: ', train_iou.mean())
 
     # if (epoch % 5 == 0):  # evaluation
     net.train(False)
