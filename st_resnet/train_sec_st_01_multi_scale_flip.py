@@ -201,7 +201,11 @@ for epoch in range(args.epochs):
 
         with torch.no_grad():
             sm_mask = net(inputs)
-            result_big, result_small = st_crf_layer.run(sm_mask.detach().cpu().numpy(), img.numpy())
+
+            if args.CRF_model == 'adaptive_CRF':
+                result_big, result_small = st_crf_layer.run(sm_mask.detach().cpu().numpy(), img_np, labels.detach().cpu().numpy())
+            else:
+                result_big, result_small = st_crf_layer.run(sm_mask.detach().cpu().numpy(), img_np)
 
             for i in range(labels.shape[0]):
                 mask_pre = np.argmax(result_big[i], axis=0)
