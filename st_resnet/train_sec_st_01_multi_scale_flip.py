@@ -204,9 +204,9 @@ for epoch in range(args.epochs):
             sm_mask = net(inputs)
 
             if args.CRF_model == 'adaptive_CRF':
-                result_big, result_small = st_crf_layer.run(sm_mask.detach().cpu().numpy(), img_np, labels.detach().cpu().numpy())
+                result_big, result_small = st_crf_layer.run(sm_mask.detach().cpu().numpy(), img.numpy(), labels.detach().cpu().numpy())
             else:
-                result_big, result_small = st_crf_layer.run(sm_mask.detach().cpu().numpy(), img_np)
+                result_big, result_small = st_crf_layer.run(sm_mask.detach().cpu().numpy(), img.numpy())
 
             for i in range(labels.shape[0]):
                 mask_pre = np.argmax(result_big[i], axis=0)
