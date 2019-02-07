@@ -181,3 +181,40 @@ class STCRFLayer():
             result_small[i] = np.transpose(resize(np.transpose(result_big[i],[1,2,0]), self.mask_size, mode='constant'), [2,0,1])
 
         return result_big, result_small
+
+
+def mend_mask_by_labels(mask_np, labels):
+    num_batch = labels.shape[0]
+    num_class = labels.shape[1]
+
+    for i_batch in range(num_batch):
+        cur_class = np.nonzero(labels[i_batch])[0]
+        cur_non_class = np.nonzero(labels[i_batch]==0)[0]
+        num_cur_class = len(cur_class)
+        max_value_non_cur_class = 1e-5
+        min_value_cur_class = 0.9/num_cur_class
+
+        # cut big value in non present class
+        non_class_map = mask_np[i_batch,cur_non_class,:,:]
+        non_class_map[non_class_map>max_value_non_cur_class] = max_value_non_cur_class
+        mask_np[i_batch,cur_non_class,:,:] = non_class_map
+
+        # for cur class
+        cur_class_map = mask_np[i_batch,cur_class,:,:]
+        if num_cur_class>1:
+            temp = np.max(cur_class_map, axis=0)
+            idx_temp = temp<min_value_cur_class
+            for i in range(num_cur_class):
+                temp = cur_class_map[i]
+                temp[idx_temp] = min_value_cur_class
+                cur_class_map[i] = temp
+
+        else:
+            cur_class_map[cur_class_map<min_value_cur_class] = min_value_cur_class
+
+        mask_np[i_batch,cur_class,:,:] = cur_class_map
+
+    return mask_np
+
+
+

@@ -21,7 +21,7 @@ args.input_size = [321,321]
 args.output_size = [41, 41]
 max_size = [385, 385]
 # args.lr = 5e-06
-args.CRF_model = 'adaptive_CRF'
+# args.CRF_model = 'adaptive_CRF'
 
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
@@ -61,7 +61,7 @@ net = st_resnet.resnet_st_seg01.resnet50(pretrained=False, num_classes=args.num_
 net.load_state_dict(torch.load(model_path), strict = False)
 
 if args.CRF_model == 'adaptive_CRF':
-    st_crf_layer = multi_scale.STCRF_adaptive01.STCRFLayer(True)
+    st_crf_layer = multi_scale.STCRF_adaptive01.STCRFLayer(False)
 else:
     st_crf_layer = multi_scale.voc_data_mul_scale_w_cues.STCRFLayer(True)
 
@@ -135,11 +135,13 @@ for epoch in range(args.epochs):
 
         sm_mask = net(inputs)
 
+        mask_mended = multi_scale.STCRF_adaptive01.mend_mask_by_labels(sm_mask.detach().cpu().numpy(), labels.detach().cpu().numpy())
         if args.CRF_model == 'adaptive_CRF':
-            result_big, result_small = st_crf_layer.run(sm_mask.detach().cpu().numpy(), img_np, labels.detach().cpu().numpy())
+            result_big, result_small = st_crf_layer.run(mask_mended, img_np, labels.detach().cpu().numpy())
         else:
-            result_big, result_small = st_crf_layer.run(sm_mask.detach().cpu().numpy(), img_np)
+            result_big, result_small = st_crf_layer.run(mask_mended, img_np)
 
+        # mask_mended = multi_scale.STCRF_adaptive01.mend_mask_by_labels(result_small, labels.detach().cpu().numpy())
         # calculate the SEC loss
         seed_loss = seed_loss_layer(sm_mask, cues, flag_use_cuda)
         constrain_loss = st_constrain_loss_layer(result_small, sm_mask, flag_use_cuda)
