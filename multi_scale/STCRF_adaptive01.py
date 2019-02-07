@@ -213,6 +213,7 @@ def mend_mask_by_labels(mask_np, labels):
             cur_class_map[cur_class_map<min_value_cur_class] = min_value_cur_class
 
         mask_np[i_batch,cur_class,:,:] = cur_class_map
+        mask_np[i_batch,:,:,:] = mask_np[i_batch,:,:,:]/mask_np[i_batch,:,:,:].sum(axis=0)
 
     return mask_np
 
