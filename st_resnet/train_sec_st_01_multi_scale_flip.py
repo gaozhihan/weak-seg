@@ -21,7 +21,7 @@ args.input_size = [321,321]
 args.output_size = [41, 41]
 max_size = [385, 385]
 # args.lr = 5e-06
-args.CRF_model = 'adaptive_CRF'
+# args.CRF_model = 'adaptive_CRF'
 
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
@@ -59,7 +59,7 @@ elif host_name == 'ram-lab-server01':
 
 
 net = st_resnet.resnet_st_seg01.resnet50(pretrained=False, num_classes=args.num_classes)
-net.load_state_dict(torch.load(model_path), strict = False)
+net.load_state_dict(torch.load(model_path), strict = True)
 
 if args.CRF_model == 'adaptive_CRF':
     st_crf_layer = multi_scale.STCRF_adaptive01.STCRFLayer(True)
@@ -172,7 +172,8 @@ for epoch in range(args.epochs):
         # (seed_loss + constrain_loss + expand_loss).backward()  # independent backward would cause Error: Trying to backward through the graph a second time ...
         # seed_loss.backward()
         # (seed_loss + constrain_loss/8).backward()
-        (seed_loss + st_BCE_loss*2).backward()
+        # (seed_loss + st_BCE_loss*2).backward()
+        (seed_loss + constrain_loss/8 + st_BCE_loss*2).backward()
         optimizer.step()
 
         train_seed_loss += seed_loss.item()
