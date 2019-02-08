@@ -52,7 +52,7 @@ def pick_mask(image, mask, class_cur, map, adaptive_crf_setting):
             # calculate score based on color histogram separation
             mask_temp[idx_temp] = 1
             if mask_temp.sum() < 100: # based on my observation
-                hist_cur[i_idx[0], :,:,:] = adaptive_crf_setting['num_pixel']
+                hist_cur[i_idx[0], :,:,:] = score_whole[i_idx]  # adaptive_crf_setting['num_pixel'], in case small object mess up with big ones
             else:
                 hist_cur[i_idx[0], :,:,:] = cv2.calcHist([image.astype('float32')], adaptive_crf_setting['color_channels'], mask_temp, adaptive_crf_setting['color_his_size'], adaptive_crf_setting['color_ranges'])
 
@@ -69,13 +69,17 @@ def pick_mask(image, mask, class_cur, map, adaptive_crf_setting):
         score_over_map[i_map] += temp_map_overlap_soft.sum()
         score_map_iou[i_map] = (temp_map_overlap_hard/(score_whole+pre_map_whole-temp_map_overlap_hard)).mean() # like iou
 
-    iou_penalty = np.maximum(0.5 - score_map_iou, 0) * 100000
+    iou_penalty = np.maximum(0.5 - score_map_iou, 0) * (raw_map>0).sum() # 100000
     score_overall = score_over_map - score_color - iou_penalty
     best_map_idx = np.argmax(score_overall)
+
+    # np.set_printoptions(precision=3)
     # print(score_color)
+    # print(score_over_map)
     # print(score_map_iou)
-    # print(score_overall - score_overall.min())
     # print(iou_penalty)
+    # print(score_overall - score_overall.min())
+    # print(best_map_idx)
 
     return best_map_idx, score_map_iou[best_map_idx], score_color[best_map_idx]
 
@@ -138,7 +142,7 @@ class STCRFLayer():
 
         # define the params dictionary for crf
         self.adaptive_crf_setting = {}
-        self.adaptive_crf_setting['iters'] = [0, 1, 3, 5, 8]
+        self.adaptive_crf_setting['iters'] = [0, 1, 3, 5]
         self.adaptive_crf_setting['color_his_size'] = [4, 4, 4]
         self.adaptive_crf_setting['num_color_bins'] = self.adaptive_crf_setting['color_his_size'][0]*self.adaptive_crf_setting['color_his_size'][1]*self.adaptive_crf_setting['color_his_size'][2]
         self.adaptive_crf_setting['color_channels'] = [0, 1, 2]

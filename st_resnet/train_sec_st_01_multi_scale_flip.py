@@ -21,7 +21,7 @@ args.input_size = [321,321]
 args.output_size = [41, 41]
 max_size = [385, 385]
 # args.lr = 5e-06
-# args.CRF_model = 'adaptive_CRF'
+args.CRF_model = 'adaptive_CRF'
 
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
@@ -87,6 +87,7 @@ iou_obj = common_function.iou_calculator()
 
 num_train_batch = len(dataloader.dataloaders["train"])
 
+weight_STBCE = 0.1
 for epoch in range(args.epochs):
     train_seed_loss = 0.0
     train_expand_loss = 0.0
@@ -136,6 +137,8 @@ for epoch in range(args.epochs):
         sm_mask = net(inputs)
 
         mask_mended = multi_scale.STCRF_adaptive01.mend_mask_by_labels(sm_mask.detach().cpu().numpy(), labels.detach().cpu().numpy())
+        # mask_mended = sm_mask.detach().cpu().numpy()
+
         if args.CRF_model == 'adaptive_CRF':
             result_big, result_small = st_crf_layer.run(mask_mended, img_np, labels.detach().cpu().numpy())
         else:
@@ -173,7 +176,7 @@ for epoch in range(args.epochs):
         # (seed_loss + constrain_loss + expand_loss).backward()  # independent backward would cause Error: Trying to backward through the graph a second time ...
         # seed_loss.backward()
         # (seed_loss + constrain_loss/8).backward()
-        (seed_loss + st_BCE_loss).backward()
+        (seed_loss + st_BCE_loss*weight_STBCE).backward()
         optimizer.step()
 
         train_seed_loss += seed_loss.item()
@@ -193,6 +196,7 @@ for epoch in range(args.epochs):
     print('Epoch: {} took {:.2f}, Train seed Loss: {:.4f},  constraint loss: {:.4f}, st BCE loss: {:.4f}.'.format(epoch, time_took, epoch_train_seed_loss, epoch_train_constraint_loss, epoch_train_st_BEC_loss))
     print('cur train iou is : ', train_iou, ' mean: ', train_iou.mean())
     # print('cur train iou mean: ', train_iou.mean())
+    weight_STBCE = weight_STBCE * 2 
 
     # if (epoch % 5 == 0):  # evaluation
     net.train(False)
