@@ -33,8 +33,8 @@ if host_name == 'sunting':
     args.sec_id_img_name_list_dir = "/home/sunting/Documents/program/SEC-master/training/input_list.txt"
     args.cues_pickle_dir = "/home/sunting/Documents/program/SEC-master/training/localization_cues/localization_cues.pickle"
     # model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_top_val_acc_my_resnet_5_cpu_rename_fc2conv.pth'
-    # model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_top_val_acc_my_resnet_multi_scale_09_01_cpu_rename_fc2conv.pth'
-    model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/res_from_mul_scale_resnet_cue_01_hard_snapped_my_resnet_cpu.pth'
+    model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_top_val_acc_my_resnet_multi_scale_09_01_cpu_rename_fc2conv.pth'
+    # model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/res_from_mul_scale_resnet_cue_01_hard_snapped_my_resnet_cpu.pth'
     # model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/res_from_mul_scale_resnet_cue_01_w_STBCE_my_resnet_cpu.pth'
 
 elif host_name == 'sunting-ThinkCentre-M90':
@@ -62,7 +62,7 @@ net = st_resnet.resnet_st_seg01.resnet50(pretrained=False, num_classes=args.num_
 net.load_state_dict(torch.load(model_path), strict = True)
 
 if args.CRF_model == 'adaptive_CRF':
-    st_crf_layer = multi_scale.STCRF_adaptive01.STCRFLayer(False)
+    st_crf_layer = multi_scale.STCRF_adaptive01.STCRFLayer(True)
 else:
     st_crf_layer = multi_scale.voc_data_mul_scale_w_cues.STCRFLayer(True)
 
@@ -136,13 +136,15 @@ for epoch in range(args.epochs):
 
         sm_mask = net(inputs)
 
-        mask_mended = multi_scale.STCRF_adaptive01.mend_mask_by_labels(sm_mask.detach().cpu().numpy(), labels.detach().cpu().numpy())
+        # mask_mended = multi_scale.STCRF_adaptive01.mend_mask_by_labels(sm_mask.detach().cpu().numpy(), labels.detach().cpu().numpy())
+        mask_mended = sm_mask.detach().cpu().numpy()
+
         if args.CRF_model == 'adaptive_CRF':
             result_big, result_small = st_crf_layer.run(mask_mended, img_np, labels.detach().cpu().numpy())
         else:
             result_big, result_small = st_crf_layer.run(mask_mended, img_np)
 
-        # mask_mended = multi_scale.STCRF_adaptive01.mend_mask_by_labels(result_small, labels.detach().cpu().numpy())
+        result_small = multi_scale.STCRF_adaptive01.mend_mask_by_labels(result_small, labels.detach().cpu().numpy())
         # calculate the SEC loss
         seed_loss = seed_loss_layer(sm_mask, cues, flag_use_cuda)
         constrain_loss = st_constrain_loss_layer(result_small, sm_mask, flag_use_cuda)
@@ -173,9 +175,9 @@ for epoch in range(args.epochs):
 
         # (seed_loss + constrain_loss + expand_loss).backward()  # independent backward would cause Error: Trying to backward through the graph a second time ...
         # seed_loss.backward()
-        # (seed_loss + constrain_loss/8).backward()
+        (seed_loss + constrain_loss/8).backward()
         # (seed_loss + st_BCE_loss*2).backward()
-        (seed_loss + constrain_loss/8 + st_BCE_loss*2).backward()
+        # (seed_loss + constrain_loss/8 + st_BCE_loss*2).backward()
         optimizer.step()
 
         train_seed_loss += seed_loss.item()
