@@ -224,6 +224,49 @@ class STConstrainLossLayer(nn.Module):
         return ((temp * (temp/sm_mask).log()).sum()/num_pixel)/sm_mask.shape[0]
 
 
+class ST_half_BCE_loss(nn.Module): # like use the crf output as cues for seed loss
+    def __init__(self):
+        super(ST_half_BCE_loss, self).__init__()
+
+    def forward(self, crf_sm_mask, sm_mask, labels, flag_use_cuda):
+        # generate pseudo mask from crf_sm_mask: kill non present classsm
+        pse_mask_numpy = np.zeros(sm_mask.shape, dtype='float32')
+
+        for i_batch in range(sm_mask.shape[0]):
+            cur_class = np.nonzero(labels[i_batch])[0]
+            pre_mask = np.argmax(crf_sm_mask[i_batch], axis=0)
+            pre_class = np.unique(pre_mask)
+
+            if len(cur_class) == 1:
+                pse_mask_numpy[i_batch, cur_class[0], :, :] = 1.0
+
+            else:
+                for i_class in pre_class:
+                    if np.isin(cur_class[1:], i_class).any():
+                        idx_tmp = (pre_mask == i_class)
+                        temp = pse_mask_numpy[i_batch, i_class, :, :]
+                        temp[idx_tmp] = 1.0
+                    else:
+                        idx_tmp = (pre_mask == i_class)
+                        if len(cur_class) == 2:
+                            temp = pse_mask_numpy[i_batch, cur_class[1], :, :]
+                            temp[idx_tmp] = 1.0
+
+            # temp = np.argmax(pse_mask_numpy[i_batch],axis=0)
+            # plt.figure()
+            # plt.subplot(1,2,1); plt.imshow(pre_mask); plt.title('pre mask'); plt.axis('off')
+            # plt.subplot(1,2,2); plt.imshow(temp); plt.title('pse mask'); plt.axis('off')
+
+            if flag_use_cuda:
+                pse_mask = torch.from_numpy(pse_mask_numpy).cuda()
+            else:
+                pse_mask = torch.from_numpy(pse_mask_numpy)
+
+        count = pse_mask.sum()
+        loss = -(pse_mask * sm_mask.log()).sum()/count
+        return loss
+
+
 
 class STBCE_loss(nn.Module):
     def __init__(self):

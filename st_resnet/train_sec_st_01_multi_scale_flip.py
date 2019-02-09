@@ -61,7 +61,7 @@ net = st_resnet.resnet_st_seg01.resnet50(pretrained=False, num_classes=args.num_
 net.load_state_dict(torch.load(model_path), strict = False)
 
 if args.CRF_model == 'adaptive_CRF':
-    st_crf_layer = multi_scale.STCRF_adaptive01.STCRFLayer(False)
+    st_crf_layer = multi_scale.STCRF_adaptive01.STCRFLayer(True)
 else:
     st_crf_layer = multi_scale.voc_data_mul_scale_w_cues.STCRFLayer(True)
 
@@ -69,6 +69,7 @@ seed_loss_layer = multi_scale.voc_data_mul_scale_w_cues.SeedingLoss()
 # expand_loss_layer = sec.sec_org_net.ExpandLossLayer(flag_use_cuda)
 st_constrain_loss_layer = multi_scale.voc_data_mul_scale_w_cues.STConstrainLossLayer()
 st_BCE_loss_layer = multi_scale.voc_data_mul_scale_w_cues.STBCE_loss()
+st_half_BCE_loss_layer = multi_scale.voc_data_mul_scale_w_cues.ST_half_BCE_loss()
 
 print(args)
 print(model_path)
@@ -93,6 +94,7 @@ for epoch in range(args.epochs):
     train_expand_loss = 0.0
     train_constraint_loss = 0.0
     train_st_BEC_loss = 0.0
+    train_st_half_BCE_loss = 0.0
 
     train_iou = 0
     eval_iou = 0
@@ -149,6 +151,7 @@ for epoch in range(args.epochs):
         seed_loss = seed_loss_layer(sm_mask, cues, flag_use_cuda)
         constrain_loss = st_constrain_loss_layer(result_small, sm_mask, flag_use_cuda)
         st_BCE_loss = st_BCE_loss_layer(result_small, sm_mask, labels.detach().cpu().numpy(), flag_use_cuda)
+        st_half_BCE_loss = st_half_BCE_loss_layer(result_small, sm_mask, labels.detach().cpu().numpy(), flag_use_cuda)
         # expand_loss = expand_loss_layer(sm_mask, labels)
 
         for i in range(labels.shape[0]):
@@ -156,11 +159,14 @@ for epoch in range(args.epochs):
             iou_obj.add_iou_mask_pair(mask_gt_resize[i,:,:], mask_pre)
 
             # plt.figure()
-            # plt.subplot(1,3,1); plt.imshow(img[i]/255); plt.title('Input image'); plt.axis('off')
+            # plt.subplot(1,5,1); plt.imshow(img[i]/255); plt.title('Input image'); plt.axis('off')
             # temp = mask_gt[i,:,:].numpy()
             # temp[temp==255] = 0
-            # plt.subplot(1,3,2); plt.imshow(mask_gt[i,:,:].numpy()); plt.title('gt'); plt.axis('off')
-            # plt.subplot(1,3,3); plt.imshow(mask_pre); plt.title('prediction'); plt.axis('off')
+            # plt.subplot(1,5,2); plt.imshow(mask_gt[i,:,:].numpy()); plt.title('gt'); plt.axis('off')
+            # temp2 = cues.detach().squeeze().numpy()
+            # plt.subplot(1,5,3); plt.imshow(np.argmax(temp2,axis=0)); plt.title('cues'); plt.axis('off')
+            # plt.subplot(1,5,4); plt.imshow(temp2[0,:,:]); plt.title('bk cues'); plt.axis('off')
+            # plt.subplot(1,5,5); plt.imshow(mask_pre); plt.title('prediction'); plt.axis('off')
             # plt.close('all')
 
         # for i in range(labels.shape[0]):
@@ -176,13 +182,15 @@ for epoch in range(args.epochs):
         # (seed_loss + constrain_loss + expand_loss).backward()  # independent backward would cause Error: Trying to backward through the graph a second time ...
         # seed_loss.backward()
         # (seed_loss + constrain_loss/8).backward()
-        (seed_loss + st_BCE_loss*weight_STBCE).backward()
+        # (seed_loss + st_BCE_loss*weight_STBCE).backward()
+        (seed_loss + constrain_loss/8 + st_half_BCE_loss).backward()
         optimizer.step()
 
         train_seed_loss += seed_loss.item()
         train_constraint_loss += constrain_loss.item()
         # train_expand_loss += expand_loss.item()
         train_st_BEC_loss += st_BCE_loss.item()
+        train_st_half_BCE_loss += st_half_BCE_loss.item()
 
     train_iou = iou_obj.cal_cur_iou()
     iou_obj.iou_clear()
@@ -192,11 +200,12 @@ for epoch in range(args.epochs):
     # epoch_train_expand_loss = train_expand_loss / num_train_batch
     epoch_train_constraint_loss = train_constraint_loss / num_train_batch
     epoch_train_st_BEC_loss = train_st_BEC_loss / num_train_batch
+    epoch_train_st_half_BCE_loss = train_st_half_BCE_loss / num_train_batch
 
-    print('Epoch: {} took {:.2f}, Train seed Loss: {:.4f},  constraint loss: {:.4f}, st BCE loss: {:.4f}.'.format(epoch, time_took, epoch_train_seed_loss, epoch_train_constraint_loss, epoch_train_st_BEC_loss))
+    print('Epoch: {} took {:.2f}, Train seed Loss: {:.4f},  constraint loss: {:.4f}, st BCE loss: {:.4f}, half BCE loss: {:.4f}.'.format(epoch, time_took, epoch_train_seed_loss, epoch_train_constraint_loss, epoch_train_st_BEC_loss, epoch_train_st_half_BCE_loss))
     print('cur train iou is : ', train_iou, ' mean: ', train_iou.mean())
     # print('cur train iou mean: ', train_iou.mean())
-    weight_STBCE = weight_STBCE * 2 
+    weight_STBCE = weight_STBCE * 2
 
     # if (epoch % 5 == 0):  # evaluation
     net.train(False)
