@@ -88,6 +88,7 @@ iou_obj = common_function.iou_calculator()
 
 num_train_batch = len(dataloader.dataloaders["train"])
 
+weight_STBCE = 0.1
 for epoch in range(args.epochs):
     train_seed_loss = 0.0
     train_expand_loss = 0.0
@@ -144,7 +145,7 @@ for epoch in range(args.epochs):
         else:
             result_big, result_small = st_crf_layer.run(mask_mended, img_np)
 
-        result_small = multi_scale.STCRF_adaptive01.mend_mask_by_labels(result_small, labels.detach().cpu().numpy())
+        # result_small = multi_scale.STCRF_adaptive01.mend_mask_by_labels(result_small, labels.detach().cpu().numpy())
         # calculate the SEC loss
         seed_loss = seed_loss_layer(sm_mask, cues, flag_use_cuda)
         constrain_loss = st_constrain_loss_layer(result_small, sm_mask, flag_use_cuda)
@@ -171,13 +172,11 @@ for epoch in range(args.epochs):
         #     plt.subplot(1,4,4); plt.imshow(temp); plt.title('sm mask crf')
         #     plt.close("all")
 
-
-
         # (seed_loss + constrain_loss + expand_loss).backward()  # independent backward would cause Error: Trying to backward through the graph a second time ...
         # seed_loss.backward()
         (seed_loss + constrain_loss/8).backward()
-        # (seed_loss + st_BCE_loss*2).backward()
-        # (seed_loss + constrain_loss/8 + st_BCE_loss*2).backward()
+        # (seed_loss + st_BCE_loss*weight_STBCE).backward()
+
         optimizer.step()
 
         train_seed_loss += seed_loss.item()
@@ -195,8 +194,10 @@ for epoch in range(args.epochs):
     epoch_train_st_BEC_loss = train_st_BEC_loss / num_train_batch
 
     print('Epoch: {} took {:.2f}, Train seed Loss: {:.4f},  constraint loss: {:.4f}, st BCE loss: {:.4f}.'.format(epoch, time_took, epoch_train_seed_loss, epoch_train_constraint_loss, epoch_train_st_BEC_loss))
+
     # print('cur train iou is : ', train_iou, ' mean: ', train_iou.mean())
     print('cur train iou mean: ', train_iou.mean())
+    weight_STBCE = weight_STBCE * 2 
 
     # if (epoch % 5 == 0):  # evaluation
     net.train(False)
@@ -222,7 +223,7 @@ for epoch in range(args.epochs):
 
     if eval_iou.mean() > max_iou:
         print('save model ' + args.model + ' with val mean iou: {}'.format(eval_iou.mean()))
-        torch.save(net.state_dict(), './st_resnet/models/res_from_mul_scale_resnet_cue_01_w_STBCE_adp_CRF'+ args.model + '.pth')
+        torch.save(net.state_dict(), './st_resnet/models/res_from_mul_scale_resnet_cue_01_ws02_'+ args.model + '.pth')
         max_iou = eval_iou.mean()
 
     # print('cur eval iou is : ', eval_iou, ' mean: ', eval_iou.mean())
