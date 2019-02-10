@@ -31,7 +31,8 @@ if host_name == 'sunting':
     args.batch_size = 1
     args.data_dir = '/home/sunting/Documents/program/VOC2012_SEG_AUG'
     args.sec_id_img_name_list_dir = "/home/sunting/Documents/program/SEC-master/training/input_list.txt"
-    args.cues_pickle_dir = "/home/sunting/Documents/program/SEC-master/training/localization_cues/localization_cues.pickle"
+    # args.cues_pickle_dir = "/home/sunting/Documents/program/SEC-master/training/localization_cues/localization_cues.pickle"
+    args.cues_pickle_dir = "/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_resnet_cue_01_hard_snapped.pickle"
     # model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_top_val_acc_my_resnet_5_cpu_rename_fc2conv.pth'
     # model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_top_val_acc_my_resnet_multi_scale_09_01_cpu_rename_fc2conv.pth'
     model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/res_from_mul_scale_resnet_cue_01_hard_snapped_my_resnet_cpu.pth'
@@ -52,8 +53,8 @@ elif host_name == 'ram-lab-server01':
     # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/res_from_mul_scale_ws_top_val_iou_my_resnet.pth'
     # args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/models/localization_cues.pickle"
     # args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/st_01/models/my_cues.pickle"
-    args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/st_01/models/st_cue_01_hard_snapped.pickle"
-    # args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/st_resnet_cue_01.pickle"
+    # args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/st_01/models/st_cue_01_hard_snapped.pickle"
+    args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/st_resnet_cue_01_hard_snapped.pickle"
     args.batch_size = 12
 
 
@@ -61,7 +62,7 @@ net = st_resnet.resnet_st_seg01.resnet50(pretrained=False, num_classes=args.num_
 net.load_state_dict(torch.load(model_path), strict = False)
 
 if args.CRF_model == 'adaptive_CRF':
-    st_crf_layer = multi_scale.STCRF_adaptive01.STCRFLayer(True)
+    st_crf_layer = multi_scale.STCRF_adaptive01.STCRFLayer(False)
 else:
     st_crf_layer = multi_scale.voc_data_mul_scale_w_cues.STCRFLayer(True)
 
@@ -108,7 +109,7 @@ for epoch in range(args.epochs):
         inputs, labels, mask_gt, img, cues = data
 
         # ---- random resize ------------------------------
-        rand_scale = random.uniform(0.8, 1.0) #random.uniform(0.67, 1.0)
+        rand_scale = random.uniform(0.67, 1.0) #random.uniform(0.67, 1.0)
         cur_size = [round(max_size[0] * rand_scale), round(max_size[1] * rand_scale)]
         inputs_resize = np.zeros((inputs.shape[0], inputs.shape[1], cur_size[0], cur_size[1]),dtype='float32')
         mask_gt_resize = np.zeros((mask_gt.shape[0], cur_size[0], cur_size[1]),dtype='float32')
@@ -138,7 +139,8 @@ for epoch in range(args.epochs):
 
         sm_mask = net(inputs)
 
-        mask_mended = multi_scale.STCRF_adaptive01.mend_mask_by_labels(sm_mask.detach().cpu().numpy(), labels.detach().cpu().numpy())
+        mask_mended = multi_scale.STCRF_adaptive01.min_mend_mask_by_labels(sm_mask.detach().cpu().numpy(), labels.detach().cpu().numpy())
+        # mask_mended = multi_scale.STCRF_adaptive01.mend_mask_by_labels(sm_mask.detach().cpu().numpy(), labels.detach().cpu().numpy())
         # mask_mended = sm_mask.detach().cpu().numpy()
 
         if args.CRF_model == 'adaptive_CRF':
@@ -147,6 +149,8 @@ for epoch in range(args.epochs):
             result_big, result_small = st_crf_layer.run(mask_mended, img_np)
 
         # mask_mended = multi_scale.STCRF_adaptive01.mend_mask_by_labels(result_small, labels.detach().cpu().numpy())
+        # plt.figure()
+        # plt.imshow(np.argmax(mask_mended.squeeze(), axis=0))
         # calculate the SEC loss
         seed_loss = seed_loss_layer(sm_mask, cues, flag_use_cuda)
         constrain_loss = st_constrain_loss_layer(result_small, sm_mask, flag_use_cuda)
@@ -203,8 +207,8 @@ for epoch in range(args.epochs):
     epoch_train_st_half_BCE_loss = train_st_half_BCE_loss / num_train_batch
 
     print('Epoch: {} took {:.2f}, Train seed Loss: {:.4f},  constraint loss: {:.4f}, st BCE loss: {:.4f}, half BCE loss: {:.4f}.'.format(epoch, time_took, epoch_train_seed_loss, epoch_train_constraint_loss, epoch_train_st_BEC_loss, epoch_train_st_half_BCE_loss))
-    print('cur train iou is : ', train_iou, ' mean: ', train_iou.mean())
-    # print('cur train iou mean: ', train_iou.mean())
+    # print('cur train iou is : ', train_iou, ' mean: ', train_iou.mean())
+    print('cur train iou mean: ', train_iou.mean())
     weight_STBCE = weight_STBCE * 2
 
     # if (epoch % 5 == 0):  # evaluation

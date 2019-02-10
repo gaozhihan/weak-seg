@@ -195,12 +195,13 @@ def mend_mask_by_labels(mask_np, labels):
         cur_class = np.nonzero(labels[i_batch])[0]
         cur_non_class = np.nonzero(labels[i_batch]==0)[0]
         num_cur_class = len(cur_class)
-        max_value_non_cur_class = 1e-5
-        min_value_cur_class = 0.9/num_cur_class
+        max_value_non_cur_class = 1e-3
+        min_value_cur_class = 0.96/num_cur_class
 
         # cut big value in non present class
         non_class_map = mask_np[i_batch,cur_non_class,:,:]
-        non_class_map[non_class_map>max_value_non_cur_class] = max_value_non_cur_class
+        # print((non_class_map>=min_value_cur_class).sum())
+        non_class_map[non_class_map>=min_value_cur_class] = max_value_non_cur_class
         mask_np[i_batch,cur_non_class,:,:] = non_class_map
 
         # for cur class
@@ -222,4 +223,30 @@ def mend_mask_by_labels(mask_np, labels):
     return mask_np
 
 
+# just make sure the max value appear in the cur_class_map
+def min_mend_mask_by_labels(mask_np, labels): # just make sure the max value appear in the cur_class_map
+    num_batch = labels.shape[0]
+    num_class = labels.shape[1]
+    margin = 1e-4
 
+    for i_batch in range(num_batch):
+        # plt.figure()
+        # plt.subplot(1,2,1); plt.imshow(np.argmax(mask_np[i_batch,:,:,:], axis=0)); plt.axis('off')
+        cur_class = np.nonzero(labels[i_batch])[0]
+        cur_non_class = np.nonzero(labels[i_batch]==0)[0]
+        num_cur_class = len(cur_class)
+        num_non_class = len(cur_non_class)
+
+        non_class_map = mask_np[i_batch,cur_non_class,:,:]
+        cur_class_map = mask_np[i_batch,cur_class,:,:]
+        ceiling_map = np.maximum(cur_class_map.max(axis=0) - margin, margin)
+
+        # regulate all the maps in non_class_map do not exceed the ceiling
+        for i_map in range(num_non_class):
+            non_class_map[i_map,:,:] = np.minimum(ceiling_map, non_class_map[i_map,:,:])
+
+        mask_np[i_batch,cur_non_class,:,:] = non_class_map
+        mask_np[i_batch,:,:,:] = mask_np[i_batch,:,:,:]/mask_np[i_batch,:,:,:].sum(axis=0)
+        # plt.subplot(1,2,2); plt.imshow(np.argmax(mask_np[i_batch,:,:,:], axis=0)); plt.axis('off')
+
+    return mask_np
