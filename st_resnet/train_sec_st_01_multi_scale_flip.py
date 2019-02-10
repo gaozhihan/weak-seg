@@ -53,8 +53,8 @@ elif host_name == 'ram-lab-server01':
     # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/res_from_mul_scale_ws_top_val_iou_my_resnet.pth'
     # args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/models/localization_cues.pickle"
     # args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/st_01/models/my_cues.pickle"
-    args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/st_01/models/st_cue_01_hard_snapped.pickle"
-    # args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/st_resnet_cue_01.pickle"
+    # args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/st_01/models/st_cue_01_hard_snapped.pickle"
+    args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/st_resnet_cue_01_hard_snapped.pickle"
     args.batch_size = 12
 
 
@@ -70,6 +70,7 @@ seed_loss_layer = multi_scale.voc_data_mul_scale_w_cues.SeedingLoss()
 # expand_loss_layer = sec.sec_org_net.ExpandLossLayer(flag_use_cuda)
 st_constrain_loss_layer = multi_scale.voc_data_mul_scale_w_cues.STConstrainLossLayer()
 st_BCE_loss_layer = multi_scale.voc_data_mul_scale_w_cues.STBCE_loss()
+st_half_BCE_loss_layer = multi_scale.voc_data_mul_scale_w_cues.ST_half_BCE_loss()
 
 print(args)
 print(model_path)
@@ -89,11 +90,14 @@ iou_obj = common_function.iou_calculator()
 num_train_batch = len(dataloader.dataloaders["train"])
 
 weight_STBCE = 0.1
+weight_dec = 0.9
+
 for epoch in range(args.epochs):
     train_seed_loss = 0.0
     train_expand_loss = 0.0
     train_constraint_loss = 0.0
     train_st_BEC_loss = 0.0
+    train_st_half_BCE_loss = 0.0
 
     train_iou = 0
     eval_iou = 0
@@ -107,7 +111,7 @@ for epoch in range(args.epochs):
         inputs, labels, mask_gt, img, cues = data
 
         # ---- random resize ------------------------------
-        rand_scale = random.uniform(0.8, 1.0) #random.uniform(0.67, 1.0)
+        rand_scale = random.uniform(0.67, 1.0) #random.uniform(0.67, 1.0)
         cur_size = [round(max_size[0] * rand_scale), round(max_size[1] * rand_scale)]
         inputs_resize = np.zeros((inputs.shape[0], inputs.shape[1], cur_size[0], cur_size[1]),dtype='float32')
         mask_gt_resize = np.zeros((mask_gt.shape[0], cur_size[0], cur_size[1]),dtype='float32')
@@ -146,10 +150,13 @@ for epoch in range(args.epochs):
             result_big, result_small = st_crf_layer.run(mask_mended, img_np)
 
         # result_small = multi_scale.STCRF_adaptive01.mend_mask_by_labels(result_small, labels.detach().cpu().numpy())
-        # calculate the SEC loss
+        # result_small_mended = multi_scale.STCRF_adaptive01.mend_mask_by_labels(result_small, labels.detach().cpu().numpy())
+        # calculate the loss
         seed_loss = seed_loss_layer(sm_mask, cues, flag_use_cuda)
         constrain_loss = st_constrain_loss_layer(result_small, sm_mask, flag_use_cuda)
         st_BCE_loss = st_BCE_loss_layer(result_small, sm_mask, labels.detach().cpu().numpy(), flag_use_cuda)
+        st_half_BCE_loss = st_half_BCE_loss_layer(result_small, sm_mask, labels.detach().cpu().numpy(), flag_use_cuda)
+        # st_half_BCE_loss = st_half_BCE_loss_layer(result_small_mended, sm_mask, labels.detach().cpu().numpy(), flag_use_cuda)
         # expand_loss = expand_loss_layer(sm_mask, labels)
 
         for i in range(labels.shape[0]):
@@ -157,11 +164,14 @@ for epoch in range(args.epochs):
             iou_obj.add_iou_mask_pair(mask_gt_resize[i,:,:], mask_pre)
 
             # plt.figure()
-            # plt.subplot(1,3,1); plt.imshow(img[i]/255); plt.title('Input image'); plt.axis('off')
+            # plt.subplot(1,5,1); plt.imshow(img[i]/255); plt.title('Input image'); plt.axis('off')
             # temp = mask_gt[i,:,:].numpy()
             # temp[temp==255] = 0
-            # plt.subplot(1,3,2); plt.imshow(mask_gt[i,:,:].numpy()); plt.title('gt'); plt.axis('off')
-            # plt.subplot(1,3,3); plt.imshow(mask_pre); plt.title('prediction'); plt.axis('off')
+            # plt.subplot(1,5,2); plt.imshow(mask_gt[i,:,:].numpy()); plt.title('gt'); plt.axis('off')
+            # temp2 = cues.detach().squeeze().numpy()
+            # plt.subplot(1,5,3); plt.imshow(np.argmax(temp2,axis=0)); plt.title('cues'); plt.axis('off')
+            # plt.subplot(1,5,4); plt.imshow(temp2[0,:,:]); plt.title('bk cues'); plt.axis('off')
+            # plt.subplot(1,5,5); plt.imshow(mask_pre); plt.title('prediction'); plt.axis('off')
             # plt.close('all')
 
         # for i in range(labels.shape[0]):
@@ -176,6 +186,7 @@ for epoch in range(args.epochs):
         # seed_loss.backward()
         (seed_loss + constrain_loss/8).backward()
         # (seed_loss + st_BCE_loss*weight_STBCE).backward()
+        # (seed_loss + constrain_loss/8 + st_half_BCE_loss*(1-weight_dec)).backward()
 
         optimizer.step()
 
@@ -183,6 +194,7 @@ for epoch in range(args.epochs):
         train_constraint_loss += constrain_loss.item()
         # train_expand_loss += expand_loss.item()
         train_st_BEC_loss += st_BCE_loss.item()
+        train_st_half_BCE_loss += st_half_BCE_loss.item()
 
     train_iou = iou_obj.cal_cur_iou()
     iou_obj.iou_clear()
@@ -192,12 +204,13 @@ for epoch in range(args.epochs):
     # epoch_train_expand_loss = train_expand_loss / num_train_batch
     epoch_train_constraint_loss = train_constraint_loss / num_train_batch
     epoch_train_st_BEC_loss = train_st_BEC_loss / num_train_batch
+    epoch_train_st_half_BCE_loss = train_st_half_BCE_loss / num_train_batch
 
-    print('Epoch: {} took {:.2f}, Train seed Loss: {:.4f},  constraint loss: {:.4f}, st BCE loss: {:.4f}.'.format(epoch, time_took, epoch_train_seed_loss, epoch_train_constraint_loss, epoch_train_st_BEC_loss))
-
+    print('Epoch: {} took {:.2f}, Train seed Loss: {:.4f},  constraint loss: {:.4f}, st BCE loss: {:.4f}, half BCE loss: {:.4f}.'.format(epoch, time_took, epoch_train_seed_loss, epoch_train_constraint_loss, epoch_train_st_BEC_loss, epoch_train_st_half_BCE_loss))
     # print('cur train iou is : ', train_iou, ' mean: ', train_iou.mean())
     print('cur train iou mean: ', train_iou.mean())
-    weight_STBCE = weight_STBCE * 2 
+    weight_STBCE = weight_STBCE * 2
+    weight_dec = weight_dec * weight_dec
 
     # if (epoch % 5 == 0):  # evaluation
     net.train(False)
@@ -223,7 +236,7 @@ for epoch in range(args.epochs):
 
     if eval_iou.mean() > max_iou:
         print('save model ' + args.model + ' with val mean iou: {}'.format(eval_iou.mean()))
-        torch.save(net.state_dict(), './st_resnet/models/res_from_mul_scale_resnet_cue_01_ws02_'+ args.model + '.pth')
+        torch.save(net.state_dict(), './st_resnet/models/res_wsc_0210_'+ args.model + '.pth')
         max_iou = eval_iou.mean()
 
     # print('cur eval iou is : ', eval_iou, ' mean: ', eval_iou.mean())
