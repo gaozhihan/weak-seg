@@ -20,10 +20,11 @@ args.model = 'my_resnet'
 args.input_size = [321,321]
 args.output_size = [41, 41]
 max_size = [385, 385]
-
-args.rand_gray = True
+# args.rand_gray = True
 # args.lr = 5e-06
 args.CRF_model = 'adaptive_CRF'
+
+eval_iter = 200
 
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
@@ -95,6 +96,7 @@ num_train_batch = len(dataloader.dataloaders["train"])
 
 weight_STBCE = 0.1
 weight_dec = 0.9
+iter_counter = 0
 
 for epoch in range(args.epochs):
     train_seed_loss = 0.0
@@ -157,7 +159,7 @@ for epoch in range(args.epochs):
         # result_small = multi_scale.STCRF_adaptive01.mend_mask_by_labels(result_small, labels.detach().cpu().numpy())
         # result_small = multi_scale.STCRF_adaptive01.min_mend_mask_by_labels(result_small, labels.detach().cpu().numpy())
         # result_small_mended = multi_scale.STCRF_adaptive01.mend_mask_by_labels(result_small, labels.detach().cpu().numpy())
-      
+
         # mask_mended = multi_scale.STCRF_adaptive01.mend_mask_by_labels(result_small, labels.detach().cpu().numpy())
         # plt.figure()
         # plt.imshow(np.argmax(mask_mended.squeeze(), axis=0))
@@ -174,25 +176,6 @@ for epoch in range(args.epochs):
             mask_pre = np.argmax(result_big[i], axis=0)
             iou_obj.add_iou_mask_pair(mask_gt_resize[i,:,:], mask_pre)
 
-            # plt.figure()
-            # plt.subplot(1,5,1); plt.imshow(img[i]/255); plt.title('Input image'); plt.axis('off')
-            # temp = mask_gt[i,:,:].numpy()
-            # temp[temp==255] = 0
-            # plt.subplot(1,5,2); plt.imshow(mask_gt[i,:,:].numpy()); plt.title('gt'); plt.axis('off')
-            # temp2 = cues.detach().squeeze().numpy()
-            # plt.subplot(1,5,3); plt.imshow(np.argmax(temp2,axis=0)); plt.title('cues'); plt.axis('off')
-            # plt.subplot(1,5,4); plt.imshow(temp2[0,:,:]); plt.title('bk cues'); plt.axis('off')
-            # plt.subplot(1,5,5); plt.imshow(mask_pre); plt.title('prediction'); plt.axis('off')
-            # plt.close('all')
-
-        # for i in range(labels.shape[0]):
-        #     temp = np.argmax(result_big[i], axis=0)
-        #     plt.subplot(1,4,1); plt.imshow(img[i]/255); plt.title('Input image')
-        #     plt.subplot(1,4,2); plt.imshow(mask_gt[i,:,:].numpy()); plt.title('gt')
-        #     plt.subplot(1,4,3); plt.imshow(np.argmax(sm_mask[i].detach().cpu().numpy(),axis=0)); plt.title('sm mask')
-        #     plt.subplot(1,4,4); plt.imshow(temp); plt.title('sm mask crf')
-        #     plt.close("all")
-
         # (seed_loss + constrain_loss + expand_loss).backward()  # independent backward would cause Error: Trying to backward through the graph a second time ...
         # seed_loss.backward()
         (seed_loss + constrain_loss/8).backward()
@@ -206,6 +189,40 @@ for epoch in range(args.epochs):
         # train_expand_loss += expand_loss.item()
         train_st_BEC_loss += st_BCE_loss.item()
         train_st_half_BCE_loss += st_half_BCE_loss.item()
+
+        if (iter_counter % eval_iter == 0):
+            net.train(False)
+            for data in dataloader.dataloaders["val"]:
+                inputs, labels, mask_gt, img = data
+                if flag_use_cuda:
+                    inputs = inputs.cuda(); labels = labels.cuda()
+
+                with torch.no_grad():
+                    sm_mask = net(inputs)
+
+                    if args.CRF_model == 'adaptive_CRF':
+                        result_big, result_small = st_crf_layer.run(sm_mask.detach().cpu().numpy(), img.numpy(), labels.detach().cpu().numpy())
+                    else:
+                        result_big, result_small = st_crf_layer.run(sm_mask.detach().cpu().numpy(), img.numpy())
+
+                    for i in range(labels.shape[0]):
+                        mask_pre = np.argmax(result_big[i], axis=0)
+                        iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pre)
+
+            eval_iou = iou_obj.cal_cur_iou()
+            iou_obj.iou_clear()
+
+            if eval_iou.mean() > max_iou:
+                print('save model ' + args.model + ' with val mean iou: {}'.format(eval_iou.mean()))
+                torch.save(net.state_dict(), './st_resnet/models/res_wsc_min_amend_0211_'+ args.model + '.pth')
+                max_iou = eval_iou.mean()
+
+            # print('cur eval iou is : ', eval_iou, ' mean: ', eval_iou.mean())
+            print('{} iter eval iou mean: '.format(iter_counter), eval_iou.mean())
+
+            net.train(True)
+
+        iter_counter += 1
 
     train_iou = iou_obj.cal_cur_iou()
     iou_obj.iou_clear()
@@ -223,35 +240,6 @@ for epoch in range(args.epochs):
     weight_STBCE = weight_STBCE * 2
     weight_dec = weight_dec * weight_dec
 
-    # if (epoch % 5 == 0):  # evaluation
-    net.train(False)
-    for data in dataloader.dataloaders["val"]:
-        inputs, labels, mask_gt, img = data
-        if flag_use_cuda:
-            inputs = inputs.cuda(); labels = labels.cuda()
-
-        with torch.no_grad():
-            sm_mask = net(inputs)
-
-            if args.CRF_model == 'adaptive_CRF':
-                result_big, result_small = st_crf_layer.run(sm_mask.detach().cpu().numpy(), img.numpy(), labels.detach().cpu().numpy())
-            else:
-                result_big, result_small = st_crf_layer.run(sm_mask.detach().cpu().numpy(), img.numpy())
-
-            for i in range(labels.shape[0]):
-                mask_pre = np.argmax(result_big[i], axis=0)
-                iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pre)
-
-    eval_iou = iou_obj.cal_cur_iou()
-    iou_obj.iou_clear()
-
-    if eval_iou.mean() > max_iou:
-        print('save model ' + args.model + ' with val mean iou: {}'.format(eval_iou.mean()))
-        torch.save(net.state_dict(), './st_resnet/models/res_wsc_min_amend_0211_'+ args.model + '.pth')
-        max_iou = eval_iou.mean()
-
-    # print('cur eval iou is : ', eval_iou, ' mean: ', eval_iou.mean())
-    print('cur eval iou mean: ', eval_iou.mean())
 
 print("done")
 
