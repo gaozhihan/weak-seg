@@ -14,6 +14,7 @@ args.need_mask_flag = False
 args.model = 'my_resnet'
 args.input_size = [321,321]
 args.output_size = [41, 41]
+args.rand_gray = True
 
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()

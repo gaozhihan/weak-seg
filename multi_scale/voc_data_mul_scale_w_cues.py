@@ -169,6 +169,16 @@ class VOCDataset(Dataset):
         mask_name = os.path.join(self.data_dir, "segmentations", self.file_list[idx]+".png")
 
         img = Image.open(img_name)
+
+        if self.args.rand_gray:
+            if random.random() > 0.5:
+                temp_rgb = np.array(img)
+                temp_gray = np.array(img.convert('L'))
+                temp_rgb[:,:,0] = temp_gray
+                temp_rgb[:,:,1] = temp_gray
+                temp_rgb[:,:,2] = temp_gray
+                img = Image.fromarray(temp_rgb,mode='RGB')
+
         mask_temp = Image.open(mask_name)
         if self.file_list[idx]+".png" in self.img_id_dic_SEC.keys():
             cues_numpy = self.__get_cues_from_img_name(self.file_list[idx]+".png")

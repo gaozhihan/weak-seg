@@ -34,6 +34,8 @@ def get_args():
                         help='training batch size')
     parser.add_argument('--origin_size', action='store_true', default=False,
                         help='when it is training')
+    parser.add_argument('--rand_gray', action='store_true', default=False,
+                        help='randomly trun GRB image into gray')
     parser.add_argument('--relu_mask', action='store_true', default=False,
                         help='whether apply relu for not')
     parser.add_argument('--preds_only', action='store_true', default=True,

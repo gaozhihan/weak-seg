@@ -20,6 +20,7 @@ args.input_size = [321,321]
 max_size = [385, 385]
 # max_size = [321, 321]
 args.output_size = [41, 41]
+args.rand_gray = True
 
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
@@ -153,12 +154,12 @@ for epoch in range(args.epochs):
 
     if acc_eval > max_acc:
         print('save model ' + args.model + ' with val acc: {}'.format(acc_eval))
-        torch.save(net.state_dict(), './multi_scale/models/st_top_val_acc_'+ args.model + '_' + date_str + '.pth')
+        torch.save(net.state_dict(), './multi_scale/models/st_rand_gray_top_val_acc_'+ args.model + '_' + date_str + '.pth')
         max_acc = acc_eval
 
     if recall_eval > max_recall:
         print('save model ' + args.model + ' with val recall: {}'.format(recall_eval))
-        torch.save(net.state_dict(), './multi_scale/models/st_top_val_rec_'+ args.model + '_more_drp_' + date_str + '.pth')
+        torch.save(net.state_dict(), './multi_scale/models/st_rand_gray_top_val_rec_'+ args.model + '_' + date_str + '.pth')
         max_recall = recall_eval
 
     print('Epoch: {} took {:.2f}, Train Loss: {:.4f}, Acc: {:.4f}, Recall: {:.4f}; eval loss: {:.4f}, Acc: {:.4f}, Recall: {:.4f}'.format(epoch, time_took, epoch_train_loss, acc_train, recall_train, epoch_eval_loss, acc_eval, recall_eval))
