@@ -21,7 +21,7 @@ args.input_size = [321,321]
 args.output_size = [41, 41]
 max_size = [385, 385]
 # args.lr = 5e-06
-args.CRF_model = 'adaptive_CRF'
+# args.CRF_model = 'adaptive_CRF'
 
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
@@ -34,8 +34,8 @@ if host_name == 'sunting':
     # args.cues_pickle_dir = "/home/sunting/Documents/program/SEC-master/training/localization_cues/localization_cues.pickle"
     args.cues_pickle_dir = "/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_resnet_cue_01_hard_snapped.pickle"
     # model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_top_val_acc_my_resnet_5_cpu_rename_fc2conv.pth'
-    # model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_top_val_acc_my_resnet_multi_scale_09_01_cpu_rename_fc2conv.pth'
-    model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/res_from_mul_scale_resnet_cue_01_hard_snapped_my_resnet_cpu.pth'
+    model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_top_val_acc_my_resnet_multi_scale_09_01_cpu_rename_fc2conv.pth'
+    # model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/res_from_mul_scale_resnet_cue_01_hard_snapped_my_resnet_cpu.pth'
     # model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/res_from_mul_scale_resnet_cue_01_w_STBCE_my_resnet_cpu.pth'
 
 elif host_name == 'sunting-ThinkCentre-M90':
@@ -50,6 +50,8 @@ elif host_name == 'ram-lab-server01':
     # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/st_top_val_acc_my_resnet_5_cpu_rename_fc2conv.pth'
     # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/res_sec01_ws_top_val_iou_my_resnet.pth'
     model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/multi_scale/models/st_top_val_acc_my_resnet_multi_scale_09_01_cpu_rename_fc2conv.pth'
+    # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/res_wsc_0210_my_resnet.pth'
+    # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/res_from_mul_scale_resnet_cue_01_hard_snapped_my_resnet.pth'
     # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/res_from_mul_scale_ws_top_val_iou_my_resnet.pth'
     # args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/models/localization_cues.pickle"
     # args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/st_01/models/my_cues.pickle"
@@ -59,10 +61,10 @@ elif host_name == 'ram-lab-server01':
 
 
 net = st_resnet.resnet_st_seg01.resnet50(pretrained=False, num_classes=args.num_classes)
-net.load_state_dict(torch.load(model_path), strict = False)
+net.load_state_dict(torch.load(model_path), strict = True)
 
 if args.CRF_model == 'adaptive_CRF':
-    st_crf_layer = multi_scale.STCRF_adaptive01.STCRFLayer(False)
+    st_crf_layer = multi_scale.STCRF_adaptive01.STCRFLayer(True)
 else:
     st_crf_layer = multi_scale.voc_data_mul_scale_w_cues.STCRFLayer(True)
 
@@ -90,6 +92,8 @@ iou_obj = common_function.iou_calculator()
 num_train_batch = len(dataloader.dataloaders["train"])
 
 weight_STBCE = 0.1
+weight_dec = 0.9
+
 for epoch in range(args.epochs):
     train_seed_loss = 0.0
     train_expand_loss = 0.0
@@ -148,14 +152,20 @@ for epoch in range(args.epochs):
         else:
             result_big, result_small = st_crf_layer.run(mask_mended, img_np)
 
+        # result_small = multi_scale.STCRF_adaptive01.mend_mask_by_labels(result_small, labels.detach().cpu().numpy())
+        # result_small = multi_scale.STCRF_adaptive01.min_mend_mask_by_labels(result_small, labels.detach().cpu().numpy())
+        # result_small_mended = multi_scale.STCRF_adaptive01.mend_mask_by_labels(result_small, labels.detach().cpu().numpy())
+      
         # mask_mended = multi_scale.STCRF_adaptive01.mend_mask_by_labels(result_small, labels.detach().cpu().numpy())
         # plt.figure()
         # plt.imshow(np.argmax(mask_mended.squeeze(), axis=0))
+
         # calculate the SEC loss
         seed_loss = seed_loss_layer(sm_mask, cues, flag_use_cuda)
         constrain_loss = st_constrain_loss_layer(result_small, sm_mask, flag_use_cuda)
         st_BCE_loss = st_BCE_loss_layer(result_small, sm_mask, labels.detach().cpu().numpy(), flag_use_cuda)
         st_half_BCE_loss = st_half_BCE_loss_layer(result_small, sm_mask, labels.detach().cpu().numpy(), flag_use_cuda)
+        # st_half_BCE_loss = st_half_BCE_loss_layer(result_small_mended, sm_mask, labels.detach().cpu().numpy(), flag_use_cuda)
         # expand_loss = expand_loss_layer(sm_mask, labels)
 
         for i in range(labels.shape[0]):
@@ -181,13 +191,12 @@ for epoch in range(args.epochs):
         #     plt.subplot(1,4,4); plt.imshow(temp); plt.title('sm mask crf')
         #     plt.close("all")
 
-
-
         # (seed_loss + constrain_loss + expand_loss).backward()  # independent backward would cause Error: Trying to backward through the graph a second time ...
         # seed_loss.backward()
-        # (seed_loss + constrain_loss/8).backward()
+        (seed_loss + constrain_loss/8).backward()
         # (seed_loss + st_BCE_loss*weight_STBCE).backward()
-        (seed_loss + constrain_loss/8 + st_half_BCE_loss).backward()
+        # (seed_loss + constrain_loss/8 + st_half_BCE_loss*(1-weight_dec)).backward()
+
         optimizer.step()
 
         train_seed_loss += seed_loss.item()
@@ -210,6 +219,7 @@ for epoch in range(args.epochs):
     # print('cur train iou is : ', train_iou, ' mean: ', train_iou.mean())
     print('cur train iou mean: ', train_iou.mean())
     weight_STBCE = weight_STBCE * 2
+    weight_dec = weight_dec * weight_dec
 
     # if (epoch % 5 == 0):  # evaluation
     net.train(False)
@@ -235,7 +245,7 @@ for epoch in range(args.epochs):
 
     if eval_iou.mean() > max_iou:
         print('save model ' + args.model + ' with val mean iou: {}'.format(eval_iou.mean()))
-        torch.save(net.state_dict(), './st_resnet/models/res_from_mul_scale_resnet_cue_01_w_STBCE_adp_CRF'+ args.model + '.pth')
+        torch.save(net.state_dict(), './st_resnet/models/res_wsc_min_amend_0211_'+ args.model + '.pth')
         max_iou = eval_iou.mean()
 
     # print('cur eval iou is : ', eval_iou, ' mean: ', eval_iou.mean())
