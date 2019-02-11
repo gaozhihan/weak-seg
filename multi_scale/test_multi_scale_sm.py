@@ -36,7 +36,8 @@ args.batch_size = 1
 if host_name == 'sunting':
     args.data_dir = '/home/sunting/Documents/program/VOC2012_SEG_AUG'
     # model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/models/resnet50_feat.pth'
-    model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_top_val_acc_my_resnet_multi_scale_09_01_cpu_rename_fc2conv.pth'
+    # model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_top_val_acc_my_resnet_multi_scale_09_01_cpu_rename_fc2conv.pth'
+    model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/res_from_mul_scale_resnet_cue_01_hard_snapped_my_resnet_cpu.pth'
 elif host_name == 'sunting-ThinkCentre-M90':
     args.data_dir = '/home/sunting/Documents/data/VOC2012_SEG_AUG'
 elif host_name == 'ram-lab-server01':
@@ -51,7 +52,7 @@ elif host_name == 'ram-lab-server01':
     model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/res_sec01_ws_top_val_iou_my_resnet.pth'
 
 net = st_resnet.resnet_st_seg01.resnet50(pretrained=False, num_classes=args.num_classes)
-net.load_state_dict(torch.load(model_path), strict = True)
+net.load_state_dict(torch.load(model_path), strict = False)
 
 if args.loss == 'BCELoss':
     criterion = nn.BCELoss()

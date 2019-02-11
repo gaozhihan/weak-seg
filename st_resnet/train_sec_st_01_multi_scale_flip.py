@@ -31,7 +31,8 @@ if host_name == 'sunting':
     args.batch_size = 1
     args.data_dir = '/home/sunting/Documents/program/VOC2012_SEG_AUG'
     args.sec_id_img_name_list_dir = "/home/sunting/Documents/program/SEC-master/training/input_list.txt"
-    args.cues_pickle_dir = "/home/sunting/Documents/program/SEC-master/training/localization_cues/localization_cues.pickle"
+    # args.cues_pickle_dir = "/home/sunting/Documents/program/SEC-master/training/localization_cues/localization_cues.pickle"
+    args.cues_pickle_dir = "/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_resnet_cue_01_hard_snapped.pickle"
     # model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_top_val_acc_my_resnet_5_cpu_rename_fc2conv.pth'
     model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_top_val_acc_my_resnet_multi_scale_09_01_cpu_rename_fc2conv.pth'
     # model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/res_from_mul_scale_resnet_cue_01_hard_snapped_my_resnet_cpu.pth'
@@ -49,6 +50,7 @@ elif host_name == 'ram-lab-server01':
     # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/st_top_val_acc_my_resnet_5_cpu_rename_fc2conv.pth'
     # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/res_sec01_ws_top_val_iou_my_resnet.pth'
     model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/multi_scale/models/st_top_val_acc_my_resnet_multi_scale_09_01_cpu_rename_fc2conv.pth'
+    # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/res_wsc_0210_my_resnet.pth'
     # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/res_from_mul_scale_resnet_cue_01_hard_snapped_my_resnet.pth'
     # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/res_from_mul_scale_ws_top_val_iou_my_resnet.pth'
     # args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/models/localization_cues.pickle"
@@ -141,8 +143,9 @@ for epoch in range(args.epochs):
 
         sm_mask = net(inputs)
 
+        mask_mended = multi_scale.STCRF_adaptive01.min_mend_mask_by_labels(sm_mask.detach().cpu().numpy(), labels.detach().cpu().numpy())
         # mask_mended = multi_scale.STCRF_adaptive01.mend_mask_by_labels(sm_mask.detach().cpu().numpy(), labels.detach().cpu().numpy())
-        mask_mended = sm_mask.detach().cpu().numpy()
+        # mask_mended = sm_mask.detach().cpu().numpy()
 
         if args.CRF_model == 'adaptive_CRF':
             result_big, result_small = st_crf_layer.run(mask_mended, img_np, labels.detach().cpu().numpy())
@@ -150,8 +153,14 @@ for epoch in range(args.epochs):
             result_big, result_small = st_crf_layer.run(mask_mended, img_np)
 
         # result_small = multi_scale.STCRF_adaptive01.mend_mask_by_labels(result_small, labels.detach().cpu().numpy())
+        # result_small = multi_scale.STCRF_adaptive01.min_mend_mask_by_labels(result_small, labels.detach().cpu().numpy())
         # result_small_mended = multi_scale.STCRF_adaptive01.mend_mask_by_labels(result_small, labels.detach().cpu().numpy())
-        # calculate the loss
+      
+        # mask_mended = multi_scale.STCRF_adaptive01.mend_mask_by_labels(result_small, labels.detach().cpu().numpy())
+        # plt.figure()
+        # plt.imshow(np.argmax(mask_mended.squeeze(), axis=0))
+
+        # calculate the SEC loss
         seed_loss = seed_loss_layer(sm_mask, cues, flag_use_cuda)
         constrain_loss = st_constrain_loss_layer(result_small, sm_mask, flag_use_cuda)
         st_BCE_loss = st_BCE_loss_layer(result_small, sm_mask, labels.detach().cpu().numpy(), flag_use_cuda)
@@ -236,7 +245,7 @@ for epoch in range(args.epochs):
 
     if eval_iou.mean() > max_iou:
         print('save model ' + args.model + ' with val mean iou: {}'.format(eval_iou.mean()))
-        torch.save(net.state_dict(), './st_resnet/models/res_wsc_0210_'+ args.model + '.pth')
+        torch.save(net.state_dict(), './st_resnet/models/res_wsc_min_amend_0211_'+ args.model + '.pth')
         max_iou = eval_iou.mean()
 
     # print('cur eval iou is : ', eval_iou, ' mean: ', eval_iou.mean())
