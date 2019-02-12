@@ -36,7 +36,8 @@ if host_name == 'sunting':
     # args.cues_pickle_dir = "/home/sunting/Documents/program/SEC-master/training/localization_cues/localization_cues.pickle"
     args.cues_pickle_dir = "/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_resnet_cue_01_hard_snapped.pickle"
     # model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_top_val_acc_my_resnet_5_cpu_rename_fc2conv.pth'
-    model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_top_val_acc_my_resnet_multi_scale_09_01_cpu_rename_fc2conv.pth'
+    # model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_top_val_acc_my_resnet_multi_scale_09_01_cpu_rename_fc2conv.pth'
+    model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/multi_scale/models/st_rand_gray_top_val_acc_my_resnet_11_fc2conv_cpu.pth'
     # model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/res_from_mul_scale_resnet_cue_01_hard_snapped_my_resnet_cpu.pth'
     # model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/res_from_mul_scale_resnet_cue_01_w_STBCE_my_resnet_cpu.pth'
 
