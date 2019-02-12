@@ -36,8 +36,8 @@ elif host_name == 'sunting-ThinkCentre-M90':
     args.data_dir = '/home/sunting/Documents/data/VOC2012_SEG_AUG'
 elif host_name == 'ram-lab-server01':
     args.data_dir = '/data_shared/Docker/tsun/data/VOC2012/VOC2012_SEG_AUG'
-    # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/models/resnet50_feat.pth'
-    model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/multi_scale/models/st_top_val_rec_my_resnet_9_9.pth'
+    model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/models/resnet50_feat.pth'
+    # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/multi_scale/models/st_top_val_rec_my_resnet_9_9.pth'
     args.batch_size = 10
 
 # net = st_resnet.resnet_st.resnet50(pretrained=False, num_classes=args.num_classes)
@@ -82,7 +82,7 @@ for epoch in range(args.epochs):
                 cur_size = [round(max_size[0] * rand_scale), round(max_size[1] * rand_scale)]
                 inputs_resize = np.zeros((inputs.shape[0], inputs.shape[1], cur_size[0], cur_size[1]),dtype='float32')
 
-                max_val = max(max(inputs.max(), -inputs.min()), 1.0)
+                max_val = max(max(inputs.max(), -inputs.min()), 1.0).numpy()
                 for i in range(inputs.shape[0]):
                     inputs_resize[i] = np.transpose(resize(np.transpose(inputs[i].detach().numpy(), (1,2,0))/max_val, cur_size)*max_val, (2,0,1))
 
