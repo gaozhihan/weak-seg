@@ -82,7 +82,7 @@ for epoch in range(args.epochs):
                 cur_size = [round(max_size[0] * rand_scale), round(max_size[1] * rand_scale)]
                 inputs_resize = np.zeros((inputs.shape[0], inputs.shape[1], cur_size[0], cur_size[1]),dtype='float32')
 
-                max_val = max(max(inputs.max(), -inputs.min()), 1.0)
+                max_val = max(max(inputs.max(), -inputs.min()), 1.0).numpy()
                 for i in range(inputs.shape[0]):
                     inputs_resize[i] = np.transpose(resize(np.transpose(inputs[i].detach().numpy(), (1,2,0))/max_val, cur_size)*max_val, (2,0,1))
 
