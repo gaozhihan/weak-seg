@@ -179,7 +179,7 @@ for epoch in range(args.epochs):
             # plt.subplot(1,5,1); plt.imshow(img[i]/255); plt.title('Input image'); plt.axis('off')
             # temp = mask_gt[i,:,:].numpy()
             # temp[temp==255] = 0
-            # plt.subplot(1,5,2); plt.imshow(mask_gt[i,:,:].numpy()); plt.title('gt'); plt.axis('off')
+            # plt.subplot(1,5,2); plt.imshow(temp); plt.title('gt'); plt.axis('off')
             # temp2 = cues.detach().squeeze().numpy()
             # plt.subplot(1,5,3); plt.imshow(np.argmax(temp2,axis=0)); plt.title('cues'); plt.axis('off')
             # plt.subplot(1,5,4); plt.imshow(temp2[0,:,:]); plt.title('bk cues'); plt.axis('off')
