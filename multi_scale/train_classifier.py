@@ -36,8 +36,8 @@ elif host_name == 'sunting-ThinkCentre-M90':
     args.data_dir = '/home/sunting/Documents/data/VOC2012_SEG_AUG'
 elif host_name == 'ram-lab-server01':
     args.data_dir = '/data_shared/Docker/tsun/data/VOC2012/VOC2012_SEG_AUG'
-    # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/models/resnet50_feat.pth'
-    model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/multi_scale/models/st_top_val_rec_my_resnet_9_9.pth'
+    model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/models/resnet50_feat.pth'
+    # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/multi_scale/models/st_top_val_rec_my_resnet_9_9.pth'
     args.batch_size = 10
 
 # net = st_resnet.resnet_st.resnet50(pretrained=False, num_classes=args.num_classes)
@@ -154,12 +154,12 @@ for epoch in range(args.epochs):
 
     if acc_eval > max_acc:
         print('save model ' + args.model + ' with val acc: {}'.format(acc_eval))
-        torch.save(net.state_dict(), './multi_scale/models/st_rand_gray_top_val_acc_'+ args.model + '_' + date_str + '.pth')
+        torch.save(net.state_dict(), './multi_scale/models/st_pure_gray_top_val_acc_'+ args.model + '_' + date_str + '.pth')
         max_acc = acc_eval
 
     if recall_eval > max_recall:
         print('save model ' + args.model + ' with val recall: {}'.format(recall_eval))
-        torch.save(net.state_dict(), './multi_scale/models/st_rand_gray_top_val_rec_'+ args.model + '_' + date_str + '.pth')
+        torch.save(net.state_dict(), './multi_scale/models/st_pure_gray_top_val_rec_'+ args.model + '_' + date_str + '.pth')
         max_recall = recall_eval
 
     print('Epoch: {} took {:.2f}, Train Loss: {:.4f}, Acc: {:.4f}, Recall: {:.4f}; eval loss: {:.4f}, Acc: {:.4f}, Recall: {:.4f}'.format(epoch, time_took, epoch_train_loss, acc_train, recall_train, epoch_eval_loss, acc_eval, recall_eval))

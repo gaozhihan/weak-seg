@@ -126,7 +126,7 @@ if __name__ == '__main__':
     flag_classify = False
     host_name = socket.gethostname()
 
-    flag_visualization = True
+    flag_visualization = False
 
     if host_name == 'sunting':
         args.data_dir = '/home/sunting/Documents/program/VOC2012_SEG_AUG'
@@ -139,9 +139,12 @@ if __name__ == '__main__':
     elif host_name == 'ram-lab-server01':
         args.data_dir = '/data_shared/Docker/tsun/data/VOC2012/VOC2012_SEG_AUG'
         sec_id_img_name_list_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/sec/input_list.txt"
-        save_cue_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/st_resnet_cue_01_mul_scal.pickle'
+        # save_cue_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/st_resnet_cue_01_mul_scal_rand_gray.pickle'
+        save_cue_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/st_resnet_cue_01_mul_scal_pure_gray.pickle'
         # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/st_top_val_acc_my_resnet_5_cpu_rename_fc2conv.pth'
-        model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/st_top_val_acc_my_resnet_multi_scale_09_01_cpu_rename_fc2conv.pth'
+        # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/st_top_val_acc_my_resnet_multi_scale_09_01_cpu_rename_fc2conv.pth'
+        # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/multi_scale/models/st_rand_gray_top_val_acc_my_resnet_11_fc2conv_cpu.pth'
+        model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/st_pure_gray_top_val_acc_my_resnet_15_15_cpu_rename_fc2conv.pth'
 
 
     output_size = [41,41]
