@@ -141,6 +141,16 @@ class VOCDataset(Dataset):
         img_name = os.path.join(self.data_dir, "images", self.file_list[idx]+".png")
         mask_name = os.path.join(self.data_dir, "segmentations", self.file_list[idx]+".png")
         img = Image.open(img_name)
+
+        # if self.args.rand_gray:
+        #     if random.random() > 0.5:
+        # temp_rgb = np.array(img)
+        # temp_gray = np.array(img.convert('L'))
+        # temp_rgb[:,:,0] = temp_gray
+        # temp_rgb[:,:,1] = temp_gray
+        # temp_rgb[:,:,2] = temp_gray
+        # img = Image.fromarray(temp_rgb,mode='RGB')
+
         if self.args.origin_size:
             img_array = np.array(img).astype(np.float32)
             mask = np.array(Image.open(mask_name))

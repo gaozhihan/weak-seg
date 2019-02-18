@@ -239,9 +239,13 @@ if __name__ == '__main__':
     elif host_name == 'ram-lab-server01':
         args.data_dir = '/data_shared/Docker/tsun/data/VOC2012/VOC2012_SEG_AUG'
         args.sec_id_img_name_list_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/sec/input_list.txt"
-        cues_pickle_dir1 = "/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/st_resnet_cue_01_hard_snapped.pickle"
-        cues_pickle_dir2 = "/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/st_resnet_cue_01_mul_scal_rand_gray_hard_snapped.pickle"
-        save_cue_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/st_resnet_cue_01_gray_01_hard_snapped_merge.pickle'
+        # cues_pickle_dir1 = "/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/st_resnet_cue_01_hard_snapped.pickle"
+        # cues_pickle_dir1 = "/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/st_resnet_cue_01_mul_scal_hard_snapped.pickle"
+        cues_pickle_dir1 = "/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/st_resnet_cue_01_gray_01_hard_snapped_merge.pickle"
+        cues_pickle_dir2 = "/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/st_resnet_cue_01_mul_scale_pure_gray_01_hard_snapped_merge.pickle"
+        # cues_pickle_dir2 = "/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/st_resnet_cue_01_mul_scal_pure_gray_hard_snapped.pickle"
+        # save_cue_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/st_resnet_cue_01_mul_scale_pure_gray_01_hard_snapped_merge.pickle'
+        save_cue_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/st_resnet_cue_01_all_hard_snapped_merge_0216.pickle'
 
 
     args.batch_size = 1

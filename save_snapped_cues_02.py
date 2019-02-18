@@ -317,9 +317,9 @@ if __name__ == '__main__':
         # args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/st_01/models/my_cues.pickle"
         # args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/st_01/models/st_cue_01_hard_snapped.pickle"
         # args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/st_resnet_cue_01_hard_snapped.pickle"
-        args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/st_resnet_cue_01_mul_scal_rand_gray.pickle"
+        args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/st_resnet_cue_01_mul_scal_pure_gray.pickle"
         args.batch_size = 1
-        save_cue_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/st_resnet_cue_01_mul_scal_rand_gray_hard_snapped.pickle'
+        save_cue_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/st_resnet_cue_01_mul_scal_pure_gray_hard_snapped.pickle'
 
     print(args)
 
