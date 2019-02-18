@@ -228,9 +228,9 @@ for epoch in range(args.epochs):
     # if (epoch % 5 == 0):  # evaluation
     net.train(False)
     for data in dataloader.dataloaders["val"]:
-        inputs, labels, mask_gt, img, img_array_color = data
+        inputs, labels, mask_gt, img, img_array_color, inputs_color = data
         if flag_use_cuda:
-            inputs = inputs.cuda(); labels = labels.cuda()
+            inputs = inputs_color.cuda(); labels = labels.cuda()
 
         with torch.no_grad():
             sm_mask = net(inputs)

@@ -223,7 +223,7 @@ class VOCDataset(Dataset):
             return img_ts, label_ts, mask, img_array, cues, img_array_color # img_name,
         else:
             # return img_ts, label_ts, mask, img_name, img_array
-            return img_ts, label_ts, mask, img_array, img_array_color
+            return img_ts, label_ts, mask, img_array, img_array_color, self.transform(img_color) # always use color for eval
 
 
 
