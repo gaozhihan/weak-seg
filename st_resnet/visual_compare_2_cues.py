@@ -220,7 +220,6 @@ if __name__ == '__main__':
     args.output_size = [41, 41]
     max_size = [385, 385]
 
-
     host_name = socket.gethostname()
     date_str = str(datetime.datetime.now().day)
 
@@ -246,8 +245,15 @@ if __name__ == '__main__':
 
     print(args)
 
+    # cues_pickle_dir1 = "/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_resnet_cue_01_hard_snapped.pickle"
+    # cues_pickle_dir1 = "/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_resnet_cue_01_mul_scal_rand_gray_hard_snapped.pickle"
+    # cues_pickle_dir1 = "/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_resnet_cue_01_gray_01_hard_snapped_merge.pickle"
     cues_pickle_dir1 = "/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_resnet_cue_01_hard_snapped.pickle"
-    cues_pickle_dir2 = "/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_resnet_cue_01_mul_scal_rand_gray_hard_snapped.pickle"
+    # cues_pickle_dir2 = "/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_resnet_cue_01_mul_scal_hard_snapped.pickle"
+    # cues_pickle_dir2 = "/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_resnet_cue_01_mul_scale_gray_01_hard_snapped_merge.pickle"
+    # cues_pickle_dir2 = "/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_resnet_cue_01_all_hard_snapped_merge_0216.pickle"
+    cues_pickle_dir2 = "/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_resnet_cue_01.pickle"
+
     dataloader = VOCData(args, cues_pickle_dir1, cues_pickle_dir2)
 
     with torch.no_grad():
@@ -256,24 +262,19 @@ if __name__ == '__main__':
 
         for data in dataloader.dataloaders["train"]:
             inputs, labels, mask_gt, img, cues1, cues2 = data
-            plt.subplot(1,6,1); plt.imshow(img[0]/255); plt.title('Input image'); plt.axis('off')
+            plt.subplot(2,3,1); plt.imshow(img[0]/255); plt.title('Input image'); plt.axis('off')
             temp = mask_gt[0,:,:].numpy()
             temp[temp==255] = 0
-            plt.subplot(1,6,2); plt.imshow(temp); plt.title('gt'); plt.axis('off')
+            plt.subplot(2,3,4); plt.imshow(temp); plt.title('gt'); plt.axis('off')
 
             temp1 = cues1.detach().squeeze().numpy()
-            plt.subplot(1,6,3); plt.imshow(np.argmax(temp1,axis=0)); plt.title('cues1'); plt.axis('off')
-            plt.subplot(1,6,4); plt.imshow(temp1[0,:,:]); plt.title('bk cues1'); plt.axis('off')
+            plt.subplot(2,3,2); plt.imshow(np.argmax(temp1,axis=0)); plt.title('cues1'); plt.axis('off')
+            plt.subplot(2,3,5); plt.imshow(temp1[0,:,:]); plt.title('bk cues1'); plt.axis('off')
             temp2 = cues2.detach().squeeze().numpy()
-            plt.subplot(1,6,5); plt.imshow(np.argmax(temp2,axis=0)); plt.title('cues2'); plt.axis('off')
-            plt.subplot(1,6,6); plt.imshow(temp1[0,:,:]); plt.title('bk cues2'); plt.axis('off')
+            plt.subplot(2,3,3); plt.imshow(np.argmax(temp2,axis=0)); plt.title('cues2'); plt.axis('off')
+            plt.subplot(2,3,6); plt.imshow(temp1[0,:,:]); plt.title('bk cues2'); plt.axis('off')
 
             plt.close('all')
-
-
-
-
-
 
     print("done")
 
