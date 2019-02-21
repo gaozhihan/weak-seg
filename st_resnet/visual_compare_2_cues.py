@@ -245,8 +245,9 @@ if __name__ == '__main__':
 
     print(args)
 
-    # cues_pickle_dir1 = "/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_resnet_cue_01_hard_snapped.pickle"
-    cues_pickle_dir1 = "/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_resnet_cue_01_mul_scal_rand_gray_hard_snapped.pickle"
+    # cues_pickle_dir1 = "/home/sunting/Documents/program/SEC-master/training/localization_cues/localization_cues.pickle"
+    cues_pickle_dir1 = "/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_resnet_cue_01_hard_snapped.pickle"
+    # cues_pickle_dir1 = "/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_resnet_cue_01_mul_scal_rand_gray_hard_snapped.pickle"
     # cues_pickle_dir1 = "/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_resnet_cue_01_gray_01_hard_snapped_merge.pickle"
     # cues_pickle_dir1 = "/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_resnet_cue_01_hard_snapped.pickle"
     # cues_pickle_dir1 = "/home/sunting/Documents/program/pyTorch/weak_seg/st_01/models/st_cue_02_hard_snapped.pickle"
@@ -255,7 +256,8 @@ if __name__ == '__main__':
     # cues_pickle_dir2 = "/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_resnet_cue_01_mul_scale_gray_01_hard_snapped_merge.pickle"
     # cues_pickle_dir2 = "/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_resnet_cue_01_all_hard_snapped_merge_0216.pickle"
     # cues_pickle_dir2 = "/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_resnet_cue_01.pickle"
-    cues_pickle_dir2 = "/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_resnet_cue_01_mul_scal_rand_gray.pickle"
+    # cues_pickle_dir2 = "/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_resnet_cue_01_mul_scal_rand_gray.pickle"
+    cues_pickle_dir2 = "/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_resnet_cue_01_mul_scal_pure_gray_hard_snapped.pickle"
 
     dataloader = VOCData(args, cues_pickle_dir1, cues_pickle_dir2)
 
