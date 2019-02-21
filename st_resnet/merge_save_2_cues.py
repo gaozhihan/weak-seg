@@ -230,7 +230,8 @@ if __name__ == '__main__':
         args.data_dir = '/home/sunting/Documents/program/VOC2012_SEG_AUG'
         args.sec_id_img_name_list_dir = "/home/sunting/Documents/program/SEC-master/training/input_list.txt"
         cues_pickle_dir1 = "/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_resnet_cue_01_hard_snapped.pickle"
-        cues_pickle_dir2 = "/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_resnet_cue_01_mul_scal_rand_gray_hard_snapped.pickle"
+        # cues_pickle_dir2 = "/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_resnet_cue_01_mul_scal_rand_gray_hard_snapped.pickle"
+        cues_pickle_dir2 = "/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_resnet_cue_01_mul_scal_pure_gray_hard_snapped.pickle"
         save_cue_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_resnet_cue_01_gray_01_hard_snapped_merge.pickle'
     elif host_name == 'sunting-ThinkCentre-M90':
         args.data_dir = '/home/sunting/Documents/data/VOC2012_SEG_AUG'
