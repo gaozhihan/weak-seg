@@ -21,8 +21,8 @@ args.input_size = [321,321]
 args.output_size = [41, 41]
 max_size = [385, 385]
 # args.rand_gray = True
-# args.lr = 5e-06
-args.CRF_model = 'adaptive_CRF'
+args.lr = 5e-06
+# args.CRF_model = 'adaptive_CRF'
 
 eval_iter = 200
 
@@ -52,14 +52,16 @@ elif host_name == 'ram-lab-server01':
     args.sec_id_img_name_list_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/sec/input_list.txt"
     # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/st_top_val_acc_my_resnet_5_cpu_rename_fc2conv.pth'
     # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/res_sec01_ws_top_val_iou_my_resnet.pth'
-    model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/multi_scale/models/st_top_val_acc_my_resnet_multi_scale_09_01_cpu_rename_fc2conv.pth'
+    # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/multi_scale/models/st_top_val_acc_my_resnet_multi_scale_09_01_cpu_rename_fc2conv.pth'
+    model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/res_wsc_ft_wsgray0217_gray_color_0221_my_resnet.pth'
     # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/res_wsc_0210_my_resnet.pth'
     # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/res_from_mul_scale_resnet_cue_01_hard_snapped_my_resnet.pth'
     # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/res_from_mul_scale_ws_top_val_iou_my_resnet.pth'
     # args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/models/localization_cues.pickle"
     # args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/st_01/models/my_cues.pickle"
     # args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/st_01/models/st_cue_01_hard_snapped.pickle"
-    args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/st_resnet_cue_01_hard_snapped.pickle"
+    # args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/st_resnet_cue_01_hard_snapped.pickle"
+    args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/st_resnet_cue_01_all_hard_snapped_merge_0216.pickle"
     args.batch_size = 12
 
 
@@ -90,7 +92,8 @@ optimizer = optim.Adam(net.parameters(), lr=args.lr)  # L2 penalty: norm weight_
 main_scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.5)
 
 max_iou = 0
-iou_obj = common_function.iou_calculator()
+iou_obj_train = common_function.iou_calculator()
+iou_obj_eval = common_function.iou_calculator()
 
 num_train_batch = len(dataloader.dataloaders["train"])
 
@@ -147,9 +150,9 @@ for epoch in range(args.epochs):
 
         sm_mask = net(inputs)
 
-        mask_mended = multi_scale.STCRF_adaptive01.min_mend_mask_by_labels(sm_mask.detach().cpu().numpy(), labels.detach().cpu().numpy())
+        # mask_mended = multi_scale.STCRF_adaptive01.min_mend_mask_by_labels(sm_mask.detach().cpu().numpy(), labels.detach().cpu().numpy())
         # mask_mended = multi_scale.STCRF_adaptive01.mend_mask_by_labels(sm_mask.detach().cpu().numpy(), labels.detach().cpu().numpy())
-        # mask_mended = sm_mask.detach().cpu().numpy()
+        mask_mended = sm_mask.detach().cpu().numpy()
 
         if args.CRF_model == 'adaptive_CRF':
             result_big, result_small = st_crf_layer.run(mask_mended, img_np, labels.detach().cpu().numpy())
@@ -174,7 +177,7 @@ for epoch in range(args.epochs):
 
         for i in range(labels.shape[0]):
             mask_pre = np.argmax(result_big[i], axis=0)
-            iou_obj.add_iou_mask_pair(mask_gt_resize[i,:,:], mask_pre)
+            iou_obj_train.add_iou_mask_pair(mask_gt_resize[i,:,:], mask_pre)
 
         # (seed_loss + constrain_loss + expand_loss).backward()  # independent backward would cause Error: Trying to backward through the graph a second time ...
         # seed_loss.backward()
@@ -207,14 +210,14 @@ for epoch in range(args.epochs):
 
                     for i in range(labels.shape[0]):
                         mask_pre = np.argmax(result_big[i], axis=0)
-                        iou_obj.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pre)
+                        iou_obj_eval.add_iou_mask_pair(mask_gt[i,:,:].numpy(), mask_pre)
 
-            eval_iou = iou_obj.cal_cur_iou()
-            iou_obj.iou_clear()
+            eval_iou = iou_obj_eval.cal_cur_iou()
+            iou_obj_eval.iou_clear()
 
             if eval_iou.mean() > max_iou:
                 print('save model ' + args.model + ' with val mean iou: {}'.format(eval_iou.mean()))
-                torch.save(net.state_dict(), './st_resnet/models/res_wsc_min_amend_0211_'+ args.model + '.pth')
+                torch.save(net.state_dict(), './st_resnet/models/res_wsc_ft_gray_color_0221_0222_2_'+ args.model + '.pth')
                 max_iou = eval_iou.mean()
 
             # print('cur eval iou is : ', eval_iou, ' mean: ', eval_iou.mean())
@@ -224,8 +227,8 @@ for epoch in range(args.epochs):
 
         iter_counter += 1
 
-    train_iou = iou_obj.cal_cur_iou()
-    iou_obj.iou_clear()
+    train_iou = iou_obj_train.cal_cur_iou()
+    iou_obj_train.iou_clear()
 
     time_took = time.time() - start
     epoch_train_seed_loss = train_seed_loss / num_train_batch

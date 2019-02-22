@@ -142,7 +142,7 @@ class STCRFLayer():
 
         # define the params dictionary for crf
         self.adaptive_crf_setting = {}
-        self.adaptive_crf_setting['iters'] = [0, 1, 3, 5]
+        self.adaptive_crf_setting['iters'] = [1, 3, 5]
         self.adaptive_crf_setting['color_his_size'] = [4, 4, 4]
         self.adaptive_crf_setting['num_color_bins'] = self.adaptive_crf_setting['color_his_size'][0]*self.adaptive_crf_setting['color_his_size'][1]*self.adaptive_crf_setting['color_his_size'][2]
         self.adaptive_crf_setting['color_channels'] = [0, 1, 2]
