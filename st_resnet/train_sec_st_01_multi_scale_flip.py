@@ -64,9 +64,9 @@ elif host_name == 'ram-lab-server01':
     # args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/st_01/models/st_cue_01_hard_snapped.pickle"
     # args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/st_resnet_cue_01_hard_snapped.pickle"
     # args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/st_resnet_cue_01_mul_scal_rand_gray_hard_snapped.pickle"
-    args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/st_resnet_cue_01_gray_01_hard_snapped_merge.pickle"
+    # args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/st_resnet_cue_01_gray_01_hard_snapped_merge.pickle"
     # args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/st_resnet_cue_01_mul_scale_gray_01_hard_snapped_merge.pickle"
-    # args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/st_resnet_cue_01_all_hard_snapped_merge_0216.pickle"
+    args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/st_resnet_cue_01_all_hard_snapped_merge_0216.pickle"
     args.batch_size = 12
 
 
@@ -155,6 +155,7 @@ for epoch in range(args.epochs):
 
         # mask_mended = multi_scale.STCRF_adaptive01.min_mend_mask_by_labels(sm_mask.detach().cpu().numpy(), labels.detach().cpu().numpy())
         # mask_mended = multi_scale.STCRF_adaptive01.mend_mask_by_labels(sm_mask.detach().cpu().numpy(), labels.detach().cpu().numpy())
+        # mask_mended = multi_scale.STCRF_adaptive01.min_mend_floor_mask_by_labels(sm_mask.detach().cpu().numpy(), labels.detach().cpu().numpy())
         mask_mended = sm_mask.detach().cpu().numpy()
 
         if args.CRF_model == 'adaptive_CRF':
@@ -255,7 +256,7 @@ for epoch in range(args.epochs):
 
     if eval_iou.mean() > max_iou:
         print('save model ' + args.model + ' with val mean iou: {}'.format(eval_iou.mean()))
-        torch.save(net.state_dict(), './st_resnet/models/res_wsc_0220_'+ args.model + '.pth')
+        torch.save(net.state_dict(), './st_resnet/models/res_wsc_0222_'+ args.model + '.pth')
         max_iou = eval_iou.mean()
 
     # print('cur eval iou is : ', eval_iou, ' mean: ', eval_iou.mean())
