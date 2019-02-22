@@ -24,7 +24,7 @@ max_size = [385, 385]
 args.rand_gray = False
 # args.lr = 5e-06
 # args.lr = 1.25e-06 # 3.125e-07 = 1e-5*(0.5**5)
-# args.CRF_model = 'adaptive_CRF'
+args.CRF_model = 'adaptive_CRF'
 
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
@@ -74,7 +74,7 @@ net = st_resnet.resnet_st_seg01.resnet50(pretrained=False, num_classes=args.num_
 net.load_state_dict(torch.load(model_path), strict = True)
 
 if args.CRF_model == 'adaptive_CRF':
-    st_crf_layer = multi_scale.STCRF_adaptive01.STCRFLayer(True)
+    st_crf_layer = multi_scale.STCRF_adaptive01.STCRFLayer(False)
 else:
     st_crf_layer = multi_scale.voc_data_mul_scale_w_cues.STCRFLayer(True)
 
@@ -182,16 +182,16 @@ for epoch in range(args.epochs):
             mask_pre = np.argmax(result_big[i], axis=0)
             iou_obj.add_iou_mask_pair(mask_gt_resize[i,:,:], mask_pre)
 
-            # plt.figure()
-            # plt.subplot(1,5,1); plt.imshow(img[i]/255); plt.title('Input image'); plt.axis('off')
-            # temp = mask_gt[i,:,:].numpy()
-            # temp[temp==255] = 0
-            # plt.subplot(1,5,2); plt.imshow(temp); plt.title('gt'); plt.axis('off')
-            # temp2 = cues.detach().squeeze().numpy()
-            # plt.subplot(1,5,3); plt.imshow(np.argmax(temp2,axis=0)); plt.title('cues'); plt.axis('off')
-            # plt.subplot(1,5,4); plt.imshow(temp2[0,:,:]); plt.title('bk cues'); plt.axis('off')
-            # plt.subplot(1,5,5); plt.imshow(mask_pre); plt.title('prediction'); plt.axis('off')
-            # plt.close('all')
+            plt.figure()
+            plt.subplot(1,5,1); plt.imshow(img[i]/255); plt.title('Input image'); plt.axis('off')
+            temp = mask_gt[i,:,:].numpy()
+            temp[temp==255] = 0
+            plt.subplot(1,5,2); plt.imshow(temp); plt.title('gt'); plt.axis('off')
+            temp2 = cues.detach().squeeze().numpy()
+            plt.subplot(1,5,3); plt.imshow(np.argmax(temp2,axis=0)); plt.title('cues'); plt.axis('off')
+            plt.subplot(1,5,4); plt.imshow(temp2[0,:,:]); plt.title('bk cues'); plt.axis('off')
+            plt.subplot(1,5,5); plt.imshow(mask_pre); plt.title('prediction'); plt.axis('off')
+            plt.close('all')
 
         # for i in range(labels.shape[0]):
         #     temp = np.argmax(result_big[i], axis=0)
