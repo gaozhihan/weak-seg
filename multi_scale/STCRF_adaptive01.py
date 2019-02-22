@@ -121,9 +121,9 @@ def crf(sm_mask_one, img_one, labels, num_class, input_size, mask_size, adaptive
 
     best_map_idx, map_iou_score, color_score = pick_mask(img_one, sm_u, class_cur, map_pred_buffer, adaptive_crf_setting)
 
-    plt.figure()
-    for i in range(adaptive_crf_setting['num_maps']):
-        plt.subplot(1,adaptive_crf_setting['num_maps'], i+1); plt.imshow(map_pred_buffer[i,:,:]); plt.axis('off')
+    # plt.figure()
+    # for i in range(adaptive_crf_setting['num_maps']):
+    #     plt.subplot(1,adaptive_crf_setting['num_maps'], i+1); plt.imshow(map_pred_buffer[i,:,:]); plt.axis('off')
 
     return map_buffer[best_map_idx]
 
