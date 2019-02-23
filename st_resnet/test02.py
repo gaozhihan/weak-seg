@@ -76,7 +76,7 @@ if args.origin_size:
     args.batch_size = 1
 
 net = st_resnet.resnet_st_seg01.resnet50(pretrained=False, num_classes=args.num_classes)
-net.load_state_dict(torch.load(model_path), strict = False)
+net.load_state_dict(torch.load(model_path), strict = True)
 
 if args.CRF_model == 'adaptive_CRF':
     st_crf_layer = multi_scale.STCRF_adaptive01.STCRFLayer(True)
