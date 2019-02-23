@@ -38,9 +38,9 @@ if host_name == 'sunting':
     args.cues_pickle_dir = "/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_resnet_cue_01_hard_snapped.pickle"
     # model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_top_val_acc_my_resnet_5_cpu_rename_fc2conv.pth'
     # model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_top_val_acc_my_resnet_multi_scale_09_01_cpu_rename_fc2conv.pth'
-    model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/multi_scale/models/st_rand_gray_top_val_acc_my_resnet_11_fc2conv_cpu.pth'
+    # model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/multi_scale/models/st_rand_gray_top_val_acc_my_resnet_11_fc2conv_cpu.pth'
     # model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/res_from_mul_scale_resnet_cue_01_hard_snapped_my_resnet_cpu.pth'
-    # model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/res_from_mul_scale_resnet_cue_01_w_STBCE_my_resnet_cpu.pth'
+    model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/res_wsc_ft_gray_color_0221_0222_my_resnet_cpu.pth'
 
 elif host_name == 'sunting-ThinkCentre-M90':
     args.batch_size = 2
@@ -71,10 +71,10 @@ elif host_name == 'ram-lab-server01':
 
 
 net = st_resnet.resnet_st_seg01.resnet50(pretrained=False, num_classes=args.num_classes)
-net.load_state_dict(torch.load(model_path), strict = True)
+net.load_state_dict(torch.load(model_path), strict = False)
 
 if args.CRF_model == 'adaptive_CRF':
-    st_crf_layer = multi_scale.STCRF_adaptive01.STCRFLayer(True)
+    st_crf_layer = multi_scale.STCRF_adaptive01.STCRFLayer(False)
 else:
     st_crf_layer = multi_scale.voc_data_mul_scale_w_cues.STCRFLayer(True)
 
@@ -183,16 +183,16 @@ for epoch in range(args.epochs):
             mask_pre = np.argmax(result_big[i], axis=0)
             iou_obj.add_iou_mask_pair(mask_gt_resize[i,:,:], mask_pre)
 
-            # plt.figure()
-            # plt.subplot(1,5,1); plt.imshow(img[i]/255); plt.title('Input image'); plt.axis('off')
-            # temp = mask_gt[i,:,:].numpy()
-            # temp[temp==255] = 0
-            # plt.subplot(1,5,2); plt.imshow(temp); plt.title('gt'); plt.axis('off')
-            # temp2 = cues.detach().squeeze().numpy()
-            # plt.subplot(1,5,3); plt.imshow(np.argmax(temp2,axis=0)); plt.title('cues'); plt.axis('off')
-            # plt.subplot(1,5,4); plt.imshow(temp2[0,:,:]); plt.title('bk cues'); plt.axis('off')
-            # plt.subplot(1,5,5); plt.imshow(mask_pre); plt.title('prediction'); plt.axis('off')
-            # plt.close('all')
+            plt.figure()
+            plt.subplot(1,5,1); plt.imshow(img[i]/255); plt.title('Input image'); plt.axis('off')
+            temp = mask_gt[i,:,:].numpy()
+            temp[temp==255] = 0
+            plt.subplot(1,5,2); plt.imshow(temp); plt.title('gt'); plt.axis('off')
+            temp2 = cues.detach().squeeze().numpy()
+            plt.subplot(1,5,3); plt.imshow(np.argmax(temp2,axis=0)); plt.title('cues'); plt.axis('off')
+            plt.subplot(1,5,4); plt.imshow(temp2[0,:,:]); plt.title('bk cues'); plt.axis('off')
+            plt.subplot(1,5,5); plt.imshow(mask_pre); plt.title('prediction'); plt.axis('off')
+            plt.close('all')
 
         # for i in range(labels.shape[0]):
         #     temp = np.argmax(result_big[i], axis=0)

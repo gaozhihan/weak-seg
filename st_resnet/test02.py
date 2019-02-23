@@ -20,11 +20,13 @@ args.model = 'my_resnet'
 args.input_size = [321,321]
 args.output_size = [41, 41]
 max_size = [385, 385]
+flag_eval_only = True
 
 args.rand_gray = False
 args.lr = 5e-06
 # args.lr = 1.25e-06 # 3.125e-07 = 1e-5*(0.5**5)
-args.CRF_model = 'adaptive_CRF'
+# args.CRF_model = 'adaptive_CRF'
+args.origin_size = True
 
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
@@ -107,78 +109,78 @@ with torch.no_grad():
     eval_iou = 0
 
     start = time.time()
+    if not flag_eval_only:
+        for data in dataloader.dataloaders["train"]:
+            inputs, labels, mask_gt, img, cues = data
 
-    for data in dataloader.dataloaders["train"]:
-        inputs, labels, mask_gt, img, cues = data
+            # ---- random resize ------------------------------
+            rand_scale = random.uniform(0.67, 1.0) #random.uniform(0.67, 1.0)
+            cur_size = [round(max_size[0] * rand_scale), round(max_size[1] * rand_scale)]
+            inputs_resize = np.zeros((inputs.shape[0], inputs.shape[1], cur_size[0], cur_size[1]),dtype='float32')
+            mask_gt_resize = np.zeros((mask_gt.shape[0], cur_size[0], cur_size[1]),dtype='float32')
 
-        # ---- random resize ------------------------------
-        rand_scale = random.uniform(0.67, 1.0) #random.uniform(0.67, 1.0)
-        cur_size = [round(max_size[0] * rand_scale), round(max_size[1] * rand_scale)]
-        inputs_resize = np.zeros((inputs.shape[0], inputs.shape[1], cur_size[0], cur_size[1]),dtype='float32')
-        mask_gt_resize = np.zeros((mask_gt.shape[0], cur_size[0], cur_size[1]),dtype='float32')
+            max_val = max(max(inputs.max(), -inputs.min()), 1.0).numpy()
+            mask_gt_f_temp = mask_gt.detach().numpy().astype('float32')
+            max_val_mask = max(mask_gt_f_temp.max(), 1.0)
+            mask_gt_f_temp = mask_gt_f_temp/max_val_mask
+            img_np = np.zeros((img.shape[0], cur_size[0], cur_size[1], 3))
+            img_np_temp = img.detach().numpy()/255.0
 
-        max_val = max(max(inputs.max(), -inputs.min()), 1.0).numpy()
-        mask_gt_f_temp = mask_gt.detach().numpy().astype('float32')
-        max_val_mask = max(mask_gt_f_temp.max(), 1.0)
-        mask_gt_f_temp = mask_gt_f_temp/max_val_mask
-        img_np = np.zeros((img.shape[0], cur_size[0], cur_size[1], 3))
-        img_np_temp = img.detach().numpy()/255.0
+            for i in range(inputs.shape[0]):
+                inputs_resize[i] = np.transpose(resize(np.transpose(inputs[i].detach().numpy(), (1,2,0))/max_val, cur_size)*max_val, (2,0,1))
+                mask_gt_resize[i] = resize(mask_gt_f_temp[i], cur_size, order=0)
+                img_np[i] = resize(img_np_temp[i], cur_size)
+                # resize(mask_gt[0]/mask_gt[0].max(), cur_size, order=0)*mask_gt[0].max()
 
-        for i in range(inputs.shape[0]):
-            inputs_resize[i] = np.transpose(resize(np.transpose(inputs[i].detach().numpy(), (1,2,0))/max_val, cur_size)*max_val, (2,0,1))
-            mask_gt_resize[i] = resize(mask_gt_f_temp[i], cur_size, order=0)
-            img_np[i] = resize(img_np_temp[i], cur_size)
-            # resize(mask_gt[0]/mask_gt[0].max(), cur_size, order=0)*mask_gt[0].max()
+            mask_gt_resize = (mask_gt_resize*max_val_mask).astype('uint8')
+            img_np = np.round(img_np*255.0)
 
-        mask_gt_resize = (mask_gt_resize*max_val_mask).astype('uint8')
-        img_np = np.round(img_np*255.0)
+            if flag_use_cuda:
+                inputs = torch.from_numpy(inputs_resize).cuda(); labels = labels.cuda() #; cues = cues.cuda()
+            else:
+                inputs = torch.from_numpy(inputs_resize)
 
-        if flag_use_cuda:
-            inputs = torch.from_numpy(inputs_resize).cuda(); labels = labels.cuda() #; cues = cues.cuda()
-        else:
-            inputs = torch.from_numpy(inputs_resize)
+            sm_mask = net(inputs)
 
-        sm_mask = net(inputs)
+            # mask_mended = multi_scale.STCRF_adaptive01.min_mend_mask_by_labels(sm_mask.detach().cpu().numpy(), labels.detach().cpu().numpy())
+            # mask_mended = multi_scale.STCRF_adaptive01.mend_mask_by_labels(sm_mask.detach().cpu().numpy(), labels.detach().cpu().numpy())
+            # mask_mended = multi_scale.STCRF_adaptive01.min_mend_floor_mask_by_labels(sm_mask.detach().cpu().numpy(), labels.detach().cpu().numpy())
+            mask_mended = sm_mask.detach().cpu().numpy()
 
-        # mask_mended = multi_scale.STCRF_adaptive01.min_mend_mask_by_labels(sm_mask.detach().cpu().numpy(), labels.detach().cpu().numpy())
-        # mask_mended = multi_scale.STCRF_adaptive01.mend_mask_by_labels(sm_mask.detach().cpu().numpy(), labels.detach().cpu().numpy())
-        # mask_mended = multi_scale.STCRF_adaptive01.min_mend_floor_mask_by_labels(sm_mask.detach().cpu().numpy(), labels.detach().cpu().numpy())
-        mask_mended = sm_mask.detach().cpu().numpy()
+            if args.CRF_model == 'adaptive_CRF':
+                result_big, result_small = st_crf_layer.run(mask_mended, img_np, labels.detach().cpu().numpy())
+            else:
+                result_big, result_small = st_crf_layer.run(mask_mended, img_np)
 
-        if args.CRF_model == 'adaptive_CRF':
-            result_big, result_small = st_crf_layer.run(mask_mended, img_np, labels.detach().cpu().numpy())
-        else:
-            result_big, result_small = st_crf_layer.run(mask_mended, img_np)
+            # result_small = multi_scale.STCRF_adaptive01.mend_mask_by_labels(result_small, labels.detach().cpu().numpy())
+            # result_small = multi_scale.STCRF_adaptive01.min_mend_mask_by_labels(result_small, labels.detach().cpu().numpy())
+            # result_small_mended = multi_scale.STCRF_adaptive01.mend_mask_by_labels(result_small, labels.detach().cpu().numpy())
 
-        # result_small = multi_scale.STCRF_adaptive01.mend_mask_by_labels(result_small, labels.detach().cpu().numpy())
-        # result_small = multi_scale.STCRF_adaptive01.min_mend_mask_by_labels(result_small, labels.detach().cpu().numpy())
-        # result_small_mended = multi_scale.STCRF_adaptive01.mend_mask_by_labels(result_small, labels.detach().cpu().numpy())
+            # mask_mended = multi_scale.STCRF_adaptive01.mend_mask_by_labels(result_small, labels.detach().cpu().numpy())
+            # plt.figure()
+            # plt.imshow(np.argmax(mask_mended.squeeze(), axis=0))
 
-        # mask_mended = multi_scale.STCRF_adaptive01.mend_mask_by_labels(result_small, labels.detach().cpu().numpy())
-        # plt.figure()
-        # plt.imshow(np.argmax(mask_mended.squeeze(), axis=0))
+            # calculate the SEC loss
+            seed_loss = seed_loss_layer(sm_mask, cues, flag_use_cuda)
+            constrain_loss = st_constrain_loss_layer(result_small, sm_mask, flag_use_cuda)
+            st_BCE_loss = st_BCE_loss_layer(result_small, sm_mask, labels.detach().cpu().numpy(), flag_use_cuda)
+            st_half_BCE_loss = st_half_BCE_loss_layer(result_small, sm_mask, labels.detach().cpu().numpy(), flag_use_cuda)
+            # st_half_BCE_loss = st_half_BCE_loss_layer(result_small_mended, sm_mask, labels.detach().cpu().numpy(), flag_use_cuda)
+            # expand_loss = expand_loss_layer(sm_mask, labels)
 
-        # calculate the SEC loss
-        seed_loss = seed_loss_layer(sm_mask, cues, flag_use_cuda)
-        constrain_loss = st_constrain_loss_layer(result_small, sm_mask, flag_use_cuda)
-        st_BCE_loss = st_BCE_loss_layer(result_small, sm_mask, labels.detach().cpu().numpy(), flag_use_cuda)
-        st_half_BCE_loss = st_half_BCE_loss_layer(result_small, sm_mask, labels.detach().cpu().numpy(), flag_use_cuda)
-        # st_half_BCE_loss = st_half_BCE_loss_layer(result_small_mended, sm_mask, labels.detach().cpu().numpy(), flag_use_cuda)
-        # expand_loss = expand_loss_layer(sm_mask, labels)
+            for i in range(labels.shape[0]):
+                mask_pre = np.argmax(result_big[i], axis=0)
+                iou_obj.add_iou_mask_pair(mask_gt_resize[i,:,:], mask_pre)
 
-        for i in range(labels.shape[0]):
-            mask_pre = np.argmax(result_big[i], axis=0)
-            iou_obj.add_iou_mask_pair(mask_gt_resize[i,:,:], mask_pre)
+        train_iou = iou_obj.cal_cur_iou()
+        iou_obj.iou_clear()
 
-    train_iou = iou_obj.cal_cur_iou()
-    iou_obj.iou_clear()
+        time_took = time.time() - start
 
-    time_took = time.time() - start
-
-    # print('cur train iou is : ', train_iou, ' mean: ', train_iou.mean())
-    print('cur train iou mean: ', train_iou.mean())
-    weight_STBCE = weight_STBCE * 2
-    weight_dec = weight_dec * weight_dec
+        # print('cur train iou is : ', train_iou, ' mean: ', train_iou.mean())
+        print('cur train iou mean: ', train_iou.mean())
+        weight_STBCE = weight_STBCE * 2
+        weight_dec = weight_dec * weight_dec
 
     # if (epoch % 5 == 0):  # evaluation
     for data in dataloader.dataloaders["val"]:
