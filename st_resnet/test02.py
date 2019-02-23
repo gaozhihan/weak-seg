@@ -58,7 +58,8 @@ elif host_name == 'ram-lab-server01':
     # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/res_wsc_0210_my_resnet.pth'
     # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/res_from_mul_scale_resnet_cue_01_hard_snapped_my_resnet.pth'
     # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/res_from_mul_scale_ws_top_val_iou_my_resnet.pth'
-    model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/res_ws_gray_0217_my_resnet.pth'
+    # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/res_ws_gray_0217_my_resnet.pth'
+    model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/res_wsc_ft_gray_color_0221_0222_my_resnet.pth'
     # args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/models/localization_cues.pickle"
     # args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/st_01/models/my_cues.pickle"
     # args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/st_01/models/st_cue_01_hard_snapped.pickle"
@@ -200,8 +201,8 @@ with torch.no_grad():
     eval_iou = iou_obj.cal_cur_iou()
     iou_obj.iou_clear()
 
-    # print('cur eval iou is : ', eval_iou, ' mean: ', eval_iou.mean())
-    print('cur eval iou mean: ', eval_iou.mean())
+    print('cur eval iou is : ', eval_iou, ' mean: ', eval_iou.mean())
+    # print('cur eval iou mean: ', eval_iou.mean())
 
 print("done")
 
