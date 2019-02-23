@@ -391,7 +391,7 @@ class STCRFLayer():
 
             U = unary_from_softmax(sm_u)
 
-            d = dcrf.DenseCRF2D(self.input_size[0], self.input_size[1], self.num_class)
+            d = dcrf.DenseCRF2D(self.input_size[1], self.input_size[0], self.num_class)
             d.setUnaryEnergy(U)
 
             d.addPairwiseGaussian(sxy=(3,3), compat=3, kernel=dcrf.DIAG_KERNEL, normalization=dcrf.NORMALIZE_SYMMETRIC)

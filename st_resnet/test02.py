@@ -26,7 +26,7 @@ args.rand_gray = False
 args.lr = 5e-06
 # args.lr = 1.25e-06 # 3.125e-07 = 1e-5*(0.5**5)
 # args.CRF_model = 'adaptive_CRF'
-args.origin_size = True
+# args.origin_size = True
 
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
@@ -72,12 +72,14 @@ elif host_name == 'ram-lab-server01':
     args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/st_resnet_cue_01_all_hard_snapped_merge_0216.pickle"
     args.batch_size = 12
 
+if args.origin_size:
+    args.batch_size = 1
 
 net = st_resnet.resnet_st_seg01.resnet50(pretrained=False, num_classes=args.num_classes)
-net.load_state_dict(torch.load(model_path), strict = True)
+net.load_state_dict(torch.load(model_path), strict = False)
 
 if args.CRF_model == 'adaptive_CRF':
-    st_crf_layer = multi_scale.STCRF_adaptive01.STCRFLayer(False)
+    st_crf_layer = multi_scale.STCRF_adaptive01.STCRFLayer(True)
 else:
     st_crf_layer = multi_scale.voc_data_mul_scale_w_cues.STCRFLayer(True)
 
