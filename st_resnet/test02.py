@@ -26,7 +26,7 @@ args.rand_gray = False
 args.lr = 5e-06
 # args.lr = 1.25e-06 # 3.125e-07 = 1e-5*(0.5**5)
 # args.CRF_model = 'adaptive_CRF'
-# args.origin_size = True
+args.origin_size = True
 
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
@@ -81,7 +81,7 @@ net.load_state_dict(torch.load(model_path), strict = True)
 if args.CRF_model == 'adaptive_CRF':
     st_crf_layer = multi_scale.STCRF_adaptive01.STCRFLayer(True)
 else:
-    st_crf_layer = multi_scale.voc_data_mul_scale_w_cues.STCRFLayer(True)
+    st_crf_layer = multi_scale.voc_data_mul_scale_w_cues.STCRFLayer(False)
 
 seed_loss_layer = multi_scale.voc_data_mul_scale_w_cues.SeedingLoss()
 # expand_loss_layer = sec.sec_org_net.ExpandLossLayer(flag_use_cuda)
