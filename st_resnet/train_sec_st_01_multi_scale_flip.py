@@ -22,9 +22,9 @@ args.output_size = [41, 41]
 max_size = [385, 385]
 
 args.rand_gray = False
-args.lr = 5e-06
+# args.lr = 5e-06
 # args.lr = 1.25e-06 # 3.125e-07 = 1e-5*(0.5**5)
-args.CRF_model = 'adaptive_CRF'
+# args.CRF_model = 'adaptive_CRF'
 
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
@@ -155,8 +155,8 @@ for epoch in range(args.epochs):
 
         # mask_mended = multi_scale.STCRF_adaptive01.min_mend_mask_by_labels(sm_mask.detach().cpu().numpy(), labels.detach().cpu().numpy())
         # mask_mended = multi_scale.STCRF_adaptive01.mend_mask_by_labels(sm_mask.detach().cpu().numpy(), labels.detach().cpu().numpy())
-        mask_mended = multi_scale.STCRF_adaptive01.min_mend_floor_mask_by_labels(sm_mask.detach().cpu().numpy(), labels.detach().cpu().numpy())
-        # mask_mended = sm_mask.detach().cpu().numpy()
+        # mask_mended = multi_scale.STCRF_adaptive01.min_mend_floor_mask_by_labels(sm_mask.detach().cpu().numpy(), labels.detach().cpu().numpy())
+        mask_mended = sm_mask.detach().cpu().numpy()
 
         if args.CRF_model == 'adaptive_CRF':
             result_big, result_small = st_crf_layer.run(mask_mended, img_np, labels.detach().cpu().numpy())
@@ -204,7 +204,7 @@ for epoch in range(args.epochs):
 
         # (seed_loss + constrain_loss + expand_loss).backward()  # independent backward would cause Error: Trying to backward through the graph a second time ...
         # seed_loss.backward()
-        (seed_loss + constrain_loss/8).backward()
+        (seed_loss + constrain_loss/4).backward()
         # (seed_loss + st_BCE_loss*weight_STBCE).backward()
         # (seed_loss + constrain_loss/8 + st_half_BCE_loss*(1-weight_dec)).backward()
 
@@ -255,8 +255,9 @@ for epoch in range(args.epochs):
     iou_obj.iou_clear()
 
     if eval_iou.mean() > max_iou:
-        print('save model ' + args.model + ' with val mean iou: {}'.format(eval_iou.mean()))
-        torch.save(net.state_dict(), './st_resnet/models/res_wsc_0223_'+ args.model + '.pth')
+        save_dir = './st_resnet/models/res_ft_wsc_0224.pth'
+        print('save model ' + args.model + ' ' + save_dir + ' with val mean iou: {}'.format(eval_iou.mean()))
+        torch.save(net.state_dict(), save_dir)
         max_iou = eval_iou.mean()
 
     # print('cur eval iou is : ', eval_iou, ' mean: ', eval_iou.mean())
