@@ -53,7 +53,7 @@ elif host_name == 'ram-lab-server01':
     # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/st_top_val_acc_my_resnet_5_cpu_rename_fc2conv.pth'
     # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/res_sec01_ws_top_val_iou_my_resnet.pth'
     # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/multi_scale/models/st_top_val_acc_my_resnet_multi_scale_09_01_cpu_rename_fc2conv.pth'
-    model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/res_wsc_ft_wsgray0217_gray_color_0221_my_resnet.pth'
+    model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/res_wsc_ft_wsgray0217_gray_color_0225.pth'
     # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/res_wsc_0210_my_resnet.pth'
     # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/res_from_mul_scale_resnet_cue_01_hard_snapped_my_resnet.pth'
     # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/res_from_mul_scale_ws_top_val_iou_my_resnet.pth'
@@ -216,8 +216,9 @@ for epoch in range(args.epochs):
             iou_obj_eval.iou_clear()
 
             if eval_iou.mean() > max_iou:
-                print('save model ' + args.model + ' with val mean iou: {}'.format(eval_iou.mean()))
-                torch.save(net.state_dict(), './st_resnet/models/res_wsc_ft_gray_color_0221_0224_'+ args.model + '.pth')
+                save_dir = './st_resnet/models/res_wsc_ft_gray_color_0225_0225_2.pth'
+                print('save model ' + save_dir + ' with val mean iou: {}'.format(eval_iou.mean()))
+                torch.save(net.state_dict(), save_dir)
                 max_iou = eval_iou.mean()
 
             # print('cur eval iou is : ', eval_iou, ' mean: ', eval_iou.mean())
