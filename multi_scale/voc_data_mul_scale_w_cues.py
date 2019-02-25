@@ -366,7 +366,7 @@ class STCRFLayer():
         self.min_prob = 0.0001
         self.mask_size = [41, 41]
         self.input_size = [321, 321]
-        self.num_iter = 5
+        self.num_iter = 3
         self.flag_multi_process = flag_multi_process
         if flag_multi_process:
             num_cores = os.cpu_count()
