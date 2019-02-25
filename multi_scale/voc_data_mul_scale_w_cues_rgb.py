@@ -167,6 +167,7 @@ class VOCDataset(Dataset):
     def __getitem__(self, idx):
         img_name = os.path.join(self.data_dir, "images", self.file_list[idx]+".png")
         mask_name = os.path.join(self.data_dir, "segmentations", self.file_list[idx]+".png")
+        flag_have_cue = self.file_list[idx]+".png" in self.img_id_dic_SEC.keys()
 
         img = Image.open(img_name)
         img_color = img
@@ -181,18 +182,17 @@ class VOCDataset(Dataset):
                 img = Image.fromarray(temp_rgb,mode='RGB')
 
         mask_temp = Image.open(mask_name)
-        if self.file_list[idx]+".png" in self.img_id_dic_SEC.keys():
+        if flag_have_cue:
             cues_numpy = self.__get_cues_from_img_name(self.file_list[idx]+".png")
 
         # apply rand flip -------------------------------------------------
-        if random.random() > 0.5:
+        if random.random() > 0.5 and flag_have_cue:
             img = F.hflip(img)
             img_color = F.hflip(img_color)
             mask_temp = F.hflip(mask_temp)
-            if self.file_list[idx]+".png" in self.img_id_dic_SEC.keys():
-                cues_numpy = np.flip(cues_numpy,2).copy()
+            cues_numpy = np.flip(cues_numpy,2).copy()
 
-        if self.file_list[idx]+".png" in self.img_id_dic_SEC.keys():
+        if flag_have_cue:
             cues = torch.from_numpy(cues_numpy)
 
 
@@ -219,7 +219,7 @@ class VOCDataset(Dataset):
             label[item] = 1
         label_ts = torch.from_numpy(label)
 
-        if self.train_flag and self.file_list[idx]+".png" in self.img_id_dic_SEC.keys():
+        if self.train_flag and flag_have_cue:
             return img_ts, label_ts, mask, img_array, cues, img_array_color # img_name,
         else:
             # return img_ts, label_ts, mask, img_name, img_array

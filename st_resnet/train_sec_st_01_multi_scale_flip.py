@@ -35,7 +35,8 @@ if host_name == 'sunting':
     args.data_dir = '/home/sunting/Documents/program/VOC2012_SEG_AUG'
     args.sec_id_img_name_list_dir = "/home/sunting/Documents/program/SEC-master/training/input_list.txt"
     # args.cues_pickle_dir = "/home/sunting/Documents/program/SEC-master/training/localization_cues/localization_cues.pickle"
-    args.cues_pickle_dir = "/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_resnet_cue_01_hard_snapped.pickle"
+    # args.cues_pickle_dir = "/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_resnet_cue_01_hard_snapped.pickle"
+    args.cues_pickle_dir = "/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_resnet_cue_01_all_hard_snapped_merge_0216.pickle"
     # model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_top_val_acc_my_resnet_5_cpu_rename_fc2conv.pth'
     # model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_top_val_acc_my_resnet_multi_scale_09_01_cpu_rename_fc2conv.pth'
     # model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/multi_scale/models/st_rand_gray_top_val_acc_my_resnet_11_fc2conv_cpu.pth'
@@ -71,7 +72,7 @@ elif host_name == 'ram-lab-server01':
 
 
 net = st_resnet.resnet_st_seg01.resnet50(pretrained=False, num_classes=args.num_classes)
-net.load_state_dict(torch.load(model_path), strict = True)
+net.load_state_dict(torch.load(model_path), strict = False)
 
 if args.CRF_model == 'adaptive_CRF':
     st_crf_layer = multi_scale.STCRF_adaptive01.STCRFLayer(True)
