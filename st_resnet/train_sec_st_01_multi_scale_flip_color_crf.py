@@ -250,8 +250,9 @@ for epoch in range(args.epochs):
     iou_obj.iou_clear()
 
     if eval_iou.mean() > max_iou:
-        print('save model ' + args.model + ' with val mean iou: {}'.format(eval_iou.mean()))
-        torch.save(net.state_dict(), './st_resnet/models/res_wsc_ft_wsgray0217_gray_color_0221_'+ args.model + '.pth')
+        save_dir = './st_resnet/models/res_wsc_ft_wsgray0217_gray_color_0225.pth'
+        print('save model ' + save_dir + ' with val mean iou: {}'.format(eval_iou.mean()))
+        torch.save(net.state_dict(), save_dir)
         max_iou = eval_iou.mean()
 
     # print('cur eval iou is : ', eval_iou, ' mean: ', eval_iou.mean())

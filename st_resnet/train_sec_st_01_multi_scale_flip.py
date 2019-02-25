@@ -204,7 +204,7 @@ for epoch in range(args.epochs):
 
         # (seed_loss + constrain_loss + expand_loss).backward()  # independent backward would cause Error: Trying to backward through the graph a second time ...
         # seed_loss.backward()
-        (seed_loss + constrain_loss/4).backward()
+        (seed_loss + constrain_loss/8).backward()
         # (seed_loss + st_BCE_loss*weight_STBCE).backward()
         # (seed_loss + constrain_loss/8 + st_half_BCE_loss*(1-weight_dec)).backward()
 
@@ -256,7 +256,7 @@ for epoch in range(args.epochs):
 
     if eval_iou.mean() > max_iou:
         save_dir = './st_resnet/models/res_ft_wsc_0224.pth'
-        print('save model ' + args.model + ' ' + save_dir + ' with val mean iou: {}'.format(eval_iou.mean()))
+        print('save model ' + save_dir + ' with val mean iou: {}'.format(eval_iou.mean()))
         torch.save(net.state_dict(), save_dir)
         max_iou = eval_iou.mean()
 
