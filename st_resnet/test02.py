@@ -26,7 +26,7 @@ args.rand_gray = False
 args.lr = 5e-06
 # args.lr = 1.25e-06 # 3.125e-07 = 1e-5*(0.5**5)
 # args.CRF_model = 'adaptive_CRF'
-args.origin_size = True
+args.origin_size = False
 
 host_name = socket.gethostname()
 flag_use_cuda = torch.cuda.is_available()
@@ -61,7 +61,8 @@ elif host_name == 'ram-lab-server01':
     # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/res_from_mul_scale_resnet_cue_01_hard_snapped_my_resnet.pth'
     # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/res_from_mul_scale_ws_top_val_iou_my_resnet.pth'
     # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/res_ws_gray_0217_my_resnet.pth'
-    model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/res_wsc_ft_gray_color_0221_0222_my_resnet.pth'
+    # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/res_wsc_ft_gray_color_0221_0222_my_resnet.pth'
+    model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/res_wsc_ft_wsgray0217_gray_color_0225.pth'
     # args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/models/localization_cues.pickle"
     # args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/st_01/models/my_cues.pickle"
     # args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/st_01/models/st_cue_01_hard_snapped.pickle"
