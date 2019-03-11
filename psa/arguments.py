@@ -64,9 +64,9 @@ def get_args():
                         help='whether to weigh the cross entropy by confidence')
     parser.add_argument('--need_mask_flag', action='store_true', default=False,
                         help='need mask even training')
-    parser.add_argument('--colorgray', type='str', default="color",
+    parser.add_argument('--colorgray', type=str, default="color",
                         help='color|gray')
-    parser.add_argument('--root-dir', type='str', default="/home/weak-seg",
+    parser.add_argument('--root-dir', type=str, default="/home/weak-seg",
                         help='root dir')
 
     args = parser.parse_args()
