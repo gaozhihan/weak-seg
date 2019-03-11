@@ -26,7 +26,7 @@ class Net(network.resnet38d.Net):
             x, kernel_size=(x.size(2), x.size(3)), padding=0)
 
         x = self.fc8(x)
-        x = x.view(x.size(0), -1)
+        # x = x.view(x.size(0), -1)
 
         return feature, x
 
