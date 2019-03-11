@@ -19,8 +19,8 @@ class Net(network.resnet38d.Net):
 
 
     def forward(self, x):
-        x = super().forward(x)
-        x = self.dropout7(x)
+        feature = super().forward(x)
+        x = self.dropout7(feature)
 
         x = F.avg_pool2d(
             x, kernel_size=(x.size(2), x.size(3)), padding=0)
@@ -28,7 +28,7 @@ class Net(network.resnet38d.Net):
         x = self.fc8(x)
         x = x.view(x.size(0), -1)
 
-        return x
+        return feature, x
 
     def forward_cam(self, x):
         x = super().forward(x)
