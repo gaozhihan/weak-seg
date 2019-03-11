@@ -15,7 +15,7 @@ from skimage.transform import resize
 # import matplotlib.pyplot as plt
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     args = get_args()
     sys.path.add(args.root_dir)
     import psa.network.resnet38_cls as resnet38_cls
