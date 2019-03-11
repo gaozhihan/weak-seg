@@ -66,6 +66,8 @@ def get_args():
                         help='need mask even training')
     parser.add_argument('--colorgray', type='str', default="color",
                         help='color|gray')
+    parser.add_argument('--root-dir', type='str', default="/home/weak-seg",
+                        help='root dir')
 
     args = parser.parse_args()
     if args.no_bg==True:
