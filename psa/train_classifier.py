@@ -7,11 +7,12 @@ import time
 import socket
 # import st_resnet.resnet_st
 # import st_resnet.resnet_st_more_drp
+import torch.nn.functional as F
 from arguments import get_args
 import datetime
 import numpy as np
 import random
-from skimage.transform import resize
+#from skimage.transform import resize
 # import matplotlib.pyplot as plt
 
 
@@ -107,19 +108,22 @@ if __name__ == "__main__":
 
                     rand_scale = random.uniform(0.67, 1.0)
                     cur_size = [round(max_size[0] * rand_scale), round(max_size[1] * rand_scale)]
-                    inputs_resize = np.zeros((inputs.shape[0], inputs.shape[1], cur_size[0], cur_size[1]),dtype='float32')
+                    #inputs_resize = np.zeros((inputs.shape[0], inputs.shape[1], cur_size[0], cur_size[1]),dtype='float32')
 
                     max_val = max(max(inputs.max(), -inputs.min()), 1.0).numpy()
-                    for i in range(inputs.shape[0]):
-                        inputs_resize[i] = np.transpose(resize(np.transpose(inputs[i].detach().numpy(), (1,2,0))/max_val, cur_size)*max_val, (2,0,1))
-
+                    #for i in range(inputs.shape[0]):
+                        #inputs_resize[i] = np.transpose(resize(np.transpose(inputs[i].detach().numpy(), (1,2,0))/max_val, cur_size)*max_val, (2,0,1)) 
+                    inputs = F.interpolate(inputs, (inputs.size(0), inputs.size(1), cur_size(0), cur_size(1)))
                     # plt.imshow(np.transpose(inputs[0].detach().numpy(), (1,2,0)))
 
                     if flag_use_cuda:
-                        inputs = torch.from_numpy(inputs_resize).cuda()
+                        #inputs = torch.from_numpy(inputs_resize).cuda()
+                        inputs = inputs.cuda()
                         labels = labels.cuda()
                     else:
                         inputs = torch.from_numpy(inputs_resize)
+
+                     
 
                     optimizer.zero_grad()
 
