@@ -1,6 +1,6 @@
 version: '2.3'
 services:
-  weak_seg:
+  weak_seg1:
     image: onlytailei/pytorch:1.0-cuda10-tensorboardx-scipy-skimage
     runtime: nvidia
     mem_reservation: 10000M
@@ -13,4 +13,21 @@ services:
     working_dir: /home/weak-seg
     command:
         python psa/train_classifier.py
+        --root-dir /home/weak-seg
+        --colorgray color
 
+  weak_seg2:
+    image: onlytailei/pytorch:1.0-cuda10-tensorboardx-scipy-skimage
+    runtime: nvidia
+    mem_reservation: 10000M
+    shm_size: 10000M
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=1
+    volumes:
+      - /data_shared/Docker/tsun/data/VOC2012/VOC2012_SEG_AUG:/home/VOC2012_SEG_AUG
+      - /data_shared/Docker/ltai/ws/iccv_2019/weak-seg:/home/weak-seg
+    working_dir: /home/weak-seg
+    command:
+        python psa/train_classifier.py
+        --root-dir /home/weak-seg
+        --colorgray gray
