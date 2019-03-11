@@ -113,7 +113,7 @@ if __name__ == "__main__":
                     max_val = max(max(inputs.max(), -inputs.min()), 1.0).numpy()
                     #for i in range(inputs.shape[0]):
                         #inputs_resize[i] = np.transpose(resize(np.transpose(inputs[i].detach().numpy(), (1,2,0))/max_val, cur_size)*max_val, (2,0,1)) 
-                    inputs = F.interpolate(inputs, (inputs.size(0), inputs.size(1), cur_size(0), cur_size(1)))
+                    inputs = F.interpolate(inputs, (cur_size[0], cur_size[1]), mode='bilinear')
                     # plt.imshow(np.transpose(inputs[0].detach().numpy(), (1,2,0)))
 
                     if flag_use_cuda:
