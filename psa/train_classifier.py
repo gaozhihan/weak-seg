@@ -17,7 +17,7 @@ from skimage.transform import resize
 
 if __name__ == "__main__":
     args = get_args()
-    sys.path.add(args.root_dir)
+    sys.path.append(args.root_dir)
     import psa.network.resnet38_cls as resnet38_cls
     import psa.network.resnet38d as resnet38d
 
