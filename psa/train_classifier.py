@@ -43,8 +43,12 @@ elif host_name == 'ram-lab-server01':
     model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/models/resnet50_feat.pth'
     # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/multi_scale/models/st_top_val_rec_my_resnet_9_9.pth'
     args.batch_size = 10
+<<<<<<< HEAD
 print(host_name)
 elif host_name == 'weak_seg':
+=======
+else:
+>>>>>>> a2fe8328cea81ccb8e7338b7006894f2d1c27b30
     args.data_dir = '/home/VOC2012_SEG_AUG'
     # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/models/resnet50_feat.pth'
     # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/multi_scale/models/st_top_val_rec_my_resnet_9_9.pth'
@@ -53,7 +57,7 @@ elif host_name == 'weak_seg':
 # net = st_resnet.resnet_st.resnet50(pretrained=False, num_classes=args.num_classes)
 # net = st_resnet.resnet_st_more_drp.resnet50(pretrained=False, num_classes=args.num_classes)
 # net.load_state_dict(torch.load(model_path), strict = False)
-net = resnet38_cls()
+net = resnet38_cls.Net()
 
 if args.loss == 'BCELoss':
     criterion = nn.BCELoss()
@@ -61,7 +65,7 @@ elif args.loss == 'MultiLabelSoftMarginLoss':
     criterion = nn.MultiLabelSoftMarginLoss()
 
 print(args)
-print(model_path)
+# print(model_path)
 
 if flag_use_cuda:
     net.cuda()

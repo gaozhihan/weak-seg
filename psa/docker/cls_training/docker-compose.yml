@@ -1,8 +1,10 @@
 version: '2.3'
 services:
   weak_seg:
-    image: onlytailei/pytorch:1.0-cuda10-tensorboardx-scipy
+    image: onlytailei/pytorch:1.0-cuda10-tensorboardx-scipy-skimage
     runtime: nvidia
+    mem_reservation: 10000M
+    shm_size: 10000M
     environment:
       - NVIDIA_VISIBLE_DEVICES=0
     volumes:
