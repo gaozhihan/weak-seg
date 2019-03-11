@@ -1,7 +1,7 @@
 version: '2.3'
 services:
   weak_seg1:
-    image: onlytailei/pytorch:1.0-cuda10-tensorboardx-scipy-skimage
+    image: onlytailei/pytorch:1.0-cuda10-tensorboardx-scipy-skimage-mxnet
     runtime: nvidia
     mem_reservation: 10000M
     shm_size: 10000M
@@ -17,7 +17,7 @@ services:
         --colorgray color
 
   weak_seg2:
-    image: onlytailei/pytorch:1.0-cuda10-tensorboardx-scipy-skimage
+    image: onlytailei/pytorch:1.0-cuda10-tensorboardx-scipy-skimage-mxnet
     runtime: nvidia
     mem_reservation: 10000M
     shm_size: 10000M
