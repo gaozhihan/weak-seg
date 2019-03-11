@@ -1,0 +1,14 @@
+version: '2.3'
+services:
+  weak_seg:
+    image: onlytailei/pytorch:1.0-cuda10-tensorboardx-scipy
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=0
+    volumes:
+      - /data_shared/Docker/tsun/data/VOC2012/VOC2012_SEG_AUG:/home/VOC2012_SEG_AUG
+      - /data_shared/Docker/ltai/ws/iccv_2019/weak-seg:/home/weak-seg
+    working_dir: /home/weak-seg
+    command:
+        python psa/train_classifier.py
+
