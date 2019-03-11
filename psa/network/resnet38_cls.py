@@ -11,7 +11,7 @@ class Net(network.resnet38d.Net):
 
         self.dropout7 = torch.nn.Dropout2d(0.5)
 
-        self.fc8 = nn.Conv2d(4096, 20, 1, bias=False)
+        self.fc8 = nn.Conv2d(4096, 21, 1, bias=False)
         torch.nn.init.xavier_uniform_(self.fc8.weight)
 
         self.not_training = [self.conv1a, self.b2, self.b2_1, self.b2_2]
