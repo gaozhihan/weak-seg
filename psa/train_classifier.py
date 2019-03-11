@@ -1,9 +1,12 @@
+import sys
+sys.path.append("/home/weak-seg")
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from multi_scale.voc_data_mul_scale import VOCData
 import time
 import socket
+from multi_scale.voc_data_mul_scale import VOCData
 # import st_resnet.resnet_st
 import st_resnet.resnet_st_more_drp
 import psa.network.resnet38_cls as resnet38_cls
@@ -12,7 +15,7 @@ import datetime
 import numpy as np
 import random
 from skimage.transform import resize
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
 args = get_args()
 args.need_mask_flag = False
