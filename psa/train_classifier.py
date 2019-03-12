@@ -27,13 +27,15 @@ if __name__ == "__main__":
     now = datetime.datetime.now()
     date_str = str(now.day) + '_' + str(now.day)
 
-    if args.model == "resnet38":
+    print(args)
+
+    if args.model == 'resnet38':
         import psa.network.resnet38_cls as resnet38_cls
         import psa.network.resnet38d as resnet38d
         net = resnet38_cls.Net()
         weights_dict = resnet38d.convert_mxnet_to_torch(args.weights)
         net.load_state_dict(weights_dict, strict=False)
-    elif args.model == "vgg16":
+    elif args.model == 'vgg16':
         import psa.network.vgg16 as vgg16
         net = vgg16.Net()
         net.load_state_dict(torch.load(args.weight))
@@ -67,7 +69,6 @@ if __name__ == "__main__":
     max_acc = 0
     max_recall = 0
 
-    print(args)
 
     for epoch in range(args.epochs):
         train_loss = 0.0
