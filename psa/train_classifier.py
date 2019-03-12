@@ -1,10 +1,9 @@
 import sys
-
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import time
-import socket
+# import socket
 # import st_resnet.resnet_st
 # import st_resnet.resnet_st_more_drp
 import torch.nn.functional as F
@@ -30,33 +29,13 @@ if __name__ == "__main__":
     args.output_size = [41, 41]
     args.rand_gray = True
 
-    host_name = socket.gethostname()
+    # host_name = socket.gethostname()
     flag_use_cuda = torch.cuda.is_available()
     now = datetime.datetime.now()
     date_str = str(now.day) + '_' + str(now.day)
 
-    if host_name == 'sunting':
-        args.batch_size = 1
-        args.data_dir = '/home/sunting/Documents/program/VOC2012_SEG_AUG'
-        model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/models/resnet50_feat.pth'
-    elif host_name == 'sunting-ThinkCentre-M90':
-        args.batch_size = 2
-        args.data_dir = '/home/sunting/Documents/data/VOC2012_SEG_AUG'
-    elif host_name == 'ram-lab-server01':
-        args.data_dir = '/data_shared/Docker/tsun/data/VOC2012/VOC2012_SEG_AUG'
-        model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/models/resnet50_feat.pth'
-        # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/multi_scale/models/st_top_val_rec_my_resnet_9_9.pth'
-        args.batch_size = 10
-    else:
-        args.data_dir = '/home/VOC2012_SEG_AUG'
-        args.weights = args.root_dir + '/psa/weights/ilsvrc-cls_rna-a1_cls1000_ep-0001.params'
-        weights_dict = resnet38d.convert_mxnet_to_torch(args.weights)
-        # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/multi_scale/models/st_top_val_rec_my_resnet_9_9.pth'
-        # args.batch_size = 8
+    weights_dict = resnet38d.convert_mxnet_to_torch(args.weights)
 
-    # net = st_resnet.resnet_st.resnet50(pretrained=False, num_classes=args.num_classes)
-    # net = st_resnet.resnet_st_more_drp.resnet50(pretrained=False, num_classes=args.num_classes)
-    # net.load_state_dict(torch.load(model_path), strict = False)
     net = resnet38_cls.Net()
     net.load_state_dict(weights_dict, strict=False)
 
@@ -64,9 +43,6 @@ if __name__ == "__main__":
         criterion = nn.BCELoss()
     elif args.loss == 'MultiLabelSoftMarginLoss':
         criterion = nn.MultiLabelSoftMarginLoss()
-
-    print(args)
-    # print(model_path)
 
     if flag_use_cuda:
         net.cuda()
@@ -80,8 +56,8 @@ if __name__ == "__main__":
 
     dataloader = VOCData(args)
 
-
-    optimizer = optim.Adam(net.parameters(), lr=args.lr)  # L2 penalty: norm weight_decay=0.0001
+    # L2 penalty: norm weight_decay=0.0001
+    optimizer = optim.Adam(net.parameters(), lr=args.lr)
     main_scheduler = optim.lr_scheduler.StepLR(optimizer,
                                                step_size=args.step_size)
 
@@ -102,28 +78,39 @@ if __name__ == "__main__":
         for phase in ['train', 'val']:
             if phase == 'train':
                 net.train(True)
-
                 for data in dataloader.dataloaders["train"]:
                     inputs, labels = data
 
                     rand_scale = random.uniform(0.67, 1.0)
-                    cur_size = [round(max_size[0] * rand_scale), round(max_size[1] * rand_scale)]
-                    #inputs_resize = np.zeros((inputs.shape[0], inputs.shape[1], cur_size[0], cur_size[1]),dtype='float32')
+                    cur_size = [round(max_size[0] * rand_scale),
+                                round(max_size[1] * rand_scale)]
 
-                    max_val = max(max(inputs.max(), -inputs.min()), 1.0).numpy()
-                    #for i in range(inputs.shape[0]):
-                        #inputs_resize[i] = np.transpose(resize(np.transpose(inputs[i].detach().numpy(), (1,2,0))/max_val, cur_size)*max_val, (2,0,1)) 
-                    inputs = F.interpolate(inputs, (cur_size[0], cur_size[1]), mode='bilinear')
-                    # plt.imshow(np.transpose(inputs[0].detach().numpy(), (1,2,0)))
+                    max_val = max(max(inputs.max(),
+                                      -inputs.min()), 1.0).numpy()
+
+                    # inputs_resize = np.zeros((inputs.shape[0],
+                    #                           inputs.shape[1],
+                    #                           cur_size[0],
+                    #                           cur_size[1]),
+                    #                          dtype='float32')
+
+                    # for i in range(inputs.shape[0]):
+                    #     inputs_resize[i] = np.transpose(
+                    #         resize(np.transpose(
+                    #             inputs[i].detach().numpy(),
+                    #             (1,2,0))/max_val, cur_size)*max_val, (2,0,1))
+                    inputs = F.interpolate(inputs, (cur_size[0],
+                                                    cur_size[1]),
+                                           mode='bilinear')
+                    # plt.imshow(np.transpose(inputs[0].detach().numpy(),
+                    #                         (1,2,0)))
 
                     if flag_use_cuda:
-                        #inputs = torch.from_numpy(inputs_resize).cuda()
+                        # inputs = torch.from_numpy(inputs_resize).cuda()
                         inputs = inputs.cuda()
                         labels = labels.cuda()
-                    else:
-                        inputs = torch.from_numpy(inputs_resize)
-
-                     
+                    # else:
+                        # inputs = torch.from_numpy(inputs_resize)
 
                     optimizer.zero_grad()
 
@@ -136,7 +123,7 @@ if __name__ == "__main__":
 
                     train_loss += loss.item() * inputs.size(0)
 
-                    preds_thr_numpy = (preds.data > args.threshold).detach().cpu().numpy()
+                    preds_thr_numpy = (preds > args.threshold).cpu().numpy()
                     labels_numpy = labels.detach().cpu().numpy()
 
                     TP_train += np.logical_and(preds_thr_numpy.squeeze(),
@@ -161,7 +148,7 @@ if __name__ == "__main__":
 
                     eval_loss += loss.item() * inputs.size(0)
 
-                    preds_thr_numpy = (preds.data > args.threshold).detach().cpu().numpy()
+                    preds_thr_numpy = (preds > args.threshold).cpu().numpy()
                     labels_numpy = labels.detach().cpu().numpy()
 
                     TP_eval += np.logical_and(preds_thr_numpy.squeeze(),
