@@ -68,6 +68,8 @@ def get_args():
                         help='color|gray')
     parser.add_argument('--root-dir', type=str, default="/home/weak-seg",
                         help='root dir')
+    parser.add_argument('--weights', type=str, default="/home/weak-seg",
+                        help='root dir')
 
     args = parser.parse_args()
     if args.no_bg==True:

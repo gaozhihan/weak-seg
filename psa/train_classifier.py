@@ -3,26 +3,18 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import time
-# import socket
-# import st_resnet.resnet_st
-# import st_resnet.resnet_st_more_drp
 import torch.nn.functional as F
 from arguments import get_args
 import datetime
 import numpy as np
 import random
-#from skimage.transform import resize
-# import matplotlib.pyplot as plt
 
 
 if __name__ == "__main__":
     args = get_args()
     sys.path.append(args.root_dir)
-    import psa.network.resnet38_cls as resnet38_cls
-    import psa.network.resnet38d as resnet38d
 
     args.need_mask_flag = False
-    args.model = 'my_resnet'
     args.input_size = [321, 321]
     max_size = [385, 385]
     # max_size = [321, 321]
@@ -34,15 +26,27 @@ if __name__ == "__main__":
     now = datetime.datetime.now()
     date_str = str(now.day) + '_' + str(now.day)
 
-    weights_dict = resnet38d.convert_mxnet_to_torch(args.weights)
+    print(args)
 
-    net = resnet38_cls.Net()
-    net.load_state_dict(weights_dict, strict=False)
+    if args.model == 'resnet38':
+        import psa.network.resnet38_cls as resnet38_cls
+        import psa.network.resnet38d as resnet38d
+        net = resnet38_cls.Net()
+        weights_dict = resnet38d.convert_mxnet_to_torch(args.weights)
+        net.load_state_dict(weights_dict, strict=False)
+    elif args.model == 'vgg16':
+        import psa.network.vgg16 as vgg16
+        net = vgg16.Net()
+        net.load_state_dict(torch.load(args.weights), strict=False)
+    else:
+        raise("wrong model settings")
 
     if args.loss == 'BCELoss':
         criterion = nn.BCELoss()
     elif args.loss == 'MultiLabelSoftMarginLoss':
         criterion = nn.MultiLabelSoftMarginLoss()
+    else:
+        raise("wrong loss settings")
 
     if flag_use_cuda:
         net.cuda()
@@ -63,6 +67,7 @@ if __name__ == "__main__":
 
     max_acc = 0
     max_recall = 0
+
 
     for epoch in range(args.epochs):
         train_loss = 0.0
@@ -179,7 +184,8 @@ if __name__ == "__main__":
                   .format(acc_eval))
             torch.save(net.state_dict(),
                        '{}/psa/weights/psa_{}_top_val_acc_{}_{}.pth'.format(
-                        args.root_dir, args.colorgray, args.model, date_str))
+                        args.root_dir, args.colorgray,
+                        args.model, date_str))
             max_acc = acc_eval
 
         if recall_eval > max_recall:
