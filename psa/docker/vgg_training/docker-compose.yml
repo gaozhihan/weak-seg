@@ -1,0 +1,42 @@
+version: '2.3'
+services:
+  weak_seg2:
+    image: onlytailei/pytorch:1.0-cuda10-tensorboardx-scipy-skimage-mxnet
+    runtime: nvidia
+    mem_reservation: 10000M
+    shm_size: 10000M
+    cpu_count: 4
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=2
+    volumes:
+      - /data_shared/Docker/tsun/data/VOC2012/VOC2012_SEG_AUG:/home/VOC2012_SEG_AUG
+      - /data_shared/Docker/ltai/ws/iccv_2019/weak-seg:/home/weak-seg
+    working_dir: /home/weak-seg
+    command:
+        python psa/train_classifier.py
+        --data_dir /home/VOC2012_SEG_AUG
+        --root-dir /home/weak-seg
+        --model vgg16
+        --weights /home/weak-seg/psa/weights/vgg16-397923af.pth
+        --colorgray color
+        --batch_size 8
+
+  weak_seg3:
+    image: onlytailei/pytorch:1.0-cuda10-tensorboardx-scipy-skimage-mxnet
+    runtime: nvidia
+    mem_reservation: 10000M
+    shm_size: 10000M
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=3
+    volumes:
+      - /data_shared/Docker/tsun/data/VOC2012/VOC2012_SEG_AUG:/home/VOC2012_SEG_AUG
+      - /data_shared/Docker/ltai/ws/iccv_2019/weak-seg:/home/weak-seg
+    working_dir: /home/weak-seg
+    command:
+        python psa/train_classifier.py
+        --data_dir /home/VOC2012_SEG_AUG
+        --root-dir /home/weak-seg
+        --model vgg16
+        --weights /home/weak-seg/psa/weights/vgg16-397923af.pth
+        --colorgray gray
+        --batch_size 8

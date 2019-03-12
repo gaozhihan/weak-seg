@@ -86,7 +86,10 @@ for epoch in range(args.epochs):
                 for i in range(inputs.shape[0]):
                     inputs_resize[i] = np.transpose(resize(np.transpose(inputs[i].detach().numpy(), (1,2,0))/max_val, cur_size)*max_val, (2,0,1))
 
-                # plt.imshow(np.transpose(inputs[0].detach().numpy(), (1,2,0)))
+                # x=inputs[0].detach().numpy()
+                # x=x-x.min()
+                # x=x/x.max()
+                # plt.imshow(np.transpose(x, (1,2,0)))
 
                 if flag_use_cuda:
                     inputs = torch.from_numpy(inputs_resize).cuda(); labels = labels.cuda()

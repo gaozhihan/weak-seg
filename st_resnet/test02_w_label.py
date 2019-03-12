@@ -13,6 +13,7 @@ from skimage.transform import resize
 import random
 import matplotlib.pyplot as plt
 import multi_scale.STCRF_adaptive01
+import st_resnet.resnet_st_more_drp
 
 args = get_args()
 args.need_mask_flag = True
@@ -44,6 +45,8 @@ if host_name == 'sunting':
     # model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/res_from_mul_scale_resnet_cue_01_hard_snapped_my_resnet_cpu.pth'
     # model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/res_from_mul_scale_resnet_cue_01_w_STBCE_my_resnet_cpu.pth'
 
+    classifier_model_path = '/home/sunting/Documents/program/pyTorch/weak_seg/st_resnet/models/st_top_val_acc_my_resnet_multi_scale_09_01_cpu.pth'
+
 elif host_name == 'sunting-ThinkCentre-M90':
     args.batch_size = 2
     args.data_dir = '/home/sunting/Documents/data/VOC2012_SEG_AUG'
@@ -61,8 +64,10 @@ elif host_name == 'ram-lab-server01':
     # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/res_from_mul_scale_resnet_cue_01_hard_snapped_my_resnet.pth'
     # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/res_from_mul_scale_ws_top_val_iou_my_resnet.pth'
     # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/res_ws_gray_0217_my_resnet.pth'
-    # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/res_wsc_ft_gray_color_0221_0222_my_resnet.pth'
-    model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/res_wsc_ft_wsgray0217_gray_color_0225.pth'
+    model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/st_resnet/models/res_wsc_ft_gray_color_0221_0222_my_resnet.pth'
+
+    classifier_model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/multi_scale/models/st_top_val_acc_my_resnet_multi_scale_09_01.pth'
+
     # args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/models/localization_cues.pickle"
     # args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/st_01/models/my_cues.pickle"
     # args.cues_pickle_dir = "/data_shared/Docker/tsun/docker/program/weak-seg/st_01/models/st_cue_01_hard_snapped.pickle"
@@ -78,6 +83,9 @@ if args.origin_size:
 
 net = st_resnet.resnet_st_seg01.resnet50(pretrained=False, num_classes=args.num_classes)
 net.load_state_dict(torch.load(model_path), strict = True)
+
+net_classifier = st_resnet.resnet_st_more_drp.resnet50(pretrained=False, num_classes=args.num_classes)
+net_classifier.load_state_dict(torch.load(classifier_model_path), strict = True)
 
 if args.CRF_model == 'adaptive_CRF':
     st_crf_layer = multi_scale.STCRF_adaptive01.STCRFLayer(True)
@@ -95,6 +103,7 @@ print(model_path)
 
 if flag_use_cuda:
     net.cuda()
+    net_classifier.cuda()
 
 dataloader = multi_scale.voc_data_mul_scale_w_cues.VOCData(args)
 
@@ -106,6 +115,7 @@ weight_STBCE = 0.1
 weight_dec = 0.9
 
 net.train(False)
+net_classifier.train(False)
 
 with torch.no_grad():
 
@@ -145,14 +155,17 @@ with torch.no_grad():
                 inputs = torch.from_numpy(inputs_resize)
 
             sm_mask = net(inputs)
+            layer4_feature, fc = net_classifier(inputs)
+            preds = torch.sigmoid(fc)
+            preds_thr_numpy = (preds.data>args.threshold).detach().cpu().numpy().astype('float32')
 
-            # mask_mended = multi_scale.STCRF_adaptive01.min_mend_mask_by_labels(sm_mask.detach().cpu().numpy(), labels.detach().cpu().numpy())
-            # mask_mended = multi_scale.STCRF_adaptive01.mend_mask_by_labels(sm_mask.detach().cpu().numpy(), labels.detach().cpu().numpy())
-            # mask_mended = multi_scale.STCRF_adaptive01.min_mend_floor_mask_by_labels(sm_mask.detach().cpu().numpy(), labels.detach().cpu().numpy())
+            # mask_mended = multi_scale.STCRF_adaptive01.min_mend_mask_by_labels(sm_mask.detach().cpu().numpy(), preds_thr_numpy)
+            # mask_mended = multi_scale.STCRF_adaptive01.mend_mask_by_labels(sm_mask.detach().cpu().numpy(), preds_thr_numpy)
+            # mask_mended = multi_scale.STCRF_adaptive01.min_mend_floor_mask_by_labels(sm_mask.detach().cpu().numpy(), preds_thr_numpy)
             mask_mended = sm_mask.detach().cpu().numpy()
 
             if args.CRF_model == 'adaptive_CRF':
-                result_big, result_small = st_crf_layer.run(mask_mended, img_np, labels.detach().cpu().numpy())
+                result_big, result_small = st_crf_layer.run(mask_mended, img_np, preds_thr_numpy)
             else:
                 result_big, result_small = st_crf_layer.run(mask_mended, img_np)
 
@@ -193,11 +206,19 @@ with torch.no_grad():
             inputs = inputs.cuda(); labels = labels.cuda()
 
         sm_mask = net(inputs)
+        layer4_feature, fc = net_classifier(inputs)
+        preds = torch.sigmoid(fc)
+        preds_thr_numpy = (preds.data>args.threshold).detach().cpu().numpy().astype('float32')
+
+        # mask_mended = multi_scale.STCRF_adaptive01.min_mend_mask_by_labels(sm_mask.detach().cpu().numpy(), preds_thr_numpy)
+        # mask_mended = multi_scale.STCRF_adaptive01.mend_mask_by_labels(sm_mask.detach().cpu().numpy(), preds_thr_numpy)
+        mask_mended = multi_scale.STCRF_adaptive01.min_mend_floor_mask_by_labels(sm_mask.detach().cpu().numpy(), preds_thr_numpy)
+        # mask_mended = sm_mask.detach().cpu().numpy()
 
         if args.CRF_model == 'adaptive_CRF':
-            result_big, result_small = st_crf_layer.run(sm_mask.detach().cpu().numpy(), img.numpy(), labels.detach().cpu().numpy())
+            result_big, result_small = st_crf_layer.run(mask_mended, img.numpy(), labels.detach().cpu().numpy())
         else:
-            result_big, result_small = st_crf_layer.run(sm_mask.detach().cpu().numpy(), img.numpy())
+            result_big, result_small = st_crf_layer.run(mask_mended, img.numpy())
 
         for i in range(labels.shape[0]):
             mask_pre = np.argmax(result_big[i], axis=0)
