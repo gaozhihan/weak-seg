@@ -18,7 +18,7 @@ services:
         --model vgg16
         --weights /home/weak-seg/psa/weights/vgg16-397923af.pth
         --colorgray color
-        --batch_size 7
+        --batch_size 8
 
   weak_seg3:
     image: onlytailei/pytorch:1.0-cuda10-tensorboardx-scipy-skimage-mxnet
@@ -38,4 +38,4 @@ services:
         --model vgg16
         --weights /home/weak-seg/psa/weights/vgg16-397923af.pth
         --colorgray gray
-        --batch_size 7
+        --batch_size 8
