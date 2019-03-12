@@ -15,7 +15,6 @@ if __name__ == "__main__":
     sys.path.append(args.root_dir)
 
     args.need_mask_flag = False
-    args.model = 'my_resnet'
     args.input_size = [321, 321]
     max_size = [385, 385]
     # max_size = [321, 321]
