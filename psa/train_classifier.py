@@ -52,7 +52,7 @@ if __name__ == "__main__":
         args.weights = args.root_dir + '/psa/weights/ilsvrc-cls_rna-a1_cls1000_ep-0001.params'
         weights_dict = resnet38d.convert_mxnet_to_torch(args.weights)
         # model_path = '/data_shared/Docker/tsun/docker/program/weak-seg/multi_scale/models/st_top_val_rec_my_resnet_9_9.pth'
-        args.batch_size = 8
+        # args.batch_size = 8
 
     # net = st_resnet.resnet_st.resnet50(pretrained=False, num_classes=args.num_classes)
     # net = st_resnet.resnet_st_more_drp.resnet50(pretrained=False, num_classes=args.num_classes)

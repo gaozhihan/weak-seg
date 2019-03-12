@@ -15,6 +15,7 @@ services:
         python psa/train_classifier.py
         --root-dir /home/weak-seg
         --colorgray color
+        --batch_size 7
 
   weak_seg2:
     image: onlytailei/pytorch:1.0-cuda10-tensorboardx-scipy-skimage-mxnet
@@ -31,3 +32,4 @@ services:
         python psa/train_classifier.py
         --root-dir /home/weak-seg
         --colorgray gray
+        --batch_size 7
