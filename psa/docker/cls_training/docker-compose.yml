@@ -13,7 +13,9 @@ services:
     working_dir: /home/weak-seg
     command:
         python psa/train_classifier.py
+        --data_dir /home/VOC2012_SEG_AUG
         --root-dir /home/weak-seg
+        --weights /home/weak-seg/psa/weights/ilsvrc-cls_rna-a1_cls1000_ep-0001.params
         --colorgray color
         --batch_size 7
 
@@ -30,6 +32,8 @@ services:
     working_dir: /home/weak-seg
     command:
         python psa/train_classifier.py
+        --data_dir /home/VOC2012_SEG_AUG
         --root-dir /home/weak-seg
+        --weights /home/weak-seg/psa/weights/ilsvrc-cls_rna-a1_cls1000_ep-0001.params
         --colorgray gray
         --batch_size 7
