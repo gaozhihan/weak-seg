@@ -183,8 +183,8 @@ if __name__ == "__main__":
             print('save model ' + args.model + ' with val acc: {}'
                   .format(acc_eval))
             torch.save(net.state_dict(),
-                       '{}/psa/weights/{}_{}_top_val_acc_{}_{}.pth'.format(
-                        args.root_dir, args.model, args.colorgray,
+                       '{}/psa/weights/psa_{}_top_val_acc_{}_{}.pth'.format(
+                        args.root_dir, args.colorgray,
                         args.model, date_str))
             max_acc = acc_eval
 

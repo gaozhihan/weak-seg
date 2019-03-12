@@ -5,6 +5,7 @@ services:
     runtime: nvidia
     mem_reservation: 10000M
     shm_size: 10000M
+    cpu_count: 4
     environment:
       - NVIDIA_VISIBLE_DEVICES=2
     volumes:
