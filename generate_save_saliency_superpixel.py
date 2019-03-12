@@ -76,12 +76,12 @@ def snap_saliency_to_superpixel(saliency_mask, img, arg_super_pixel):
         cur_saliency_region = saliency_mask_rez[cur_seg]
         saliency_mask_snapped[cur_seg] = cur_saliency_region.mean()
 
-    # print(num_seg)
-    # plt.subplot(2,3,1); plt.imshow(img); plt.title('Input image'); plt.axis('off')
-    # plt.subplot(2,3,3); plt.imshow(saliency_mask_rez); plt.title('original saliency'); plt.axis('off')
-    # plt.subplot(2,3,4); plt.imshow(seg); plt.title('super pixel'); plt.axis('off')
-    # plt.subplot(2,3,5); plt.imshow(mark_boundaries(img,seg)); plt.title('super pixel'); plt.axis('off')
-    # plt.subplot(2,3,6); plt.imshow(saliency_mask_snapped); plt.title('snapped saliency'); plt.axis('off')
+    print(num_seg)
+    plt.subplot(2,3,1); plt.imshow(img); plt.title('Input image'); plt.axis('off')
+    plt.subplot(2,3,3); plt.imshow(saliency_mask_rez); plt.title('original saliency'); plt.axis('off')
+    plt.subplot(2,3,4); plt.imshow(seg); plt.title('super pixel'); plt.axis('off')
+    plt.subplot(2,3,5); plt.imshow(mark_boundaries(img,seg)); plt.title('super pixel'); plt.axis('off')
+    plt.subplot(2,3,6); plt.imshow(saliency_mask_snapped); plt.title('snapped saliency'); plt.axis('off')
 
     return saliency_mask_snapped, seg
 
@@ -166,14 +166,14 @@ if __name__ == '__main__':
                     saliency_mask = generate_saliency(outputs, flag_classify, flag_sum)
                     saliency_mask_snapped, super_pixel_seg = snap_saliency_to_superpixel(saliency_mask, img.detach().squeeze().numpy(), arg_super_pixel)
 
-                    # mask_gt[mask_gt==255] = 0
-                    # plt.subplot(2,3,2); plt.imshow(mask_gt.detach().squeeze().numpy()); plt.title('gt mask'); plt.axis('off')
-                    # plt.close('all')
+                    mask_gt[mask_gt==255] = 0
+                    plt.subplot(2,3,2); plt.imshow(mask_gt.detach().squeeze().numpy()); plt.title('gt mask'); plt.axis('off')
+                    plt.close('all')
 
                     # save raw_saliency, super pixel seg, snapped saliency
-                    np.save(save_saliency_path+img_name[0]+'.npy', saliency_mask.astype('float16'))
-                    np.save(save_superpixel_path+img_name[0]+'.npy', super_pixel_seg.astype('uint16'))
-                    np.save(save_snapped_saliency_path+img_name[0]+'.npy', saliency_mask_snapped.astype('float16'))
+                    # np.save(save_saliency_path+img_name[0]+'.npy', saliency_mask.astype('float16'))
+                    # np.save(save_superpixel_path+img_name[0]+'.npy', super_pixel_seg.astype('uint16'))
+                    # np.save(save_snapped_saliency_path+img_name[0]+'.npy', saliency_mask_snapped.astype('float16'))
                     # d = np.load('test3.npy')
                     print(counter)
                     counter+=1
