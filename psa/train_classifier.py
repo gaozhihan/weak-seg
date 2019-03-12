@@ -37,7 +37,7 @@ if __name__ == "__main__":
     elif args.model == 'vgg16':
         import psa.network.vgg16 as vgg16
         net = vgg16.Net()
-        net.load_state_dict(torch.load(args.weight))
+        net.load_state_dict(torch.load(args.weights))
     else:
         raise("wrong model settings")
 
