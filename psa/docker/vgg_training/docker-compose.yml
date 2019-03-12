@@ -1,12 +1,12 @@
 version: '2.3'
 services:
-  weak_seg0:
+  weak_seg2:
     image: onlytailei/pytorch:1.0-cuda10-tensorboardx-scipy-skimage-mxnet
     runtime: nvidia
     mem_reservation: 10000M
     shm_size: 10000M
     environment:
-      - NVIDIA_VISIBLE_DEVICES=0
+      - NVIDIA_VISIBLE_DEVICES=2
     volumes:
       - /data_shared/Docker/tsun/data/VOC2012/VOC2012_SEG_AUG:/home/VOC2012_SEG_AUG
       - /data_shared/Docker/ltai/ws/iccv_2019/weak-seg:/home/weak-seg
@@ -15,18 +15,18 @@ services:
         python psa/train_classifier.py
         --data_dir /home/VOC2012_SEG_AUG
         --root-dir /home/weak-seg
-        --model resnet38
-        --weights /home/weak-seg/psa/weights/ilsvrc-cls_rna-a1_cls1000_ep-0001.params
+        --model vgg16
+        --weights /home/weak-seg/psa/weights/vgg16-397923af.pth
         --colorgray color
         --batch_size 7
 
-  weak_seg1:
+  weak_seg3:
     image: onlytailei/pytorch:1.0-cuda10-tensorboardx-scipy-skimage-mxnet
     runtime: nvidia
     mem_reservation: 10000M
     shm_size: 10000M
     environment:
-      - NVIDIA_VISIBLE_DEVICES=1
+      - NVIDIA_VISIBLE_DEVICES=3
     volumes:
       - /data_shared/Docker/tsun/data/VOC2012/VOC2012_SEG_AUG:/home/VOC2012_SEG_AUG
       - /data_shared/Docker/ltai/ws/iccv_2019/weak-seg:/home/weak-seg
@@ -35,7 +35,7 @@ services:
         python psa/train_classifier.py
         --data_dir /home/VOC2012_SEG_AUG
         --root-dir /home/weak-seg
-        --weights /home/weak-seg/psa/weights/ilsvrc-cls_rna-a1_cls1000_ep-0001.params
-        --model resnet38
+        --model vgg16
+        --weights /home/weak-seg/psa/weights/vgg16-397923af.pth
         --colorgray gray
         --batch_size 7
