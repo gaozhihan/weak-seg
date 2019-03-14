@@ -8,7 +8,8 @@ def get_args():
     parser.add_argument('--threshold', type=float, default=0.3,
                         help='threshold (default: 0.3)')
     parser.add_argument('--data_dir', type=str,
-                        default="./data/VOC2012/VOC2012_SEG_AUG",
+                        # default="./data/VOC2012/VOC2012_SEG_AUG",
+                        default="/home/data/gaozhihan/project/weak-seg/weak-seg-aux/VOC2012_SEG_AUG",
                         help='data loading directory')
     parser.add_argument('--saliency_dir', type=str,
                         # default="./data/VOC2012/VOC2012_SEG_AUG/snapped_saliency/",
