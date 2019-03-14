@@ -1,3 +1,4 @@
+# helper that helps save the test output with specified format and PIL.Image.palette manipulation
 import os
 import numpy as np
 from PIL import Image

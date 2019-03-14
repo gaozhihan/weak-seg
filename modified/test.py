@@ -1,4 +1,6 @@
 # originally located at ROOTT_DIR/test_no_gt/test_w_pred.py
+# add test  by simply copy the corresponding part of val replace 'val' by 'test'
+# save test output with specified format
 import torch
 import torch.optim as optim
 # import sec.sec_org_net

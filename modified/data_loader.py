@@ -1,4 +1,5 @@
 # originally located at ROOT_DIR/test_no_gt/voc_dataa_input_only.py
+# add test dataloader by simply copy the corresponding part of val dataloader and replace 'val' by 'test'
 import torch
 import torch.nn as nn
 from torchvision import datasets, models, transforms

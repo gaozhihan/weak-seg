@@ -1,4 +1,5 @@
 # originally located at ROOT_DIR/arguments.py
+# only changed some default path for usage on dycpu server
 import argparse
 
 def get_args():
