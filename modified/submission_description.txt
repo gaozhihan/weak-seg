@@ -1,0 +1,4 @@
+Description:
+SEC based weakly supervised segmentation method with boundary snapping
+Contributors:
+Ting Sun, Lei Tai, Zhihan Gao, Ming Liu, Dit-Yan Yeung
