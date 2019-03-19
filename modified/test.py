@@ -172,9 +172,9 @@ with torch.no_grad():
             preds = torch.sigmoid(fc)
             preds_thr_numpy = (preds.data>args.threshold).detach().cpu().numpy().astype('float32')
 
-            # mask_mended = multi_scale.STCRF_adaptive01.min_mend_mask_by_labels(sm_mask.detach().cpu().numpy(), preds_thr_numpy)
+            mask_mended = multi_scale.STCRF_adaptive01.min_mend_mask_by_labels(sm_mask.detach().cpu().numpy(), preds_thr_numpy)
             # mask_mended = multi_scale.STCRF_adaptive01.mend_mask_by_labels(sm_mask.detach().cpu().numpy(), preds_thr_numpy)
-            mask_mended = multi_scale.STCRF_adaptive01.min_mend_floor_mask_by_labels(sm_mask.detach().cpu().numpy(), preds_thr_numpy)
+            # mask_mended = multi_scale.STCRF_adaptive01.min_mend_floor_mask_by_labels(sm_mask.detach().cpu().numpy(), preds_thr_numpy)
             # mask_mended = sm_mask.detach().cpu().numpy()
 
             if args.CRF_model == 'adaptive_CRF':
@@ -198,9 +198,9 @@ with torch.no_grad():
             preds = torch.sigmoid(fc)
             preds_thr_numpy = (preds.data>args.threshold).detach().cpu().numpy().astype('float32')
 
-            # mask_mended = multi_scale.STCRF_adaptive01.min_mend_mask_by_labels(sm_mask.detach().cpu().numpy(), preds_thr_numpy)
+            mask_mended = multi_scale.STCRF_adaptive01.min_mend_mask_by_labels(sm_mask.detach().cpu().numpy(), preds_thr_numpy)
             # mask_mended = multi_scale.STCRF_adaptive01.mend_mask_by_labels(sm_mask.detach().cpu().numpy(), preds_thr_numpy)
-            mask_mended = multi_scale.STCRF_adaptive01.min_mend_floor_mask_by_labels(sm_mask.detach().cpu().numpy(), preds_thr_numpy)
+            # mask_mended = multi_scale.STCRF_adaptive01.min_mend_floor_mask_by_labels(sm_mask.detach().cpu().numpy(), preds_thr_numpy)
             # mask_mended = sm_mask.detach().cpu().numpy()
 
             if args.CRF_model == 'adaptive_CRF':
