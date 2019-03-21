@@ -2,6 +2,7 @@
 import os
 import numpy as np
 from PIL import Image
+import warnings
 
 def color_map(N=256, normalized=False):
     def bitget(byteval, idx):
@@ -51,11 +52,27 @@ def color_map_viz():
     plt.show()
 
 class SaveTest(object):
-    def __init__(self,  save_dir=None, data_dir=None, file_list='test.txt'):
+    def __init__(self,  save_dir=None, data_dir=None, use='test', file_list='test.txt'):
+        '''
+        :param save_dir:
+        :param data_dir:
+        :param use: 'test' or 'val'
+        :param file_list:
+        '''
+        assert use in ('test', 'val')
         if data_dir is None:
             data_dir = "/home/data/gaozhihan/project/weak-seg/weak-seg-aux/VOC2012_SEG_AUG"
         if save_dir is None:
-            save_dir = '/home/data/gaozhihan/project/weak-seg/weak-seg-aux/results/VOC2012/Segmentation/comp6_test_cls'
+            if use == 'test':
+                save_dir = '/home/data/gaozhihan/project/weak-seg/weak-seg-aux/results/VOC2012/Segmentation/comp6_test_cls'
+            else:
+                save_dir = '/home/data/gaozhihan/project/weak-seg/weak-seg-aux/results/VOC2012/Segmentation/comp6_val_cls'
+        if use == 'test' and file_list != 'test.txt':
+            warnings.warn('Trying to save results on test set, but the file_list is not test.txt. Make sure that you intentionally did it', \
+                          UserWarning)
+        if use == 'val' and file_list != 'val.txt':
+            warnings.warn('Trying to save results on validation set, but the file_list is not val.txt. Make sure that you intentionally did it', \
+                          UserWarning)
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
         self.data_dir = data_dir

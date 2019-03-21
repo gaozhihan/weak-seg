@@ -26,7 +26,7 @@ args.input_size = [321,321]
 args.output_size = [41, 41]
 max_size = [385, 385]
 flag_train = False
-flag_eval = False
+flag_eval = True
 flag_test = True
 
 args.rand_gray = False
@@ -162,6 +162,8 @@ with torch.no_grad():
 
 
     if flag_eval:
+        print('testing on validation set')
+        Saver = SaveTest(data_dir=args.data_dir, use='val', file_list='val.txt')
         for data in dataloader.dataloaders["val"]:
             inputs, img = data
             if flag_use_cuda:
@@ -184,10 +186,13 @@ with torch.no_grad():
 
             for i in range(inputs.shape[0]):
                 mask_pre = np.argmax(result_big[i], axis=0)
-
+                Saver.save_test(mask=mask_pre)
             # evaluate mask_pre
+        print('number of val images: {}'.format(Saver.counter))
+
     if flag_test:
-        Saver = SaveTest(data_dir=args.data_dir)
+        print('testing on test set')
+        Saver = SaveTest(data_dir=args.data_dir, use='test')
         for data in dataloader.dataloaders["test"]:
             inputs, img = data
             if flag_use_cuda:

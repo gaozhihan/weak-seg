@@ -1,0 +1,23 @@
+Competition	Category	Score
+Object Segmentation (comp6)	background	83.14520
+Object Segmentation (comp6)	aeroplane	51.98780
+Object Segmentation (comp6)	bicycle	28.20500
+Object Segmentation (comp6)	bird	47.07970
+Object Segmentation (comp6)	boat	18.67060
+Object Segmentation (comp6)	bottle	55.29620
+Object Segmentation (comp6)	bus	70.41430
+Object Segmentation (comp6)	car	64.67550
+Object Segmentation (comp6)	cat	73.32280
+Object Segmentation (comp6)	chair	21.10590
+Object Segmentation (comp6)	cow	47.62310
+Object Segmentation (comp6)	diningtable	37.19110
+Object Segmentation (comp6)	dog	70.49930
+Object Segmentation (comp6)	horse	59.50640
+Object Segmentation (comp6)	motorbike	71.17730
+Object Segmentation (comp6)	person	64.82410
+Object Segmentation (comp6)	pottedplant	48.79880
+Object Segmentation (comp6)	sheep	60.01830
+Object Segmentation (comp6)	sofa	36.30630
+Object Segmentation (comp6)	train	42.41140
+Object Segmentation (comp6)	tvmonitor	39.00560
+Object Segmentation (comp6)	51.96500
